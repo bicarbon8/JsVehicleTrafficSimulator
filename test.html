@@ -1,0 +1,98 @@
+<!--
+/**********************************************************************
+ * This javascript is part of a Vehicle Traffic Simulator written 
+ * entirely in Javascript, HTML and CSS.  The application allows for 
+ * the creation of roadways upon which vehicles will travel and
+ * attempt to avoid collisions with other vehicles while obeying the
+ * rules of the road including traffic lights and speed limits
+ * 
+ * @Created: 04/09/2013
+ * @Author: Jason Holt Smith (bicarbon8@gmail.com)
+ * @Version: 0.2.0
+ * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is 
+ * distributed under the terms of the GNU General Public License.
+ * 
+ * This file is part of JsVehicleTrafficSimulator.
+ * 
+ * JsVehicleTrafficSimulator is free software: you can redistribute it 
+ * and/or modify it under the terms of the GNU General Public License 
+ * as published by the Free Software Foundation, either version 3 of 
+ * the License, or (at your option) any later version.
+ * 
+ * JsVehicleTrafficSimulator is distributed in the hope that it will 
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with JsVehicleTrafficSimulator.  If not, see 
+ * <http://www.gnu.org/licenses/>.
+ **********************************************************************/
+-->
+<html>
+    <head>
+        <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="Rectangle.js"></script>
+        <script type="text/javascript" src="Point.js"></script>
+        <script type="text/javascript" src="Polygon.js"></script>
+        <script type="text/javascript">
+            var rect = new Rectangle(4,4,new Point(2,2));
+            console.log("rect.Points: "+JSON.stringify(rect.Points));
+            if (rect.ContainsPoint(new Point(2,2))) {
+                console.log("PASS: Point in rectangle as expected.");
+            } else {
+                console.log("FAIL: Point out of rectangle, but expected in.");
+            }
+            if (!rect.ContainsPoint(new Point(0,0))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+            if (!rect.ContainsPoint(new Point(0,4))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+            if (!rect.ContainsPoint(new Point(5,5))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+            if (!rect.ContainsPoint(new Point(-1,2))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+
+            rect.Rotate(45,rect.Location);
+            console.log("rect.Points: "+JSON.stringify(rect.Points));
+            if (rect.ContainsPoint(new Point(2,2))) {
+                console.log("PASS: Point in rectangle as expected.");
+            } else {
+                console.log("FAIL: Point out of rectangle, but expected in.");
+            }
+            if (!rect.ContainsPoint(new Point(0,0))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+            if (!rect.ContainsPoint(new Point(0,4))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+            if (!rect.ContainsPoint(new Point(5,5))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+            if (!rect.ContainsPoint(new Point(-1,2))) {
+                console.log("PASS: Point out of rectangle as expected.");
+            } else {
+                console.log("FAIL: Point in rectangle, but expected out.");
+            }
+        </script>
+    </head>
+    <body>
+    </body>
+</html>

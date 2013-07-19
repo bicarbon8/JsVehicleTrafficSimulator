@@ -1,0 +1,688 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!--
+/**********************************************************************
+ * This file is part of a Vehicle Traffic Simulator written 
+ * entirely in Javascript, HTML and CSS.  The application allows for 
+ * the creation of roadways upon which vehicles will travel and
+ * attempt to avoid collisions with other vehicles while obeying the
+ * rules of the road including traffic lights and speed limits
+ * 
+ * @Created: 04/09/2013
+ * @Author: Jason Holt Smith (bicarbon8@gmail.com)
+ * @Version: 0.2.0
+ * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is 
+ * distributed under the terms of the GNU General Public License.
+ * 
+ * This file is part of JsVehicleTrafficSimulator.
+ * 
+ * JsVehicleTrafficSimulator is free software: you can redistribute it 
+ * and/or modify it under the terms of the GNU General Public License 
+ * as published by the Free Software Foundation, either version 3 of 
+ * the License, or (at your option) any later version.
+ * 
+ * JsVehicleTrafficSimulator is distributed in the hope that it will 
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with JsVehicleTrafficSimulator.  If not, see 
+ * <http://www.gnu.org/licenses/>.
+ **********************************************************************/
+-->
+<html lang="en">
+    <head>
+    	<title>Traffic Simulator</title>
+        <link rel="stylesheet" href="global.css" type="text/css" media="screen" />
+        <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="jcanvas.min.js"></script>
+        <script type="text/javascript" src="jquery.mousewheel.min.js"></script>
+        <script type="text/javascript" src="Point.js"></script>
+        <script type="text/javascript" src="Polygon.js"></script>
+        <script type="text/javascript" src="Rectangle.js"></script>
+        <script type="text/javascript" src="Triangle.js"></script>
+        <script type="text/javascript" src="GraphMap.js"></script>
+        <script type="text/javascript" src="Segment.js"></script>
+        <script type="text/javascript" src="TrafficFlowControl.js"></script>
+        <script type="text/javascript" src="StopLight.js"></script>
+        <script type="text/javascript" src="Driver.js"></script>
+        <script type="text/javascript" src="Vehicle.js"></script>
+        <script type="text/javascript" src="Mover.js"></script>
+        <script type="text/javascript" src="Plotter.js"></script>
+        <script type="text/javascript" src="TxtToMapParser.js"></script>
+        <script type="text/javascript" src="Line.js"></script>
+        <script type="text/javascript">
+            var mover         =null;
+            var plotter       =null;
+            var DEBUG         =false;
+            var keepMoving    =false;
+            var IsStartPoint  =true;
+            var CaptureStart  =false;
+            var CaptureEnd    =false;
+            var CaptureLight  =false;
+            var svg           =null;
+            var VEH_ID_COUNT  =0;
+            var LANE_ID_COUNT =0;
+            var SEG_ID_COUNT  =0;
+            var TFC_ID_COUNT  =0;
+            
+            function InitPageElements() {
+                var docWidth=$(document).width();
+                var docHeight=$(document).height();
+                //svg = new Raphael("div_Svg",docWidth,docHeight-200);
+                //var t=svg.attr("title","Map");
+                //svg.safari();
+                svg = $('#div_Svg');
+                svg.removeLayers();
+                svg[0].width=docWidth;
+                svg[0].height=docHeight-200;
+                SizePositionElement('div_Controls',docWidth,200,0,Math.round(docHeight-200));
+                
+                if(DEBUG){
+                    SizePositionElement("div_Debug",docWidth-200,0,0,docHeight);
+                    $("#div_Debug").show();
+                }
+            }
+            
+            function InitObjects() {
+                var map=new GraphMap(1);
+                mover=new Mover(map);
+                plotter=new Plotter(svg);
+
+                // bind mousewheel scrolling over canvas
+                $('#div_Svg').bind('mousewheel', function(event,delta,deltaX,deltaY) {
+                    UpdateMapScale(deltaY*0.10);
+                })
+            }
+
+            /**
+             * function will resize and position an element with an
+             * ID matching the passed in elementIdStr
+             * @param {String} elementIdStr the ID of the element to resize and reposition
+             * @param {int} width        the integer width to make the element
+             * @param {int} height       the integer height to make the element
+             * @param {int} xPos         the integer location within the window to place the element's left edge
+             * @param {int} yPos         the integer location within the window to place the element's top edge
+             */
+            function SizePositionElement(elementIdStr,width,height,xPos,yPos) {
+                var eleObj = $('#'+elementIdStr);
+                eleObj.width(width);
+                eleObj.height(height);
+                eleObj.css({
+                    "position":"absolute",
+                    "top":yPos+"px",
+                    "left":xPos+"px"
+                });
+            }
+            
+            function ToggleSimulationState(){
+                var button=document.getElementById("btn_SimStart");
+                
+                if(keepMoving){
+                    keepMoving=false;
+                    button.value="Start Simulation";
+                } else{
+                    keepMoving=true;
+                    button.value="Pause Simulation";
+                    Move();
+                }
+            }
+            
+            function Move(){
+                mover.Move(5);
+                
+                // only update View at 10Hz
+                if(mover.TotalElapsedTime%100==0){
+                    plotter.DrawVehicles(mover.Map);
+                    plotter.DrawStopLights(mover.Map,mover.TotalElapsedTime);
+                    $("#tbox_ElapsedTime").val((mover.TotalElapsedTime/1000)+"sec.");
+                    if(DEBUG){
+                        UpdateDebugStats(mover.Map);
+                    }
+                }
+                
+                if(keepMoving){
+                    window.setTimeout(Move,1);
+                }
+            }
+            
+            function UpdateDebugStats(map){
+                var roads=$("#tbox_RoadCount");
+                var lanes=$("#tbox_LaneCount");
+                var segments=$("#tbox_SegmentCount");
+                var vehicles=$("#tbox_VehicleCount");
+                var stopLights=$("#tbox_StopLightCount");
+                var output=$("#tbox_Output");
+                var rCount=0;
+                var lCount=0;
+                var sCount=0;
+                var vCount=0;
+                var slCount=0;
+                for(var i=0;i<map.Roads.length;i++){
+                    rCount++;
+                    var road = map.Roads[i];
+                    for(var j=0;j<road.Lanes.length;j++){
+                        lCount++;
+                        var lane = road.Lanes[j];
+                        for(var k=0;k<lane.Segments.length;k++){
+                            sCount++;
+                            var segment = lane.Segments[k];
+                            for(var l=0;l<segment.StopLights.length;l++){
+                                slCount++;
+                            }
+                        }
+                    }
+                }
+                vCount=map.GetVehicles().length;
+                
+                roads.val(rCount);
+                lanes.val(lCount);
+                segments.val(sCount);
+                vehicles.val(vCount);
+                stopLights.val(slCount);
+            }
+            
+            function SetFromJson(){
+                var input=$('#tbox_Xml').val();
+                var jsonObj = $.parseJSON(input);
+                mover=new TxtToMapParser().ParseMoverJson(jsonObj);
+                plotter=new Plotter(svg);
+                plotter.DrawSegments(mover.Map);
+                // plotter.DrawRoadPoints(mover.Map);
+                plotter.DrawVehicles(mover.Map);
+                plotter.DrawStopLights(mover.Map,0);
+            }
+            
+            function GetAsJson(){
+                var output=$('#tbox_Xml');
+                var moverJsonStr=new TxtToMapParser().GetMoverJson(mover);
+                output.val(moverJsonStr);
+            }
+            
+            function AddSegment(){
+                var foundRoad=false;
+                for(var i=0;i<mover.Map.Roads.length;i++){
+                    var segmentStartValues=$('#tbox_SegmentStart').val().split(",");
+                    var segmentEndValues=$('#tbox_SegmentEnd').val().split(",");
+                    var segmentSpeedLimit=parseFloat($('#tbox_RoadSpeed').val());
+
+                    var segment = new Segment(new Point(
+                        parseFloat(segmentStartValues[0]),parseFloat(segmentStartValues[1])),
+                        new Point(parseFloat(segmentEndValues[0]),parseFloat(segmentEndValues[1])));
+                    segment.SpeedLimit = segmentSpeedLimit;
+
+                    // add to Lane
+                    mover.Map.AddSegment(segment);
+                }
+                plotter.DrawRoads(mover.Map);
+            }
+            
+            function AddStopLight(){
+                var foundRoad=false;
+                for(var i=0;i<mover.Map.Roads.length;i++){
+                    var roadName=document.getElementById("tbox_RoadName").value;
+                    if(roadName==mover.Map.Roads[i].Name){
+                        var foundLane=false;
+                        for(var j=0;j<mover.Map.Roads[i].Lanes.length;j++){
+                            var laneName=document.getElementById("tbox_LaneName").value;
+                            if(laneName==mover.Map.Roads[i].Lanes[j].Name){
+                                var stopLightLocation=document.getElementById("tbox_StopLightLocation").value.split(",");
+                                var stopLightDuration=document.getElementById("tbox_StopLightDuration").value;
+                                var stopLightState=document.getElementById("opt_StopLightState").value;
+                                var state=null;
+                                switch(stopLightState){
+                                    case "Green":
+                                        state=new StopLightState().Green;
+                                        break;
+                                    case "Yellow":
+                                        state=new StopLightState().Yellow;
+                                        break;
+                                    case "Red":
+                                        state=new StopLightState().Red;
+                                        break;
+                                }
+                                var stopLight=new StopLight(parseFloat(stopLightDuration),state);
+                                stopLight.Location=new Point(parseFloat(stopLightLocation[0]),
+                                    parseFloat(stopLightLocation[1]));
+                                mover.Map.Roads[i].Lanes[j].AddStopLight(stopLight);
+                                foundLane=true;
+                                foundRoad=true;
+                            }
+                        }
+                    }
+                }
+                if(!foundRoad || !foundLane){
+                    AddLane();
+                    AddStopLight();
+                }
+                plotter.DrawVehicles(mover.Map);
+                plotter.DrawStopLights(mover.Map,mover.TotalElapsedTime);
+            }
+            
+            function UpdateMapScale(offset){
+                var scalarInput = $('#tbox_MapScale');
+                var scaleOffset = 0;
+                if (offset) {
+                    scaleOffset = offset;
+                }
+                var scale = parseFloat(scalarInput.val()) || 0;
+                scale += scaleOffset;
+                if (scale <= 0) { scale = 1; }
+                scalarInput.val(scale);
+                if(mover && mover.Map){
+                    mover.Map.Scale=scale;
+                    plotter.drawAll(mover.Map,mover.Map.TotalElapsedTime);
+                }
+            }
+            
+            function AddVehicles(){
+                var segments = mover.Map.GetSegments();
+                for(var i=0;i<segments.length;i++){
+                    var segment = segments[i];
+                    if (segment.IsInlet) {
+                        var vehicle=new Vehicle();
+                        vehicle.Width=5;
+                        vehicle.Height=3;
+                        var driver=new Driver();
+                        vehicle.SetDriver(driver);
+                        segment.AddVehicle(vehicle);
+                    }
+                }
+
+                plotter.DrawVehicles(mover.Map);
+            }
+            
+            function SetPoint(){
+                
+                var xPos=0;
+                var yPos=0;
+                xPos = event.clientX;
+                yPos = event.clientY;
+                if(mover!=null && mover.Map!=null){
+                    var s = Math.round(xPos/mover.Map.Scale) + ',' + Math.round(yPos/mover.Map.Scale);
+                } else{
+                    var s = Math.round(xPos) + ',' + Math.round(yPos);
+                }
+                if(CaptureStart){
+                    document.getElementById("tbox_SegmentStart").value=s;
+                } else if(CaptureEnd){
+                    document.getElementById("tbox_SegmentEnd").value=s;
+                } else if(CaptureLight){
+                    document.getElementById("tbox_StopLightLocation").value=s;
+                }                
+            }
+            
+            function BeginCaptureCoordinate(type){
+                CaptureLight=false;
+                CaptureStart=false;
+                CaptureEnd=false;
+                if(type=="START"){
+                    CaptureStart=true;
+                } else if(type=="END"){
+                    CaptureEnd=true;
+                } else if(type=="LIGHT"){
+                    CaptureLight=true;
+                }
+            }
+            
+            function EndCaptureCoordinate(){
+                CaptureStart=false;
+                CaptureEnd=false;
+                CaptureLight=false;
+            }
+            
+            document.onmousemove = SetPoint;
+            if(document.captureEvents){
+                document.captureEvents(Event.MOUSEMOVE);
+            }
+
+            $(document).ready(function() {
+                InitPageElements();
+                InitObjects();
+            });
+            $(window).resize(function() {
+                InitPageElements();
+                plotter.drawAll(mover.Map,mover.TotalElapsedTime);
+            });
+        </script>
+    </head>
+    <body>
+        <canvas id="div_Svg"><!-- onmouseover="SetPoint();" style="position:absolute; outline:#000000 solid 1px;" 
+            onmousemove="ShowTooltip(event, 'display');" onmouseout="HideTooltip();" 
+            onclick="EndCaptureCoordinate();">-->
+        </canvas>
+        <div id="div_Controls" style="position:absolute;overflow:auto;">
+            <fieldset>
+                <legend onclick="$('#tbl_Draw').toggle();">Draw Controls</legend>
+                <table id="tbl_Draw" width="100%" style="display:none;">
+                    <tr>
+                        <td>
+                            
+                        </td>
+                        <td>
+                            Name: <input id="tbox_RoadName" type="text" value="Road1" />
+                        </td>
+                        <td>
+                            
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            
+                        </td>
+                        <td>
+                            Name: <input id="tbox_LaneName" type="text" value="Lane1" />
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td>
+                            
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input id="btn_AddSegment" type="submit" onClick="AddSegment(); return false;"
+                                value="Add Segment" />
+                        </td>
+                        <td>
+                            Start: <input id="tbox_SegmentStart" type="text" ondblclick="BeginCaptureCoordinate('START');"
+                                value="x,y" />
+                        </td>
+                        <td>
+                            End: <input id="tbox_SegmentEnd" type="text" ondblclick="BeginCaptureCoordinate('END');"
+                                value="x,y" />
+                        </td>
+                        <td>
+                            Speed Limit: <input id="tbox_RoadSpeed" type="text" value="30" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td valign="top">
+                            <input id="btn_AddStopLight" type="submit" onClick="AddStopLight(); return false;"
+                                value="Add StopLight" />
+                        </td>
+                        <td valign="top">
+                            Location: <input id="tbox_StopLightLocation" type="text" ondblclick="BeginCaptureCoordinate('LIGHT');"
+                                value="x,y" />
+                        </td>
+                        <td valign="top">
+                            Green Duration (sec): <input id="tbox_StopLightDuration" type="text" value="30" /><br />
+                        </td>
+                        <td>
+                            Start State: <select id="opt_StopLightState">
+                                            <option>Green</option>
+                                            <option>Yellow</option>
+                                            <option>Red</option>
+                                        </select>
+                        </td>
+                    </tr>
+                </table>
+            </fieldset>
+            <fieldset>    
+                <legend onclick="$('#tbl_Simulation').toggle();">Simulation Controls</legend>
+                <table id="tbl_Simulation" width="100%" style="display:none;">
+                    <tr>
+                        <td>
+                            <input id="btn_SimStart" type="submit" onClick="ToggleSimulationState();return false;" 
+                                value="Begin Simulation" /> 
+                            Elapsed: <input id="tbox_ElapsedTime" type="text" size="50" /><br />
+                            Scale: <input id="tbox_MapScale" type="text" size="5" value="1" />
+                            <input id="btn_UpdateScale" type="submit" onClick="UpdateMapScale(); return false;"
+                                value="Update Scale" /><br />
+                            <input id="btn_AddVehicles" type="submit" onClick="AddVehicles(); return false;"
+                                value="Add Vehicles" /><br />
+                        </td>
+                    </tr>
+                </table>
+            </fieldset>
+            <fieldset>
+                <legend onclick="$('#tbl_Xml').toggle();">Xml Input/Output</legend>
+                <table id="tbl_Xml" width="100%" style="display:none;">
+                    <tr>
+                        <td>
+                            <textarea id="tbox_Xml" rows="10" cols="80">
+{
+    "mover":{
+        "millisecondstep":2,
+        "elapsedmillisec":0
+    },
+    "map":{
+        "scale":1,
+        "segments":[
+            {
+                "start":{
+                    "x":200,
+                    "y":25
+                },
+                "end":{
+                    "x":200,
+                    "y":200
+                },
+                "speedlimit":25,
+                "stoplights":[
+                    {
+                        "location":{
+                            "x":200,
+                            "y":195
+                        },
+                        "changeseconds":60,
+                        "startstate":0
+                    }
+                ],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":true
+            },
+            {
+                "start":{
+                    "x":200,
+                    "y":200
+                },
+                "end":{
+                    "x":200,
+                    "y":206
+                },
+                "speedlimit":25,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":200,
+                    "y":206
+                },
+                "end":{
+                    "x":200,
+                    "y":300
+                },
+                "speedlimit":25,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":206,
+                    "y":300
+                },
+                "end":{
+                    "x":206,
+                    "y":206
+                },
+                "speedlimit":25,
+                "stoplights":[
+                    {
+                        "location":{
+                            "x":206,
+                            "y":209
+                        },
+                        "changeseconds":60,
+                        "startstate":0
+                    }
+                ],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":true
+            },
+            {
+                "start":{
+                    "x":206,
+                    "y":206
+                },
+                "end":{
+                    "x":206,
+                    "y":200
+                },
+                "speedlimit":25,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":206,
+                    "y":200
+                },
+                "end":{
+                    "x":206,
+                    "y":25
+                },
+                "speedlimit":25,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":25,
+                    "y":206
+                },
+                "end":{
+                    "x":200,
+                    "y":206
+                },
+                "speedlimit":35,
+                "stoplights":[
+                    {
+                        "location":{
+                            "x":195,
+                            "y":206
+                        },
+                        "changeseconds":60,
+                        "startstate":2
+                    }
+                ],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":true
+            },
+            {
+                "start":{
+                    "x":200,
+                    "y":206
+                },
+                "end":{
+                    "x":206,
+                    "y":206
+                },
+                "speedlimit":35,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":206,
+                    "y":206
+                },
+                "end":{
+                    "x":300,
+                    "y":206
+                },
+                "speedlimit":35,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":300,
+                    "y":200
+                },
+                "end":{
+                    "x":206,
+                    "y":200
+                },
+                "speedlimit":35,
+                "stoplights":[
+                    {
+                        "location":{
+                            "x":209,
+                            "y":200
+                        },
+                        "changeseconds":60,
+                        "startstate":2
+                    }
+                ],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":true
+            },
+            {
+                "start":{
+                    "x":206,
+                    "y":200
+                },
+                "end":{
+                    "x":200,
+                    "y":200
+                },
+                "speedlimit":35,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":200,
+                    "y":200
+                },
+                "end":{
+                    "x":25,
+                    "y":200
+                },
+                "speedlimit":35,
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            }
+        ]
+    }
+}
+                            </textarea><br />
+                            <input id="btn_CreateObjects" type="submit" onclick="SetFromJson(); return false;" value="Parse Xml" />
+                            <input id="btn_CreateXml" type="submit" onclick="GetAsXml(); return false;" value="Generate Xml" />
+                        </td>
+                    </tr>
+                </table>
+            </fieldset>
+        </div>
+        <div id="div_Debug" style="position:fixed;width:200px;display:none;overflow:auto;">
+            Roads:<br /><input id="tbox_RoadCount" type="text" value="0" /><br />
+            Lanes:<br /><input id="tbox_LaneCount" type="text" value="0" /><br />
+            Segments:<br /><input id="tbox_SegmentCount" type="text" value="0" /><br />
+            Vehicles:<br /><input id="tbox_VehicleCount" type="text" value="0" /><br />
+            StopLights:<br /><input id="tbox_StopLightCount" type="text" value="0" /><br />
+        </div>
+    </body>
+</html>
