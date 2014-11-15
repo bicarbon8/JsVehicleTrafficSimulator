@@ -51,12 +51,13 @@ function GraphMap(scale) {
 		var segments = [];
 		var keys = Object.keys(this._segments);
 
-		for (var i=0; i<keys.length; i++) {
-			var segs = this._segments[keys[i]];
+		for (var key in keys) {
+			var k = keys[key];
+			var segs = this._segments[k];
 
-            for (var j=0; j<segs.length; j++) {
-                segments.push(segs[j]);
-            }
+            segs.forEach(function (seg) {
+                segments.push(seg);
+            });
 		}
 
 		return segments;
@@ -97,14 +98,31 @@ function GraphMap(scale) {
 
 		// loop through all segments getting all vehicles
 		var segments = this.GetSegments();
-		for (var i=0; i<segments.length; i++) {
-			var veh = segments[i].GetVehicles();
-            for (var j=0; j<veh.length; j++) {
-                vehicles.push(veh[j]);
+		for (var i in segments) {
+			var segment = segments[i];
+			var vs = segment.GetVehicles();
+			if (vs.length > 0) {
+            	vehicles.push.apply(vehicles, vs);
             }
 		}
 
 		return vehicles;
+	}
+
+	this.UpdateVehicles=function(vehicles) {
+		var segments = this.GetSegments();
+		for (var i in vehicles) {
+			var vehicle = vehicles[i];
+			for (var j in segments) {
+				var segment = segments[j];
+				for (var k in segment._Vehicles) {
+					var v = segment._Vehicles[k];
+					if (v.Id === vehicle.Id) {
+						segment._Vehicles[k] = vehicle;
+					}
+				}
+			}
+		}
 	}
 
 	/**

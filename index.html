@@ -47,35 +47,35 @@
         <script type="text/javascript" src="StopLight.js"></script>
         <script type="text/javascript" src="Driver.js"></script>
         <script type="text/javascript" src="Vehicle.js"></script>
-        <script type="text/javascript" src="Mover.js"></script>
         <script type="text/javascript" src="Plotter.js"></script>
         <script type="text/javascript" src="TxtToMapParser.js"></script>
         <script type="text/javascript" src="Line.js"></script>
         <script type="text/javascript">
-            var mover         =null;
             var plotter       =null;
+            var canvas        =null;
+            var map           =null;
             var DEBUG         =false;
             var keepMoving    =false;
             var IsStartPoint  =true;
             var CaptureStart  =false;
             var CaptureEnd    =false;
             var CaptureLight  =false;
-            var svg           =null;
             var VEH_ID_COUNT  =0;
             var LANE_ID_COUNT =0;
             var SEG_ID_COUNT  =0;
             var TFC_ID_COUNT  =0;
+            var startTime     =0;
             
             function InitPageElements() {
                 var docWidth=$(document).width();
                 var docHeight=$(document).height();
-                //svg = new Raphael("div_Svg",docWidth,docHeight-200);
-                //var t=svg.attr("title","Map");
-                //svg.safari();
-                svg = $('#div_Svg');
-                svg.removeLayers();
-                svg[0].width=docWidth;
-                svg[0].height=docHeight-200;
+                //canvas = new Raphael("div_canvas",docWidth,docHeight-200);
+                //var t=canvas.attr("title","Map");
+                //canvas.safari();
+                canvas = $('#div_canvas');
+                canvas.removeLayers();
+                canvas[0].width=docWidth;
+                canvas[0].height=docHeight-200;
                 SizePositionElement('div_Controls',docWidth,200,0,Math.round(docHeight-200));
                 
                 if(DEBUG){
@@ -85,12 +85,11 @@
             }
             
             function InitObjects() {
-                var map=new GraphMap(1);
-                mover=new Mover(map);
-                plotter=new Plotter(svg);
+                map=new GraphMap(1);
+                plotter=new Plotter(canvas);
 
                 // bind mousewheel scrolling over canvas
-                $('#div_Svg').bind('mousewheel', function(event,delta,deltaX,deltaY) {
+                $('#div_canvas').bind('mousewheel', function(event,delta,deltaX,deltaY) {
                     UpdateMapScale(deltaY*0.10);
                 })
             }
@@ -124,25 +123,40 @@
                 } else{
                     keepMoving=true;
                     button.value="Pause Simulation";
+                    startTime = new Date().getTime();
                     Move();
                 }
             }
             
-            function Move(){
-                mover.Move(5);
-                
-                // only update View at 10Hz
-                if(mover.TotalElapsedTime%100==0){
-                    plotter.DrawVehicles(mover.Map);
-                    plotter.DrawStopLights(mover.Map,mover.TotalElapsedTime);
-                    $("#tbox_ElapsedTime").val((mover.TotalElapsedTime/1000)+"sec.");
-                    if(DEBUG){
-                        UpdateDebugStats(mover.Map);
+            function Move(workers){
+                var vehicles = map.GetVehicles();
+                var workers = workers || [];
+                for (var i=0; i<vehicles.length; i++) {
+                    var v = vehicles[i];
+                    var worker = workers[i]
+                    if (!worker) {
+                        worker = new Worker("MoverWorker.js");
+                        worker.onmessage = function (event) {
+                            var vehicles = JSON.parse(event.data);
+                            map.UpdateVehicles(vehicles);
+                            plotter.DrawVehicles(vehicles, map.Scale);
+                            plotter.DrawStopLights(map,new Date().getTime() - startTime);
+                        }
+                        workers.push(worker);
                     }
+
+                    var message = JSON.stringify({ 
+                        "vehicleId": v.Id,
+                        "elapsedMilliseconds": new Date().getTime() - startTime,
+                        "map": map
+                    });
+                    workers[i].postMessage(message);
                 }
                 
                 if(keepMoving){
-                    window.setTimeout(Move,1);
+                    window.setTimeout(function () {
+                        Move(workers);
+                    },1);
                 }
             }
             
@@ -184,24 +198,24 @@
             
             function SetFromJson(){
                 var input=$('#tbox_Xml').val();
-                var jsonObj = $.parseJSON(input);
-                mover=new TxtToMapParser().ParseMoverJson(jsonObj);
-                plotter=new Plotter(svg);
-                plotter.DrawSegments(mover.Map);
-                // plotter.DrawRoadPoints(mover.Map);
-                plotter.DrawVehicles(mover.Map);
-                plotter.DrawStopLights(mover.Map,0);
+                var jsonObj = JSON.parse(input);
+                map=new TxtToMapParser().ParseMapJson(jsonObj.map);
+                plotter=new Plotter(canvas);
+                plotter.DrawSegments(map);
+                // plotter.DrawRoadPoints(map);
+                plotter.DrawVehicles(map);
+                plotter.DrawStopLights(map,0);
             }
             
             function GetAsJson(){
                 var output=$('#tbox_Xml');
-                var moverJsonStr=new TxtToMapParser().GetMoverJson(mover);
-                output.val(moverJsonStr);
+                var mapJsonStr=new TxtToMapParser().GetMapJson(map);
+                output.val(mapJsonStr);
             }
             
             function AddSegment(){
                 var foundRoad=false;
-                for(var i=0;i<mover.Map.Roads.length;i++){
+                for(var i=0;i<map.Roads.length;i++){
                     var segmentStartValues=$('#tbox_SegmentStart').val().split(",");
                     var segmentEndValues=$('#tbox_SegmentEnd').val().split(",");
                     var segmentSpeedLimit=parseFloat($('#tbox_RoadSpeed').val());
@@ -212,20 +226,20 @@
                     segment.SpeedLimit = segmentSpeedLimit;
 
                     // add to Lane
-                    mover.Map.AddSegment(segment);
+                    map.AddSegment(segment);
                 }
-                plotter.DrawRoads(mover.Map);
+                plotter.DrawRoads(map);
             }
             
             function AddStopLight(){
                 var foundRoad=false;
-                for(var i=0;i<mover.Map.Roads.length;i++){
+                for(var i=0;i<map.Roads.length;i++){
                     var roadName=document.getElementById("tbox_RoadName").value;
-                    if(roadName==mover.Map.Roads[i].Name){
+                    if(roadName==map.Roads[i].Name){
                         var foundLane=false;
-                        for(var j=0;j<mover.Map.Roads[i].Lanes.length;j++){
+                        for(var j=0;j<map.Roads[i].Lanes.length;j++){
                             var laneName=document.getElementById("tbox_LaneName").value;
-                            if(laneName==mover.Map.Roads[i].Lanes[j].Name){
+                            if(laneName==map.Roads[i].Lanes[j].Name){
                                 var stopLightLocation=document.getElementById("tbox_StopLightLocation").value.split(",");
                                 var stopLightDuration=document.getElementById("tbox_StopLightDuration").value;
                                 var stopLightState=document.getElementById("opt_StopLightState").value;
@@ -244,7 +258,7 @@
                                 var stopLight=new StopLight(parseFloat(stopLightDuration),state);
                                 stopLight.Location=new Point(parseFloat(stopLightLocation[0]),
                                     parseFloat(stopLightLocation[1]));
-                                mover.Map.Roads[i].Lanes[j].AddStopLight(stopLight);
+                                map.Roads[i].Lanes[j].AddStopLight(stopLight);
                                 foundLane=true;
                                 foundRoad=true;
                             }
@@ -255,8 +269,8 @@
                     AddLane();
                     AddStopLight();
                 }
-                plotter.DrawVehicles(mover.Map);
-                plotter.DrawStopLights(mover.Map,mover.TotalElapsedTime);
+                plotter.DrawVehicles(map);
+                plotter.DrawStopLights(map,new Date().getTime() - startTime);
             }
             
             function UpdateMapScale(offset){
@@ -269,37 +283,35 @@
                 scale += scaleOffset;
                 if (scale <= 0) { scale = 1; }
                 scalarInput.val(scale);
-                if(mover && mover.Map){
-                    mover.Map.Scale=scale;
-                    plotter.drawAll(mover.Map,mover.Map.TotalElapsedTime);
+                if(map){
+                    map.Scale=scale;
+                    plotter.drawAll(map,map.TotalElapsedTime);
                 }
             }
             
             function AddVehicles(){
-                var segments = mover.Map.GetSegments();
-                for(var i=0;i<segments.length;i++){
-                    var segment = segments[i];
+                var segments = map.GetSegments();
+                var vehicles = [];
+                segments.forEach(function (segment) {
                     if (segment.IsInlet) {
                         var vehicle=new Vehicle();
                         vehicle.Width=5;
                         vehicle.Height=3;
-                        var driver=new Driver();
-                        vehicle.SetDriver(driver);
                         segment.AddVehicle(vehicle);
+                        vehicles.push(vehicle);
                     }
-                }
+                });
 
-                plotter.DrawVehicles(mover.Map);
+                plotter.DrawVehicles(vehicles, map.Scale);
             }
             
             function SetPoint(){
-                
                 var xPos=0;
                 var yPos=0;
                 xPos = event.clientX;
                 yPos = event.clientY;
-                if(mover!=null && mover.Map!=null){
-                    var s = Math.round(xPos/mover.Map.Scale) + ',' + Math.round(yPos/mover.Map.Scale);
+                if(map!=null){
+                    var s = Math.round(xPos/map.Scale) + ',' + Math.round(yPos/map.Scale);
                 } else{
                     var s = Math.round(xPos) + ',' + Math.round(yPos);
                 }
@@ -342,12 +354,12 @@
             });
             $(window).resize(function() {
                 InitPageElements();
-                plotter.drawAll(mover.Map,mover.TotalElapsedTime);
+                plotter.drawAll(map,new Date().getTime() - startTime);
             });
         </script>
     </head>
     <body>
-        <canvas id="div_Svg"><!-- onmouseover="SetPoint();" style="position:absolute; outline:#000000 solid 1px;" 
+        <canvas id="div_canvas"><!-- onmouseover="SetPoint();" style="position:absolute; outline:#000000 solid 1px;" 
             onmousemove="ShowTooltip(event, 'display');" onmouseout="HideTooltip();" 
             onclick="EndCaptureCoordinate();">-->
         </canvas>
@@ -441,12 +453,10 @@
                 <table id="tbl_Xml" width="100%" style="display:none;">
                     <tr>
                         <td>
+                            <input id="btn_CreateObjects" type="submit" onclick="SetFromJson(); return false;" value="Parse Xml" />
+                            <input id="btn_CreateXml" type="submit" onclick="GetAsXml(); return false;" value="Generate Xml" /><br />
                             <textarea id="tbox_Xml" rows="10" cols="80">
 {
-    "mover":{
-        "millisecondstep":2,
-        "elapsedmillisec":0
-    },
     "map":{
         "scale":1,
         "segments":[
@@ -670,8 +680,6 @@
     }
 }
                             </textarea><br />
-                            <input id="btn_CreateObjects" type="submit" onclick="SetFromJson(); return false;" value="Parse Xml" />
-                            <input id="btn_CreateXml" type="submit" onclick="GetAsXml(); return false;" value="Generate Xml" />
                         </td>
                     </tr>
                 </table>

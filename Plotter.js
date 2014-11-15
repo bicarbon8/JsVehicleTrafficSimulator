@@ -34,12 +34,11 @@ function Plotter(canvas){
 
     this.drawAll=function(map,elapsedMilliseconds) {
         this.DrawSegments(map);
-        this.DrawVehicles(map);
+        this.DrawVehicles(map.GetVehicles(), map.Scale);
         this.DrawStopLights(map,elapsedMilliseconds);
     }
     
-    this.DrawVehicles=function(map){
-        var vehicles = map.GetVehicles();
+    this.DrawVehicles=function(vehicles, scale){
         // clear all vehicles
         this.Clear('vehicle');
         this.Clear('view');
@@ -66,7 +65,8 @@ function Plotter(canvas){
             
             // draw the vehicle on the canvas
             // this.DrawShape('view',vehicle.GetViewArea(),"#ffff00",null,null,true,map.Scale);
-            this.DrawShape('vehicle',vehicle.GetBoundingBox(),color,"#000000",1,true,map.Scale);
+            var v = new Vehicle(vehicle);
+            this.DrawShape('vehicle',v.GetBoundingBox(),color,"#000000",1,true,scale);
         }
     }
 

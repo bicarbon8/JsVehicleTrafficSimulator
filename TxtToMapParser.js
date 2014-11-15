@@ -28,20 +28,6 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 function TxtToMapParser(){
-    this.ParseMoverJson=function(jsonObj) {
-        var mover;
-
-        if (jsonObj && jsonObj.map && jsonObj.mover) {
-            var map = this.ParseMapJson(jsonObj.map);
-
-            mover = new Mover(map);
-            mover.MillisecStep=jsonObj.mover.millisecondstep;
-            mover.TotalElapsedTime=jsonObj.mover.elapsedmillisec;
-        }
-
-        return mover;
-    }
-
     this.ParseMapJson=function(jsonObj) {
         var map;
 

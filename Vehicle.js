@@ -30,14 +30,13 @@
 function Vehicle(vehicle){
     this.Id=null;
     try{
-        this.Id="vehicle_"+VEH_ID_COUNT++;
+        this.Id=VEH_ID_COUNT++;
     } catch(e){
-        this.Id="vehicle_"+0;
+        this.Id=0;
     }
     this.Name=null;
     this.Width=0;
     this.Height=0;
-    this.Driver=null;
     this.Location=new Point(0,0);
     this.Velocity=0; // meters per second
     this.Heading=0;
@@ -53,9 +52,6 @@ function Vehicle(vehicle){
             this.Height=vehicle.Height;
             this.Location=vehicle.Location;
             this.Velocity=vehicle.Velocity;
-            var driver=vehicle.Driver;
-            driver.Vehicle=this;
-            this.Driver=driver;
         }
     }
 
@@ -66,11 +62,6 @@ function Vehicle(vehicle){
             intersects=true;
         }
         return intersects;
-    }
-
-    this.SetDriver=function(driver){
-        driver.Vehicle=this;
-        this.Driver=driver;
     }
 
     this.GetBoundingBox=function(){
@@ -84,6 +75,13 @@ function Vehicle(vehicle){
     }
 
     this.GetViewArea=function(){
+        /**
+         * the view area is a pie-shaped region where the point of the
+         * pie starts from the centrepoint of the vehicle and the crust
+         * is ahead and to the sides.  Use 3 triangle to represent this
+         * where vehicles in the two side triangles must be traveling 
+         * towards the vehicle to initiate slowing
+         */
         var tri=null;
         if(this.Location){
             var triP0=this.GetBoundingBox().GetCenterPoint();
