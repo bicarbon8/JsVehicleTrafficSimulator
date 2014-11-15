@@ -65,6 +65,8 @@
             var SEG_ID_COUNT  =0;
             var TFC_ID_COUNT  =0;
             var startTime     =0;
+            var workers       =[];
+            var MAX_THREADS   =4;
             
             function InitPageElements() {
                 var docWidth=$(document).width();
@@ -120,6 +122,11 @@
                 if(keepMoving){
                     keepMoving=false;
                     button.value="Start Simulation";
+                    for (var i in workers) {
+                        workers[i].terminate();
+                        delete workers[i];
+                    }
+                    workers = [];
                 } else{
                     keepMoving=true;
                     button.value="Pause Simulation";
@@ -128,36 +135,41 @@
                 }
             }
             
-            function Move(workers){
-                var vehicles = map.GetVehicles();
-                var workers = workers || [];
-                for (var i=0; i<vehicles.length; i++) {
-                    var v = vehicles[i];
-                    var worker = workers[i]
-                    if (!worker) {
-                        worker = new Worker("MoverWorker.js");
-                        worker.onmessage = function (event) {
-                            var vehicles = JSON.parse(event.data);
-                            map.UpdateVehicles(vehicles);
-                            plotter.DrawVehicles(vehicles, map.Scale);
-                            plotter.DrawStopLights(map,new Date().getTime() - startTime);
+            function Move() {
+                while (workers.length < MAX_THREADS) {
+                    worker = new Worker("MoverWorker.js");
+                    worker.onmessage = function (event) {
+                        var vehicle = JSON.parse(event.data);
+                        var v = new Vehicle(vehicle);
+                        $('#tbox_ElapsedTime').val(v.ElapsedMs);
+                        map.UpdateVehicles([v]);
+                        plotter.DrawVehicles(map.GetVehicles(), map.Scale);
+                        plotter.DrawStopLights(map, v.ElapsedMs);
+                        if(keepMoving){
+                            window.setTimeout(Move,1);
                         }
-                        workers.push(worker);
                     }
+                    workers.push(worker);
+                }
 
-                    var message = JSON.stringify({ 
-                        "vehicleId": v.Id,
-                        "elapsedMilliseconds": new Date().getTime() - startTime,
-                        "map": map
-                    });
-                    workers[i].postMessage(message);
-                }
-                
-                if(keepMoving){
-                    window.setTimeout(function () {
-                        Move(workers);
-                    },1);
-                }
+                var vehicles = map.GetVehicles();
+                for (var i=0; i<vehicles.length; i) {
+                    var ids = [];
+                    for (var j=0; j<Math.ceil(vehicles.length/MAX_THREADS); j++) {
+                        var v = vehicles[i++];
+                        ids.push(v.Id);
+                    }
+                    if (ids.length > 0) {
+                        var message = JSON.stringify({ 
+                            "vehicleIds": ids,
+                            "elapsedMilliseconds": (new Date().getTime() - startTime),
+                            "map": map
+                        });
+                        workers[Math.floor(i/MAX_THREADS)].postMessage(message);
+                    } else {
+                        break;
+                    }
+                }    
             }
             
             function UpdateDebugStats(map){
@@ -291,18 +303,17 @@
             
             function AddVehicles(){
                 var segments = map.GetSegments();
-                var vehicles = [];
                 segments.forEach(function (segment) {
                     if (segment.IsInlet) {
                         var vehicle=new Vehicle();
                         vehicle.Width=5;
                         vehicle.Height=3;
-                        segment.AddVehicle(vehicle);
-                        vehicles.push(vehicle);
+                        vehicle.SegmentId = segment.Id;
+                        map.AddVehicle(vehicle);
                     }
                 });
 
-                plotter.DrawVehicles(vehicles, map.Scale);
+                plotter.DrawVehicles(map.GetVehicles(), map.Scale);
             }
             
             function SetPoint(){
@@ -457,43 +468,104 @@
                             <input id="btn_CreateXml" type="submit" onclick="GetAsXml(); return false;" value="Generate Xml" /><br />
                             <textarea id="tbox_Xml" rows="10" cols="80">
 {
+    "mover":{
+        "millisecondstep":2,
+        "elapsedmillisec":0
+    },
     "map":{
         "scale":1,
         "segments":[
             {
                 "start":{
-                    "x":200,
-                    "y":25
+                    "x":16,
+                    "y":194
                 },
                 "end":{
-                    "x":200,
-                    "y":200
+                    "x":194,
+                    "y":194
                 },
-                "speedlimit":25,
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":200,
-                            "y":195
-                        },
-                        "changeseconds":60,
-                        "startstate":0
-                    }
-                ],
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
                 "vehicles":[],
                 "preference":0,
-                "isinlet":true
+                "isinlet":false
             },
             {
                 "start":{
-                    "x":200,
+                    "x":194,
+                    "y":194
+                },
+                "end":{
+                    "x":194,
+                    "y":106
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":194,
+                    "y":106
+                },
+                "end":{
+                    "x":16,
+                    "y":106
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":16,
+                    "y":106
+                },
+                "end":{
+                    "x":16,
+                    "y":194
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":10,
+                    "y":200
+                },
+                "end":{
+                    "x":106,
+                    "y":200
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":106,
                     "y":200
                 },
                 "end":{
                     "x":200,
-                    "y":206
+                    "y":200
                 },
-                "speedlimit":25,
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
                 "stoplights":[],
                 "vehicles":[],
                 "preference":0,
@@ -502,67 +574,14 @@
             {
                 "start":{
                     "x":200,
-                    "y":206
-                },
-                "end":{
-                    "x":200,
-                    "y":300
-                },
-                "speedlimit":25,
-                "stoplights":[],
-                "vehicles":[],
-                "preference":0,
-                "isinlet":false
-            },
-            {
-                "start":{
-                    "x":206,
-                    "y":300
-                },
-                "end":{
-                    "x":206,
-                    "y":206
-                },
-                "speedlimit":25,
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":206,
-                            "y":209
-                        },
-                        "changeseconds":60,
-                        "startstate":0
-                    }
-                ],
-                "vehicles":[],
-                "preference":0,
-                "isinlet":true
-            },
-            {
-                "start":{
-                    "x":206,
-                    "y":206
-                },
-                "end":{
-                    "x":206,
-                    "y":200
-                },
-                "speedlimit":25,
-                "stoplights":[],
-                "vehicles":[],
-                "preference":0,
-                "isinlet":false
-            },
-            {
-                "start":{
-                    "x":206,
                     "y":200
                 },
                 "end":{
-                    "x":206,
-                    "y":25
+                    "x":200,
+                    "y":100
                 },
-                "speedlimit":25,
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
                 "stoplights":[],
                 "vehicles":[],
                 "preference":0,
@@ -570,22 +589,71 @@
             },
             {
                 "start":{
-                    "x":25,
+                    "x":200,
+                    "y":100
+                },
+                "end":{
+                    "x":10,
+                    "y":100
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":10,
+                    "y":100
+                },
+                "end":{
+                    "x":10,
+                    "y":200
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":10,
+                    "y":200
+                },
+                "end":{
+                    "x":10,
+                    "y":206
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "stoplights":[],
+                "vehicles":[],
+                "preference":0,
+                "isinlet":false
+            },
+            {
+                "start":{
+                    "x":10,
                     "y":206
                 },
                 "end":{
-                    "x":200,
+                    "x":50,
                     "y":206
                 },
                 "speedlimit":35,
+                "roadname":"On Ramp",
                 "stoplights":[
                     {
                         "location":{
-                            "x":195,
+                            "x":50,
                             "y":206
                         },
-                        "changeseconds":60,
-                        "startstate":2
+                        "changeseconds":5,
+                        "startstate":0
                     }
                 ],
                 "vehicles":[],
@@ -594,14 +662,15 @@
             },
             {
                 "start":{
-                    "x":200,
+                    "x":50,
                     "y":206
                 },
                 "end":{
-                    "x":206,
+                    "x":100,
                     "y":206
                 },
                 "speedlimit":35,
+                "roadname":"Jason Ave. N.",
                 "stoplights":[],
                 "vehicles":[],
                 "preference":0,
@@ -609,68 +678,15 @@
             },
             {
                 "start":{
-                    "x":206,
+                    "x":100,
                     "y":206
                 },
                 "end":{
-                    "x":300,
-                    "y":206
-                },
-                "speedlimit":35,
-                "stoplights":[],
-                "vehicles":[],
-                "preference":0,
-                "isinlet":false
-            },
-            {
-                "start":{
-                    "x":300,
+                    "x":106,
                     "y":200
                 },
-                "end":{
-                    "x":206,
-                    "y":200
-                },
-                "speedlimit":35,
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":209,
-                            "y":200
-                        },
-                        "changeseconds":60,
-                        "startstate":2
-                    }
-                ],
-                "vehicles":[],
-                "preference":0,
-                "isinlet":true
-            },
-            {
-                "start":{
-                    "x":206,
-                    "y":200
-                },
-                "end":{
-                    "x":200,
-                    "y":200
-                },
-                "speedlimit":35,
-                "stoplights":[],
-                "vehicles":[],
-                "preference":0,
-                "isinlet":false
-            },
-            {
-                "start":{
-                    "x":200,
-                    "y":200
-                },
-                "end":{
-                    "x":25,
-                    "y":200
-                },
-                "speedlimit":35,
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
                 "stoplights":[],
                 "vehicles":[],
                 "preference":0,

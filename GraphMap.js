@@ -38,6 +38,7 @@
 function GraphMap(scale) {
 	this.Scale=scale;
 	this._segments = {}; // use as a HashMap<Point,Array<Segment>>
+	this._vehicles = {}; // use as a HashMap<Id,Vehicle>
 
 	this.AddSegment=function(segment) {
         var key = JSON.stringify(segment.Start);
@@ -45,6 +46,13 @@ function GraphMap(scale) {
 			this._segments[key] = [];
 		}
 		this._segments[key].push(segment);
+	}
+
+	this.AddVehicle=function(vehicle) {
+		if (vehicle.SegmentId) {
+			vehicle = this.GetSegmentById(vehicle.SegmentId).AttachVehicle(vehicle);
+		}
+		this._vehicles[vehicle.Id] = vehicle;
 	}
 
 	this.GetSegments=function() {
@@ -61,6 +69,12 @@ function GraphMap(scale) {
 		}
 
 		return segments;
+	}
+
+	this.GetSegmentById=function (id) {
+		return this.GetSegments().filter(function (el) {
+			return el.Id === id;
+		})[0];
 	}
 
 	this.GetSegmentsStartingAt=function(point) {
@@ -96,32 +110,25 @@ function GraphMap(scale) {
 	this.GetVehicles=function() {
 		var vehicles = [];
 
-		// loop through all segments getting all vehicles
-		var segments = this.GetSegments();
-		for (var i in segments) {
-			var segment = segments[i];
-			var vs = segment.GetVehicles();
-			if (vs.length > 0) {
-            	vehicles.push.apply(vehicles, vs);
-            }
+		var keys = Object.keys(this._vehicles);
+		for (var i in keys) {
+			var vehicle = this._vehicles[keys[i]];
+			vehicles.push(vehicle);
 		}
 
 		return vehicles;
 	}
 
+	this.GetVehiclesInSegment=function(id) {
+		return this.GetVehicles().filter(function (el) {
+        	return el.SegmentId === id;
+        });
+	}
+
 	this.UpdateVehicles=function(vehicles) {
-		var segments = this.GetSegments();
 		for (var i in vehicles) {
-			var vehicle = vehicles[i];
-			for (var j in segments) {
-				var segment = segments[j];
-				for (var k in segment._Vehicles) {
-					var v = segment._Vehicles[k];
-					if (v.Id === vehicle.Id) {
-						segment._Vehicles[k] = vehicle;
-					}
-				}
-			}
+			var v = vehicles[i];
+			this._vehicles[v.Id] = v;
 		}
 	}
 
@@ -141,9 +148,11 @@ function GraphMap(scale) {
 	        
 	        // if the distance is greater than the one passed in only check vehicles for this segment
 	        var segLength = lineSeg.GetLength();
+
+	        // get vehicles in the passed in segment first
+	        var vehicles = this.GetVehiclesInSegment(vehicle.SegmentId);
 	        
             // loop through all the vehicles in this segment and compare the ones within range
-            var vehicles = segment.GetVehicles();
             for (var i=0; i<vehicles.length; i++) {
                 var v = vehicles[i];
                 if (!v.Location.Equals(currentLoc)) { // avoid current car comparison
@@ -168,6 +177,7 @@ function GraphMap(scale) {
 	            var nextSegments = this.GetSegmentsStartingAt(segment.End); // get segments starting from this one's end
 	            if (nextSegments && nextSegments.length) {
 		            for (var i=0; i<nextSegments.length; i++) {
+		            	tmpVehicle.SegmentId = nextSegments[i].Id;
 		                this.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], distance-segLength);
 		            }
 		        }

@@ -42,161 +42,160 @@ onmessage = function(event) {
 	var map = new GraphMap(data.map.Scale);
 	var keys = Object.keys(data.map._segments);
 	for (var i in keys) {
-		var segs = data.map._segments[keys[i]];
-		for (var k in segs) {
-			var seg = segs[k];
-			var segment = new Segment(seg.Start, seg.End);
-			for (var j in seg._vehicles) {
-				var veh = seg._vehicles[j];
-				var vehicle = new Vehicle(veh);
-				segment._vehicles.push(vehicle);
-			}
-		}
-		map.AddSegment(segment);
+		var segArray = data.map._segments[keys[i]];
+		segArray.forEach(function (segment) {
+			var newSeg = new Segment(segment.Start, segment.End);
+			newSeg.Id = segment.Id;
+			newSeg.SpeedLimit = segment.SpeedLimit;
+			map.AddSegment(newSeg);
+		});
 	}
-	WorkerMover.Move(data.vehicleId, data.elapsedMilliseconds, map);
+	keys = Object.keys(data.map._vehicles);
+	for (var i in keys) {
+		var v = data.map._vehicles[keys[i]];
+		var newVeh = new Vehicle(v);
+		map._vehicles[newVeh.Id] = newVeh;
+	}
+	WorkerMover.Move(data.vehicleIds, 250, map);
 }
 var WorkerMover = {
 	Map: undefined,
     TotalElapsedTime: 0,
     ChangeLaneDelay: 15000, // don't change lanes for 15 seconds after a change
-    Move: function(vehicleId, elapsedMilliseconds, map){
+    Move: function(vehicleIds, elapsedMilliseconds, map){
     	WorkerMover.Map = map;
-    	var vehicle = undefined;
-        // move everything the desired number of steps
+    	var fulfilled = 0;
         var segments = WorkerMover.Map.GetSegments();
-        // loop through each Segment
-        for (var l=0; l<segments.length; l++) {
-            // move the vehicles on this segment
-            for (var m=0; m<segments[l].GetVehicles().length; m++) {
-                var v = segments[l].GetVehicles()[m];
-                if (v.Id == vehicleId) {
-	                var speed=WorkerMover.ConvertMilesPerHourToMetersPerSecond(v.Velocity);
-	                var elapsedMilliseconds=WorkerMover.MillisecStep;
-	                if(elapsedMilliseconds>0){
-	                    var IsStopping=false;
-	                    var elapsedSeconds=(elapsedMilliseconds/1000);
-	                    var distTraveled=(speed*elapsedSeconds);
-	                    if(distTraveled>0){
-	                        var offset=WorkerMover.GetXYFromDistHeading(distTraveled,segments[l].Heading());
-	                        var nextPoint=new Point(v.Location.X+offset.X,v.Location.Y+offset.Y);
-	                        var bypassLaneCompare = false;
+        // loop through each Vehicle
+        for (var m=0; m<WorkerMover.Map.GetVehicles().length; m++) {
+            var v = WorkerMover.Map.GetVehicles()[m];
+            // only move the vehicles we're interested in
+            if (vehicleIds.indexOf(v.Id) > -1) {
+            	var segment = map.GetSegmentById(v.SegmentId);
+                var speed=WorkerMover.ConvertMilesPerHourToMetersPerSecond(v.Velocity);
+                if(elapsedMilliseconds>0){
+                    var IsStopping=false;
+                    var elapsedSeconds=(elapsedMilliseconds/1000);
+                    var distTraveled=(speed*elapsedSeconds);
+                    if(distTraveled>0){
+                        var offset=WorkerMover.GetXYFromDistHeading(distTraveled,v.Heading);
+                        var nextPoint=new Point(v.Location.X+offset.X,v.Location.Y+offset.Y);
+                        var bypassLaneCompare = false;
 
-	                        // check for vehicles in range
-	                        if (WorkerMover.ShouldStopForVehicles(v,segments[l])) {
-	                            // check for alternate lanes to move to
-	                            var currentSegment = segments[l];
-	                            var availableLane = WorkerMover.AvailableLane(v,currentSegment);
-	                            
-	                            if (availableLane && (v.changeLaneTime+WorkerMover.ChangeLaneDelay<=WorkerMover.TotalElapsedTime)) { // wait 10 seconds before changing lanes
-	                                v.changingLanes = true;
-	                                v.changeLaneTime = WorkerMover.TotalElapsedTime;
-	                                bypassLaneCompare = true; // first time through
+                        // check for vehicles in range
+                        if (WorkerMover.ShouldStopForVehicles(v,segment)) {
+                            // check for alternate lanes to move to
+                            var currentSegment = segment;
+                            var availableLane = WorkerMover.AvailableLane(v,currentSegment);
+                            
+                            if (availableLane && (v.changeLaneTime+WorkerMover.ChangeLaneDelay<=WorkerMover.TotalElapsedTime)) { // wait 10 seconds before changing lanes
+                                v.changingLanes = true;
+                                v.changeLaneTime = WorkerMover.TotalElapsedTime;
+                                bypassLaneCompare = true; // first time through
 
-	                                // set vehicle's heading towards new lane
-	                                v.Heading = WorkerMover.GetHeadingToNewLane(v,availableLane);
+                                // set vehicle's heading towards new lane
+                                v.Heading = WorkerMover.GetHeadingToNewLane(v,availableLane);
 
-	                                // switch ownership to new lane
-	                                segments[l].GetVehicles().splice(m,1);
-	                                availableLane._vehicles.push(v);
-	                            }
+                                // switch ownership to new lane
+                                v.SegmentId = availableLane.Id;
+                            }
 
-	                            // begin stopping for Vehicles (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
-	                            v.Velocity-=(14*elapsedSeconds);
-	                            IsStopping=true; 
-	                        } else if (WorkerMover.ShouldStopForLight(v,segments[l])) { // and then check for traffic lights in range
-	                            // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
-	                            v.Velocity-=(14*elapsedSeconds);
-	                            IsStopping=true;
-	                        } else { // and finally check for cornering in range
-	                            var headingDiff = WorkerMover.ShouldSlowDown(v,segments[l]);
-	                            if (headingDiff != 0) {
-	                                var corneringSpeed = WorkerMover.CorneringSpeedCalculator(headingDiff);
-	                            
-	                                // begin slowing down (-15ft/s^2); 60mph (88f/s) takes 140ft to stop, but don't fully stop
-	                                if (v.Velocity > (v.DesiredVelocity*corneringSpeed)) {
-	                                    v.Velocity-=(14*elapsedSeconds);
-	                                    IsStopping=true;
-	                                }
-	                            }
-	                        }
+                            // begin stopping for Vehicles (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
+                            v.Velocity-=(14*elapsedSeconds);
+                            IsStopping=true; 
+                        } else if (WorkerMover.ShouldStopForLight(v,segment)) { // and then check for traffic lights in range
+                            // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
+                            v.Velocity-=(14*elapsedSeconds);
+                            IsStopping=true;
+                        } else { // and finally check for cornering in range
+                            var headingDiff = WorkerMover.ShouldSlowDown(v,segment);
+                            if (headingDiff != 0) {
+                                var corneringSpeed = WorkerMover.CorneringSpeedCalculator(headingDiff);
+                            
+                                // begin slowing down (-15ft/s^2); 60mph (88f/s) takes 140ft to stop, but don't fully stop
+                                if (v.Velocity > (v.DesiredVelocity*corneringSpeed)) {
+                                    v.Velocity-=(14*elapsedSeconds);
+                                    IsStopping=true;
+                                }
+                            }
+                        }
 
-	                        if (v.changingLanes) {
-	                            // change our offset to move towards new lane
-	                            offset = WorkerMover.GetXYFromDistHeading(distTraveled,v.Heading);
-	                            nextPoint=new Point(v.Location.X+offset.X,v.Location.Y+offset.Y);
+                        if (v.changingLanes) {
+                            // change our offset to move towards new lane
+                            offset = WorkerMover.GetXYFromDistHeading(distTraveled,v.Heading);
+                            nextPoint=new Point(v.Location.X+offset.X,v.Location.Y+offset.Y);
 
-	                            // reset heading if in lane
-	                            var carLoc = v.Location;
-	                            if (segments[l].ContainsPoint(carLoc) && !bypassLaneCompare){
-	                                v.Heading = segments[l].Heading();
-	                                v.changingLanes = false;
-	                            }
-	                        }
+                            // reset heading if in lane
+                            var carLoc = v.Location;
+                            if (segment.ContainsPoint(carLoc) && !bypassLaneCompare){
+                                v.Heading = segment.Heading();
+                                v.changingLanes = false;
+                            }
+                        }
 
-	                        v.Location=nextPoint;
-	                        // ensure we don't move past the end of a segment
-	                        if(WorkerMover.IsBeyondCurrentSegment(v,segments[l])){
-	                            var beyondDist=WorkerMover.GetDistanceBetweenTwoPoints(v.Location,
-	                                segments[l].End);
-	                            
-	                            // remove vehicle from current segment
-	                            segments[l].GetVehicles().splice(m,1);
+                        v.Location=nextPoint;
+                        // ensure we don't move past the end of a segment
+                        if(WorkerMover.IsBeyondCurrentSegment(v,segment)){
+                            var beyondDist=WorkerMover.GetDistanceBetweenTwoPoints(v.Location,
+                                segment.End);
+                            
+                            // remove vehicle from current segment
+                            v.SegmentId = undefined;
 
-	                            // if there is a next Segment
-	                            var nextSegments = WorkerMover.Map.GetSegmentsStartingAt(segments[l].End);
-	                            if(nextSegments && nextSegments.length > 0){
-	                                // move to segment (pick randomly)
-	                                var randIndex = Math.floor((Math.random()*nextSegments.length));
-	                                nextSegments[randIndex].AddVehicle(v);
-	                                var offset2=WorkerMover.GetXYFromDistHeading(beyondDist,segments[randIndex].Heading());
-	                                v.Location=new Point(v.Location.X+offset2.X,v.Location.Y+offset2.Y);
-	                            } else{
-	                                // remove v from the Simulation
-	                                v = null;
-	                            }
-	                        }
-	                    }
-	                    if(v && !IsStopping){
-	                        // speed up or slow down
-	                        if(v.Velocity<v.DesiredVelocity){
-	                            // speed up: avg. rate of acceleration is 3.5 m/s^2
-	                            if(v.DesiredVelocity-v.Velocity<0.1){
-	                                // close enough so just set to value
-	                                v.Velocity=v.DesiredVelocity;
-	                            } else{
-	                                // accelerate
-	                                v.Velocity+=(3.5*elapsedSeconds);
-	                            }
-	                        }
-	                        if(v.Velocity>v.DesiredVelocity){
-	                            // slow down: avg. rate of decceleration is 3.5 m/s^2
-	                            if(v.Velocity-v.DesiredVelocity<0.1){
-	                                // close enough so just set to value
-	                                v.Velocity=v.DesiredVelocity;
-	                            } else{
-	                                // deccelerate
-	                                v.Velocity-=(3.5*elapsedSeconds);
-	                            }
-	                            
-	                            // prevent going backwards
-	                            if(v.Velocity<0){
-	                                v.Velocity=0.44704;
-	                            }
-	                        }
-	                    }
-	                }
-	                vehicle = v;
-	                break;
-	            }
-            }
-            if (vehicle) {
-            	break;
+                            // if there is a next Segment
+                            var nextSegments = WorkerMover.Map.GetSegmentsStartingAt(segment.End);
+                            if(nextSegments && nextSegments.length > 0){
+                                // move to segment (pick randomly)
+                                var randIndex = Math.floor((Math.random()*nextSegments.length));
+                                v = nextSegments[randIndex].AttachVehicle(v);
+                                var offset2=WorkerMover.GetXYFromDistHeading(beyondDist,nextSegments[randIndex].Heading());
+                                v.Location=new Point(v.Location.X+offset2.X,v.Location.Y+offset2.Y);
+                            } else{
+                                // remove v from the Simulation
+                                delete WorkerMover.Map._vehicles[v.Id];
+                            }
+                        }
+                    }
+                    if(v && !IsStopping){
+                        // speed up or slow down
+                        if(v.Velocity<v.DesiredVelocity){
+                            // speed up: avg. rate of acceleration is 3.5 m/s^2
+                            if(v.DesiredVelocity-v.Velocity<0.1){
+                                // close enough so just set to value
+                                v.Velocity=v.DesiredVelocity;
+                            } else{
+                                // accelerate
+                                v.Velocity+=(3.5*elapsedSeconds);
+                            }
+                        }
+                        if(v.Velocity>v.DesiredVelocity){
+                            // slow down: avg. rate of decceleration is 3.5 m/s^2
+                            if(v.Velocity-v.DesiredVelocity<0.1){
+                                // close enough so just set to value
+                                v.Velocity=v.DesiredVelocity;
+                            } else{
+                                // deccelerate
+                                v.Velocity-=(3.5*elapsedSeconds);
+                            }
+                            
+                            // prevent going backwards
+                            if(v.Velocity<0){
+                                v.Velocity=0.44704;
+                            }
+                        }
+                    }
+                }
+                v.ElapsedMs=WorkerMover.TotalElapsedTime+elapsedMilliseconds;
+                var message = JSON.stringify(v);
+    			postMessage(message);
+    			fulfilled++;
+    			if (fulfilled === vehicleIds.length) {
+    				break;
+    			}
             }
         }
             
-        var message = JSON.stringify(map.GetVehicles());
-        postMessage(message);
+        WorkerMover.TotalElapsedTime+=elapsedMilliseconds;
     },
     ConvertMilesPerHourToMetersPerSecond: function(milesPerHour){
         var metersPerSec=0;
@@ -216,7 +215,7 @@ var WorkerMover = {
             var alternateLanes = WorkerMover.Map.GetSimilarSegmentsInRoad(currentSegment);
             for (var p=0; p<alternateLanes.length; p++) {
                 var alt = alternateLanes[p];
-                var altCars = alt.GetVehicles();
+                var altCars = WorkerMover.Map.GetVehiclesInSegment(v.SegmentId);
                 if (carBounds.IntersectsLine(changeLine) && changeLine.IntersectsLine(alt)) {
                     if (altCars.length > 0) {
                         for (var q=0; q<altCars.length; q++) {
@@ -378,22 +377,5 @@ var WorkerMover = {
     },
     GetDistanceBetweenTwoPoints: function(p1,p2){
         return Math.sqrt(Math.pow((p2.X-p1.X),2)+Math.pow((p2.Y-p1.Y),2));
-    },
-    LocateSegmentAndAttachVehicle: function(vehicle,location){
-        var loc=location;
-        for(var i=0;i<WorkerMover.Map.Roads.length;i++){
-            if(WorkerMover.Map.Roads[i].ContainsStartPoint(loc)){
-                for(var j=0;j<WorkerMover.Map.Roads[i].Lanes.length;j++){
-                    if(WorkerMover.Map.Roads[i].Lanes[j].ContainsStartPoint(loc)){
-                        for(var k=0;k<WorkerMover.Map.Roads[i].Lanes[j].Segments.length;k++){
-                            if(WorkerMover.Map.Roads[i].Lanes[j].Segments[k].ContainsStartPoint(loc)){
-                                WorkerMover.Map.Roads[i].Lanes[j].Segments[k].AddVehicle(vehicle);
-                                return null;
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }

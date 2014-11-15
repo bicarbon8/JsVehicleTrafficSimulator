@@ -31,7 +31,6 @@ function Segment(start,end){
     this.InheritFrom=Line;
     this.InheritFrom();
     this.Id=null;
-    this._vehicles=[];
     this._stopLights=[];
     this.SpeedLimit=0;
     this.Preference=0; // values used to more heavily weight a choice of this segment
@@ -52,17 +51,14 @@ function Segment(start,end){
         this.Id="segment_"+0;
     }
     
-    this.AddVehicle=function(vehicle) {
+    this.AttachVehicle=function(vehicle) {
         // set the vehicle's heading
         vehicle.Heading = this.Heading();
         vehicle.DesiredVelocity = this.SpeedLimit;
         vehicle.Location = this.Start;
+        vehicle.SegmentId = this.Id;
 
-        this._vehicles.push(vehicle);
-    }
-
-    this.GetVehicles=function() {
-        return this._vehicles;
+        return vehicle;
     }
 
     this.GetStopLights=function() {

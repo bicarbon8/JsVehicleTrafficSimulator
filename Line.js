@@ -32,8 +32,8 @@ function Line(startPoint, endPoint) {
     this.End=endPoint; // Point
 
     this.SetPoints=function(startPoint, endPoint) {
-    	this.Start = startPoint;
-    	this.End = endPoint;
+    	this.Start = new Point(startPoint.X, startPoint.Y);
+    	this.End = new Point(endPoint.X, endPoint.Y);
     }
 
     this.Heading=function(){

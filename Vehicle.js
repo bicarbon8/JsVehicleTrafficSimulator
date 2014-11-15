@@ -43,6 +43,8 @@ function Vehicle(vehicle){
     this.DesiredVelocity = 0;
     this.changingLanes = false;
     this.changeLaneTime = 0;
+    this.SegmentId = undefined;
+    this.ElapsedMs = 0;
 
     this.Initialize=function(vehicle) {
         if (vehicle){
@@ -50,8 +52,12 @@ function Vehicle(vehicle){
             this.Name=vehicle.Name;
             this.Width=vehicle.Width;
             this.Height=vehicle.Height;
-            this.Location=vehicle.Location;
+            this.Location=new Point(vehicle.Location.X, vehicle.Location.Y);
             this.Velocity=vehicle.Velocity;
+            this.Heading=vehicle.Heading;
+            this.DesiredVelocity=vehicle.DesiredVelocity;
+            this.SegmentId=vehicle.SegmentId;
+            this.ElapsedMs=vehicle.ElapsedMs;
         }
     }
 
