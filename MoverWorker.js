@@ -88,9 +88,8 @@ var WorkerMover = {
                             var currentSegment = segment;
                             var availableLane = WorkerMover.AvailableLane(v,currentSegment);
                             
-                            if (availableLane && (v.changeLaneTime+WorkerMover.ChangeLaneDelay<=WorkerMover.TotalElapsedTime)) { // wait 10 seconds before changing lanes
+                            if (availableLane) { // TODO: driver decides to change lanes or not
                                 v.changingLanes = true;
-                                v.changeLaneTime = WorkerMover.TotalElapsedTime;
                                 bypassLaneCompare = true; // first time through
 
                                 // set vehicle's heading towards new lane
@@ -126,11 +125,19 @@ var WorkerMover = {
                             nextPoint=new Point(v.Location.X+offset.X,v.Location.Y+offset.Y);
 
                             // reset heading if in lane
-                            var carLoc = v.Location;
-                            if (segment.ContainsPoint(carLoc) && !bypassLaneCompare){
-                                v.Heading = segment.Heading();
-                                v.changingLanes = false;
-                            }
+                            var carBounds = v.GetBoundingBox();
+                            for (var i=0; i<4; i++) {
+                            	var start = i;
+                            	var end = i+1;
+                            	if (end>=4) {
+                            		end = 0;
+                            	}
+	                            var line = new Line(carBounds.Points[start], carBounds.Points[end]);
+	                            if (segment.IntersectsLine(carBounds) && !bypassLaneCompare){
+	                                v.Heading = segment.Heading();
+	                                v.changingLanes = false;
+	                            }
+	                        }
                         }
 
                         v.Location=nextPoint;

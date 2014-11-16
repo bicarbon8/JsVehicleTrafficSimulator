@@ -66,7 +66,7 @@
             var TFC_ID_COUNT  =0;
             var startTime     =0;
             var workers       =[];
-            var MAX_THREADS   =4;
+            var MAX_THREADS   =2;
             
             function InitPageElements() {
                 var docWidth=$(document).width();
@@ -155,9 +155,11 @@
                 var vehicles = map.GetVehicles();
                 for (var i=0; i<vehicles.length; i) {
                     var ids = [];
-                    for (var j=0; j<Math.ceil(vehicles.length/MAX_THREADS); j++) {
+                    for (var j=0; i<vehicles.length && j<Math.ceil(vehicles.length/MAX_THREADS); j++) {
                         var v = vehicles[i++];
-                        ids.push(v.Id);
+                        if (v) {
+                            ids.push(v.Id);
+                        }
                     }
                     if (ids.length > 0) {
                         var message = JSON.stringify({ 
@@ -165,7 +167,10 @@
                             "elapsedMilliseconds": (new Date().getTime() - startTime),
                             "map": map
                         });
-                        workers[Math.floor(i/MAX_THREADS)].postMessage(message);
+                        worker = workers[Math.floor(i/MAX_THREADS)];
+                        if (worker) {
+                            worker.postMessage(message);
+                        }
                     } else {
                         break;
                     }
@@ -298,6 +303,15 @@
                 if(map){
                     map.Scale=scale;
                     plotter.drawAll(map,map.TotalElapsedTime);
+                }
+            }
+
+            function UpdateThreads() {
+                var threads = parseInt($('#tbox_Threads').val());
+                if (isNaN(threads) === false) {
+                    MAX_THREADS = threads;
+                    ToggleSimulationState(); // kills all threads
+                    ToggleSimulationState(); // restarts with new thread allocation
                 }
             }
             
@@ -453,6 +467,9 @@
                             Scale: <input id="tbox_MapScale" type="text" size="5" value="1" />
                             <input id="btn_UpdateScale" type="submit" onClick="UpdateMapScale(); return false;"
                                 value="Update Scale" /><br />
+                            Threads: <input id="tbox_Threads" type="text" size="5" value="2" />
+                            <input id="btn_UpdateThreads" type="submit" onClick="UpdateThreads(); return false;" 
+                                value="Update Threads" /><br />
                             <input id="btn_AddVehicles" type="submit" onClick="AddVehicles(); return false;"
                                 value="Add Vehicles" /><br />
                         </td>
