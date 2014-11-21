@@ -27,60 +27,54 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function Vehicle(vehicle){
-    this.Id=null;
-    try{
-        this.Id=VEH_ID_COUNT++;
-    } catch(e){
-        this.Id=0;
-    }
-    this.Name=null;
-    this.Width=0;
-    this.Height=0;
-    this.Location=new Point(0,0);
-    this.Velocity=0; // meters per second
-    this.Heading=0;
+var JSVTS = JSVTS || {};
+JSVTS.VEH_ID_COUNT = 0;
+JSVTS.VEH_OPTIONS = {
+    name: '',
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    z: 0,
+    heading: 0
+};
+JSVTS.Vehicle = function(options){
+    this.id = null;
+    this.config = JSVTS.VEH_OPTIONS;
+    this.bounds = null;
     this.DesiredVelocity = 0;
     this.changingLanes = false;
     this.changeLaneTime = 0;
     this.SegmentId = undefined;
-    this.ElapsedMs = 0;
+    this.box = undefined;
+    this.view = undefined;
 
-    this.Initialize=function(vehicle) {
-        if (vehicle){
+    this.init=function(options) {
+        this.Id = VEH_ID_COUNT++;
+        for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
+    };
+
+    this.copyFrom = function (vehicle) {
+        if (vehicle) {
+            this.Initialize(vehicle.config);
             this.Id=vehicle.Id;
-            this.Name=vehicle.Name;
-            this.Width=vehicle.Width;
-            this.Height=vehicle.Height;
-            this.Location=new Point(vehicle.Location.X, vehicle.Location.Y);
-            this.Velocity=vehicle.Velocity;
-            this.Heading=vehicle.Heading;
             this.DesiredVelocity=vehicle.DesiredVelocity;
             this.SegmentId=vehicle.SegmentId;
             this.ElapsedMs=vehicle.ElapsedMs;
+            this.box=vehicle.box;
         }
-    }
+    };
 
-    this.IntersectsPoint=function(point){
+    this.intersectsPoint=function(point){
         var intersects=false;
         var rect=this.GetBoundingBox();
         if(rect.ContainsPoint(point)){
             intersects=true;
         }
         return intersects;
-    }
+    };
 
-    this.GetBoundingBox=function(){
-        var rect=null;
-        if(this.Width>0 && this.Height>0){
-            rect=new Rectangle(this.Width,this.Height);
-            rect.Rotate(this.Heading);
-            rect.MoveTo(this.Location);
-        }
-        return rect;
-    }
-
-    this.GetViewArea=function(){
+    this.getViewArea=function(){
         /**
          * the view area is a pie-shaped region where the point of the
          * pie starts from the centrepoint of the vehicle and the crust
@@ -90,7 +84,7 @@ function Vehicle(vehicle){
          */
         var tri=null;
         if(this.Location){
-            var triP0=this.GetBoundingBox().GetCenterPoint();
+            var triP0=this.getBoundingBox().GetCenterPoint();
             var triP1=new Point(triP0.X,triP0.Y);
             if(this.Velocity>=0.44){
                 triP1.MoveBy(new Point(this.Width+(this.Velocity),-(this.Height*2))); //-((this.Height+this.Velocity)/(this.Velocity/4))));
@@ -107,27 +101,29 @@ function Vehicle(vehicle){
             tri.Rotate(this.Heading,triP0);
         }
         return tri;
-    }
+    };
 
-    this.GetLookAheadDistance=function() {
-        if(this.Velocity>=4.4704){
-            // distance is one car length per 10 miles per hour
-            return (this.Width*(this.ConvertMetersPerSecondToMilesPerHour(this.Velocity)/10))+(this.Width/2);
+    this.getLookAheadDistance=function() {
+        if(this.velocity>=4.4704){
+            // distance is one car length per 16.1 kilometers per hour
+            return (this.config.width*(this.Velocity/16.1)+(this.Width/2));
         } else{
             // or slightly more than half a car length if going really slow
             return this.Width+(this.Width/2);
         }
+    };
+
+    function generateBox() {
+        // z coordinate used for vertical height
+        this.box = new THREE.Box3(THREE.Vector3(width/-2,height/-2,-0.5), THREE.Vector3(width/2,height/2,0.5));
+        this.box.translate(new THREE.Vector3(this.config.x, this.config.y, this.config.z));
+        this.box.rotateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), this.heading);
     }
 
-    this.ConvertMetersPerSecondToMilesPerHour=function(metersPerSec){
-        var milesPerHour=0;
-        var METERS_PER_MILE=1609.344;
-        var SECONDS_PER_HOUR=3600;
-        
-        milesPerHour = ((metersPerSec/METERS_PER_MILE)*SECONDS_PER_HOUR);
-        return milesPerHour;
+    function generateView() {
+
     }
 
     // configure this object if data was passed in
-    this.Initialize(vehicle);
+    this.init(options);
 }

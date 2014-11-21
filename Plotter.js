@@ -27,16 +27,54 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function Plotter(canvas){
-    this.LaneThickness=2;
-    this.RoadColor="#808080";
-    this.canvas=canvas;
+var JSVTS = JSVTS || {};
+JSVTS.Plotter = function (canvas){
+    this.LaneThickness = 2;
+    this.RoadColor = "#808080";
+    this.canvas = null;
+    this.renderer = null;
+    this.scene = null;
+    this.camera = null;
+
+    this.init = function(canvas) {
+        if (typeof canvas === "string") {
+            var el = document.querySelector('#' + canvas);
+            if (el) {
+                this.canvas = el;
+            } else {
+                el = document.createElement('canvas');
+                el.id = canvas;
+                this.canvas = el;
+                document.querySelector('body').appendChild(this.canvas);
+            }
+        } else {
+            this.canvas = canvas;
+        }
+
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.renderer = new THREE.WebGLRenderer();
+        var VIEW_ANGLE = 45,
+            ASPECT = this.canvas.width / this.canvas.height,
+            NEAR = 0.1,
+            FAR = 10000;
+        this.camera = new THREE.PerspectiveCamera(
+            VIEW_ANGLE,
+            ASPECT,
+            NEAR,
+            FAR); 
+        this.scene = new THREE.Scene();
+        this.scene.add(this.camera);
+        this.camera.position.z = 300;
+        this.renderer.setSize(this.canvas.width, this.canvas.height);
+        this.canvas.append(this.renderer.domElement);
+    };
 
     this.drawAll=function(map,elapsedMilliseconds) {
         this.DrawSegments(map);
         this.DrawVehicles(map.GetVehicles(), map.Scale);
         this.DrawStopLights(map,elapsedMilliseconds);
-    }
+    };
     
     this.DrawVehicles=function(vehicles, scale){
         // clear all vehicles
@@ -65,10 +103,10 @@ function Plotter(canvas){
             
             // draw the vehicle on the canvas
             // this.DrawShape('view',vehicle.GetViewArea(),"#ffff00",null,null,true,map.Scale);
-            var v = new Vehicle(vehicle);
-            this.DrawShape('vehicle',v.GetBoundingBox(),color,"#000000",1,true,scale);
+            this.DrawShape('vehicle',Vehicle.GetBoundingBox(vehicle),color,"#000000",1,true,scale);
         }
-    }
+        this.renderer.render(this.scene, this.camera);
+    };
 
     this.DrawStopLights=function(map,elapsedMilliseconds){
         var segments = map.GetSegments();
@@ -92,7 +130,7 @@ function Plotter(canvas){
                 this.DrawPoint("stoplights",sl.Location,2,color,null,1,map.Scale);
             }
         }
-    }
+    };
 
     this.DrawSegments=function(map){
         var segments = map.GetSegments();
@@ -108,7 +146,7 @@ function Plotter(canvas){
                 this.RoadColor,this.LaneThickness*map.Scale,false,map.Scale);
             // this.DrawLaneChangeLines(segments[i],map);
         }
-    }
+    };
     this.DrawLaneChangeLines=function(segment,map) {
         for(var i=0;i<segment.LaneChangeLines.length;i++){
             var lane={"Points":new Array()};
@@ -118,7 +156,7 @@ function Plotter(canvas){
             this.DrawShape("roads",lane,null,
                 "#ff6666",1*map.Scale,false,map.Scale);
         }
-    }
+    };
 
     this.DrawPoint=function(elementId,center,radius,fillColor,edgeColor,edgeThickness,scale){
         if(center!=undefined && center!=null){
@@ -157,65 +195,16 @@ function Plotter(canvas){
             }
             this.canvas.drawArc(options);
         }
-    }
+    };
 
     this.DrawShape=function(elementId,shape,fillColor,edgeColor,edgeThickness,close,scale){
-        if(shape && shape.Points){
-            var drawEdge=false;
-            var drawFill=false;
-            var shapeScale=1;
-            if(fillColor){
-                drawFill=true;
-            }
-            if(edgeColor){
-                drawEdge=true;
-            } else{
-                edgeColor="#000000";
-            }
-            if(edgeThickness){
-                drawEdge=true;
-            } else{
-                edgeThickness=1;
-            }
-            if(scale){
-                shapeScale=scale;
-            }
-            
-            // ensure we have more than just a line
-            if(shape.Points.length>1) {
-                // define the lines
-                // var lineStr = "M "+shape.Points[0].X*shapeScale+" "+shape.Points[0].Y*shapeScale;
-                // for(var i=1;i<shape.Points.length;i++){
-                //     lineStr += "L "+shape.Points[i].X*shapeScale+" "+shape.Points[i].Y*shapeScale;
-                // }
-                var options = {
-                    "layer": true,
-                    "group": elementId
-                };
-                for (var i=0; i<shape.Points.length; i++) {
-                    options['x'+(i+1)] = shape.Points[i].X*scale;
-                    options['y'+(i+1)] = shape.Points[i].Y*scale;
-                }
-                
-                if(close){
-                    options["closed"] = true;
-                }
-
-                if(drawFill){
-                    options["fillStyle"]=fillColor;
-                }
-                if(drawEdge){
-                    options["strokeStyle"]=edgeColor;
-                    options["strokeWidth"]=edgeThickness;
-                }
-
-                this.canvas.drawLine(options);
-            }
-        }
-    }
+        this.scene.add(shape);
+    };
 
     this.Clear=function(elementId){
-        canvas.removeLayerGroup(elementId);
-        canvas.drawLayers();
-    }
+        // canvas.removeLayerGroup(elementId);
+        // canvas.drawLayers();
+    };
+
+    this.init(canvas);
 }

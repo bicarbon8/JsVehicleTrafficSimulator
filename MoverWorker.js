@@ -37,6 +37,7 @@ importScripts(
 	"Vehicle.js", 
 	"Segment.js",
 	"GraphMap.js");
+var elapsed = new Date().getTime();
 onmessage = function(event) {
 	var data = JSON.parse(event.data);
 	var map = new GraphMap(data.map.Scale);
@@ -56,7 +57,8 @@ onmessage = function(event) {
 		var newVeh = new Vehicle(v);
 		map._vehicles[newVeh.Id] = newVeh;
 	}
-	WorkerMover.Move(data.vehicleIds, 250, map);
+    elapsed = new Date().getTime() - elapsed;
+	WorkerMover.Move(data.vehicleIds, elapsed, map);
 }
 var WorkerMover = {
 	Map: undefined,
@@ -211,6 +213,14 @@ var WorkerMover = {
         
         metersPerSec = ((milesPerHour*METERS_PER_MILE)/SECONDS_PER_HOUR);
         return metersPerSec;
+    },
+    ConvertMetersPerSecondToMilesPerHour: function(metersPerSec){
+        var milesPerHour=0;
+        var METERS_PER_MILE=1609.344;
+        var SECONDS_PER_HOUR=3600;
+        
+        milesPerHour = ((metersPerSec/METERS_PER_MILE)*SECONDS_PER_HOUR);
+        return milesPerHour;
     },
     AvailableLane: function(v,currentSegment) {
         var lane = null;
