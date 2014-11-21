@@ -30,7 +30,7 @@ JSVTS.Loader.load([
     "StopLight.js",
     "Driver.js",
     "js/vehicle.js",
-    "Plotter.js",
+    "js/plotter.js",
     "TxtToMapParser.js",
     "Line.js"
 ], function () {

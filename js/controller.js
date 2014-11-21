@@ -3,19 +3,13 @@ JSVTS.Controller = {
 	plotter       : null,
     canvas        : null,
     map           : null,
-    DEBUG         : false,
     keepMoving    : false,
-    IsStartPoint  : true,
-    CaptureStart  : false,
-    CaptureEnd    : false,
-    CaptureLight  : false,
-    VEH_ID_COUNT  : 0,
     LANE_ID_COUNT : 0,
     SEG_ID_COUNT  : 0,
     TFC_ID_COUNT  : 0,
     startTime     : 0,
     workers       : [],
-    MAX_THREADS   : 2,
+    MAX_THREADS   : 1,
     
     InitPageElements: function () {
         JSVTS.Controller.docWidth = window.innerWidth;
@@ -26,10 +20,12 @@ JSVTS.Controller = {
     InitObjects: function () {
         JSVTS.Controller.map = new GraphMap(1);
         JSVTS.Controller.plotter = new JSVTS.Plotter('viewport');
+        JSVTS.Controller.map.AddVehicle(new JSVTS.Vehicle());
+        JSVTS.Controller.render();
     },
 
     render: function () {
-        JSVTS.Controller.plotter.drawAll(map, new Date().getTime() - startTime);
+        JSVTS.Controller.plotter.drawAll(JSVTS.Controller.map, new Date().getTime() - JSVTS.Controller.startTime);
     },
 
     /**
@@ -114,19 +110,18 @@ JSVTS.Controller = {
     },
     
     SetFromJson: function (){
-        var input=$('#tbox_Xml').val();
+        var input=document.querySelector('#tbox_Xml').value;
         var jsonObj = JSON.parse(input);
         JSVTS.Controller.map=new TxtToMapParser().ParseMapJson(jsonObj.map);
-        JSVTS.Controller.plotter=new Plotter(canvas);
-        JSVTS.Controller.plotter.DrawSegments(map);
+        JSVTS.Controller.plotter.DrawSegments(JSVTS.Controller.map);
         // plotter.DrawRoadPoints(map);
-        JSVTS.Controller.plotter.DrawVehicles(map);
-        JSVTS.Controller.plotter.DrawStopLights(map,0);
+        JSVTS.Controller.plotter.DrawVehicles(JSVTS.Controller.map);
+        JSVTS.Controller.plotter.DrawStopLights(JSVTS.Controller.map,0);
     },
     
     GetAsJson: function (){
         var output=$('#tbox_Xml');
-        var mapJsonStr=new TxtToMapParser().GetMapJson(map);
+        var mapJsonStr=new TxtToMapParser().GetMapJson(JSVTS.Controller.map);
         output.val(mapJsonStr);
     },
     

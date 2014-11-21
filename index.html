@@ -31,17 +31,19 @@
  **********************************************************************/
 -->
 <html lang="en">
-    <head>
-    	<title>Traffic Simulator</title>
-        <link rel="stylesheet" href="global.css" type="text/css" media="screen" />
-        <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-        <script type="text/javascript" src="js/loader.js"></script>
-    </head>
+<head>
+<title>Traffic Simulator</title>
+<style type="text/css">
+
+</style>
+<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="js/loader.js"></script>
+</head>
     <body>
         <script type="text/javascript">
             $(window).resize(function() {
-                JSVTS.Controller.InitPageElements();
-                JSVTS.Controller.render();
+                // JSVTS.Controller.InitPageElements();
+                // JSVTS.Controller.render();
             });
         </script>
         <div id="div_Controls" style="position:absolute;overflow:auto;">
@@ -146,13 +148,6 @@
                     </tr>
                 </table>
             </fieldset>
-        </div>
-        <div id="div_Debug" style="position:fixed;width:200px;display:none;overflow:auto;">
-            Roads:<br /><input id="tbox_RoadCount" type="text" value="0" /><br />
-            Lanes:<br /><input id="tbox_LaneCount" type="text" value="0" /><br />
-            Segments:<br /><input id="tbox_SegmentCount" type="text" value="0" /><br />
-            Vehicles:<br /><input id="tbox_VehicleCount" type="text" value="0" /><br />
-            StopLights:<br /><input id="tbox_StopLightCount" type="text" value="0" /><br />
         </div>
     </body>
 </html>

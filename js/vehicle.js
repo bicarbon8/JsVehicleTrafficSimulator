@@ -31,8 +31,8 @@ var JSVTS = JSVTS || {};
 JSVTS.VEH_ID_COUNT = 0;
 JSVTS.VEH_OPTIONS = {
     name: '',
-    width: 0,
-    height: 0,
+    width: 2,
+    height: 4,
     x: 0,
     y: 0,
     z: 0,
@@ -50,8 +50,9 @@ JSVTS.Vehicle = function(options){
     this.view = undefined;
 
     this.init=function(options) {
-        this.Id = VEH_ID_COUNT++;
+        this.Id = JSVTS.VEH_ID_COUNT++;
         for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
+        this.generateBox();
     };
 
     this.copyFrom = function (vehicle) {
@@ -113,12 +114,14 @@ JSVTS.Vehicle = function(options){
         }
     };
 
-    function generateBox() {
+    this.generateBox = function() {
         // z coordinate used for vertical height
-        this.box = new THREE.Box3(THREE.Vector3(width/-2,height/-2,-0.5), THREE.Vector3(width/2,height/2,0.5));
+        this.box = new THREE.Box3(
+            THREE.Vector3(this.config.width/-2,this.config.height/-2,-0.5), 
+            THREE.Vector3(this.config.width/2,this.config.height/2,0.5));
         this.box.translate(new THREE.Vector3(this.config.x, this.config.y, this.config.z));
-        this.box.rotateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), this.heading);
-    }
+        // this.box.rotateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), this.config.heading);
+    };
 
     function generateView() {
 

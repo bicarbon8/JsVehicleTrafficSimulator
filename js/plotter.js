@@ -28,34 +28,19 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.Plotter = function (canvas){
+JSVTS.Plotter = function (){
     this.LaneThickness = 2;
     this.RoadColor = "#808080";
-    this.canvas = null;
     this.renderer = null;
     this.scene = null;
     this.camera = null;
 
-    this.init = function(canvas) {
-        if (typeof canvas === "string") {
-            var el = document.querySelector('#' + canvas);
-            if (el) {
-                this.canvas = el;
-            } else {
-                el = document.createElement('canvas');
-                el.id = canvas;
-                this.canvas = el;
-                document.querySelector('body').appendChild(this.canvas);
-            }
-        } else {
-            this.canvas = canvas;
-        }
-
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+    this.init = function() {
+        var width = JSVTS.Controller.docWidth || window.innerWidth;
+        var height = JSVTS.Controller.docHeight || window.innerHeight;
         this.renderer = new THREE.WebGLRenderer();
         var VIEW_ANGLE = 45,
-            ASPECT = this.canvas.width / this.canvas.height,
+            ASPECT = width / height,
             NEAR = 0.1,
             FAR = 10000;
         this.camera = new THREE.PerspectiveCamera(
@@ -65,9 +50,16 @@ JSVTS.Plotter = function (canvas){
             FAR); 
         this.scene = new THREE.Scene();
         this.scene.add(this.camera);
-        this.camera.position.z = 300;
-        this.renderer.setSize(this.canvas.width, this.canvas.height);
-        this.canvas.append(this.renderer.domElement);
+        this.camera.position.z = 100;
+        this.camera.lookAt(this.scene.position); 
+        this.renderer.setSize(width, height);
+        var pointLight = new THREE.PointLight(0xFFFFFF);
+        pointLight.position.x = 10;
+        pointLight.position.y = 50;
+        pointLight.position.z = 130;
+        this.scene.add(pointLight);
+        document.querySelector('body').appendChild(this.renderer.domElement);
+        this.renderer.render(this.scene, this.camera);
     };
 
     this.drawAll=function(map,elapsedMilliseconds) {
@@ -103,7 +95,7 @@ JSVTS.Plotter = function (canvas){
             
             // draw the vehicle on the canvas
             // this.DrawShape('view',vehicle.GetViewArea(),"#ffff00",null,null,true,map.Scale);
-            this.DrawShape('vehicle',Vehicle.GetBoundingBox(vehicle),color,"#000000",1,true,scale);
+            this.DrawShape('vehicle',vehicle.box,color,"#000000",1,true,scale);
         }
         this.renderer.render(this.scene, this.camera);
     };
@@ -193,12 +185,14 @@ JSVTS.Plotter = function (canvas){
                 options["strokeStyle"]=edgeColor;
                 options["strokeWidth"]=edgeThickness;
             }
-            this.canvas.drawArc(options);
+            // this.canvas.drawArc(options);
         }
     };
 
-    this.DrawShape=function(elementId,shape,fillColor,edgeColor,edgeThickness,close,scale){
-        this.scene.add(shape);
+    this.DrawShape=function(elementId,shape,fillColor,edgeColor,edgeThickness,close,scale) {
+        if (shape instanceof THREE.Object3D) {
+            this.scene.add(shape);
+        }
     };
 
     this.Clear=function(elementId){
@@ -206,5 +200,5 @@ JSVTS.Plotter = function (canvas){
         // canvas.drawLayers();
     };
 
-    this.init(canvas);
+    this.init();
 }
