@@ -29,49 +29,54 @@
  **********************************************************************/
 var JSVTS = JSVTS || {};
 JSVTS.Plotter = function (){
-    this.LaneThickness = 2;
-    this.RoadColor = "#808080";
-    this.renderer = null;
-    this.scene = null;
-    this.camera = null;
+    var self = this;
+    self.LaneThickness = 2;
+    self.RoadColor = "#808080";
+    self.renderer = null;
+    self.scene = null;
+    self.camera = null;
+    self.controls = null;
 
-    this.init = function() {
-        var width = JSVTS.Controller.docWidth || window.innerWidth;
-        var height = JSVTS.Controller.docHeight || window.innerHeight;
-        this.renderer = new THREE.WebGLRenderer();
+    self.init = function() {
+        var width = JSVTS.Controller.docWidth;
+        var height = JSVTS.Controller.docHeight;
+        self.renderer = new THREE.WebGLRenderer();
         var VIEW_ANGLE = 45,
             ASPECT = width / height,
             NEAR = 0.1,
             FAR = 10000;
-        this.camera = new THREE.PerspectiveCamera(
+        self.camera = new THREE.PerspectiveCamera(
             VIEW_ANGLE,
             ASPECT,
             NEAR,
             FAR); 
-        this.scene = new THREE.Scene();
-        this.scene.add(this.camera);
-        this.camera.position.z = 100;
-        this.camera.lookAt(this.scene.position); 
-        this.renderer.setSize(width, height);
+        self.scene = new THREE.Scene();
+        self.scene.add(self.camera);
+        self.camera.position.z = 100;
+        self.camera.lookAt(self.scene.position);
+        self.controls = new THREE.OrbitControls(self.camera);
+        self.controls.damping = 0.2;
+        self.controls.addEventListener('change', function () { self.renderer.render(self.scene, self.camera); });
+        self.renderer.setSize(width, height);
         var pointLight = new THREE.PointLight(0xFFFFFF);
         pointLight.position.x = 10;
         pointLight.position.y = 50;
         pointLight.position.z = 130;
-        this.scene.add(pointLight);
-        document.querySelector('body').appendChild(this.renderer.domElement);
-        this.renderer.render(this.scene, this.camera);
+        self.scene.add(pointLight);
+        document.querySelector('body').appendChild(self.renderer.domElement);
+        self.renderer.render(self.scene, self.camera);
     };
 
-    this.drawAll=function(map,elapsedMilliseconds) {
-        this.DrawSegments(map);
-        this.DrawVehicles(map.GetVehicles(), map.Scale);
-        this.DrawStopLights(map,elapsedMilliseconds);
+    self.drawAll=function(map,elapsedMilliseconds) {
+        self.DrawSegments(map);
+        self.DrawVehicles(map.GetVehicles(), map.Scale);
+        self.DrawStopLights(map,elapsedMilliseconds);
     };
     
-    this.DrawVehicles=function(vehicles, scale){
+    self.DrawVehicles=function(vehicles, scale){
         // clear all vehicles
-        this.Clear('vehicle');
-        this.Clear('view');
+        self.Clear('vehicle');
+        self.Clear('view');
 
         // for each vehicle in the map
         for(var i=0;i<vehicles.length;i++){
@@ -94,17 +99,17 @@ JSVTS.Plotter = function (){
             }
             
             // draw the vehicle on the canvas
-            // this.DrawShape('view',vehicle.GetViewArea(),"#ffff00",null,null,true,map.Scale);
-            this.DrawShape('vehicle',vehicle.box,color,"#000000",1,true,scale);
+            // self.DrawShape('view',vehicle.GetViewArea(),"#ffff00",null,null,true,map.Scale);
+            self.DrawShape('vehicle',vehicle.box,color,"#000000",1,true,scale);
         }
-        this.renderer.render(this.scene, this.camera);
+        self.renderer.render(self.scene, self.camera);
     };
 
-    this.DrawStopLights=function(map,elapsedMilliseconds){
+    self.DrawStopLights=function(map,elapsedMilliseconds){
         var segments = map.GetSegments();
 
         // clear all stopLight elements and redraw
-        this.Clear("stoplights");
+        self.Clear("stoplights");
 
         for(var i=0;i<segments.length;i++){
             var segment = segments[i];
@@ -119,38 +124,38 @@ JSVTS.Plotter = function (){
                     }
                 }
                 
-                this.DrawPoint("stoplights",sl.Location,2,color,null,1,map.Scale);
+                self.DrawPoint("stoplights",sl.Location,2,color,null,1,map.Scale);
             }
         }
     };
 
-    this.DrawSegments=function(map){
+    self.DrawSegments=function(map){
         var segments = map.GetSegments();
         // clear the existing road
-        this.Clear("roads");
+        self.Clear("roads");
         
         for(var i=0;i<segments.length;i++){
             var lane={"Points":new Array()};
             var segment=segments[i];
             lane.Points.push(segment.Start);
             lane.Points.push(segment.End);
-            this.DrawShape("roads",lane,null,
-                this.RoadColor,this.LaneThickness*map.Scale,false,map.Scale);
-            // this.DrawLaneChangeLines(segments[i],map);
+            self.DrawShape("roads",lane,null,
+                self.RoadColor,self.LaneThickness*map.Scale,false,map.Scale);
+            // self.DrawLaneChangeLines(segments[i],map);
         }
     };
-    this.DrawLaneChangeLines=function(segment,map) {
+    self.DrawLaneChangeLines=function(segment,map) {
         for(var i=0;i<segment.LaneChangeLines.length;i++){
             var lane={"Points":new Array()};
             var line=segment.LaneChangeLines[i];
             lane.Points.push(line.Start);
             lane.Points.push(line.End);
-            this.DrawShape("roads",lane,null,
+            self.DrawShape("roads",lane,null,
                 "#ff6666",1*map.Scale,false,map.Scale);
         }
     };
 
-    this.DrawPoint=function(elementId,center,radius,fillColor,edgeColor,edgeThickness,scale){
+    self.DrawPoint=function(elementId,center,radius,fillColor,edgeColor,edgeThickness,scale){
         if(center!=undefined && center!=null){
             var drawEdge=false;
             var drawFill=false;
@@ -185,20 +190,20 @@ JSVTS.Plotter = function (){
                 options["strokeStyle"]=edgeColor;
                 options["strokeWidth"]=edgeThickness;
             }
-            // this.canvas.drawArc(options);
+            // self.canvas.drawArc(options);
         }
     };
 
-    this.DrawShape=function(elementId,shape,fillColor,edgeColor,edgeThickness,close,scale) {
+    self.DrawShape=function(elementId,shape,fillColor,edgeColor,edgeThickness,close,scale) {
         if (shape instanceof THREE.Object3D) {
-            this.scene.add(shape);
+            self.scene.add(shape);
         }
     };
 
-    this.Clear=function(elementId){
+    self.Clear=function(elementId){
         // canvas.removeLayerGroup(elementId);
         // canvas.drawLayers();
     };
 
-    this.init();
+    self.init();
 }

@@ -12,16 +12,49 @@ JSVTS.Controller = {
     MAX_THREADS   : 1,
     
     InitPageElements: function () {
-        JSVTS.Controller.docWidth = window.innerWidth;
-        JSVTS.Controller.docHeight = window.innerHeight;
-        JSVTS.Controller.SizePositionElement('div_Controls',JSVTS.Controller.docWidth,200,0,Math.round(JSVTS.Controller.docHeight-200));
+        var w = window,
+            d = document,
+            e = d.documentElement,
+            b = d.querySelector('body'),
+            x = w.innerWidth || e.clientWidth || b.clientWidth,
+            y = w.innerHeight|| e.clientHeight|| b.clientHeight;
+        JSVTS.Controller.docWidth = x; // window.innerWidth;
+        JSVTS.Controller.docHeight = y; // window.innerHeight;
+        // JSVTS.Controller.SizePositionElement('div_Controls',JSVTS.Controller.docWidth-20,200,0,JSVTS.Controller.docHeight-200);
     },
     
     InitObjects: function () {
         JSVTS.Controller.map = new GraphMap(1);
         JSVTS.Controller.plotter = new JSVTS.Plotter('viewport');
-        JSVTS.Controller.map.AddVehicle(new JSVTS.Vehicle());
         JSVTS.Controller.render();
+    },
+
+    initListeners: function() {
+        window.addEventListener("keypress", JSVTS.Controller.handleKeypress, false);
+    },
+
+    handleKeypress: function(ev) {
+        // console.log(ev.charCode);
+        switch (ev.charCode) {
+            case 'd'.charCodeAt(0):
+                JSVTS.Controller.toggleDebugInfo();
+                break;
+            case 's'.charCodeAt(0):
+                JSVTS.Controller.ToggleSimulationState();
+                break;
+            case 'a'.charCodeAt(0):
+                JSVTS.Controller.AddVehicles();
+                break;
+            default:
+                // do nothing
+        }
+    },
+
+    reset: function () {
+        var canvas = document.querySelector('canvas');
+        document.querySelector('body').removeChild(canvas);
+        JSVTS.Controller.plotter = null;
+        JSVTS.Controller.map = null;
     },
 
     render: function () {
@@ -38,46 +71,40 @@ JSVTS.Controller = {
      * @param {int} yPos         the integer location within the window to place the element's top edge
      */
     SizePositionElement: function (elementIdStr,width,height,xPos,yPos) {
-        var eleObj = $('#'+elementIdStr);
-        eleObj.width(width);
-        eleObj.height(height);
-        eleObj.css({
-            "position":"absolute",
-            "top":yPos+"px",
-            "left":xPos+"px"
-        });
+        var eleObj = document.querySelector('#'+elementIdStr);
+        eleObj.style.width = width+"px";
+        eleObj.style.height = height+"px";
+        eleObj.style.position = 'absolute';
+        eleObj.style.top = yPos+"px";
+        eleObj.style.left = xPos+"px";
     },
     
     ToggleSimulationState: function (){
-        var button=document.getElementById("btn_SimStart");
-        
-        if(keepMoving){
-            keepMoving=false;
-            button.value="Start Simulation";
-            for (var i in workers) {
-                workers[i].terminate();
-                delete workers[i];
+        if(JSVTS.Controller.keepMoving){
+            JSVTS.Controller.keepMoving=false;
+            for (var i in JSVTS.Controller.workers) {
+                JSVTS.Controller.workers[i].terminate();
+                delete JSVTS.Controller.workers[i];
             }
-            workers = [];
+            JSVTS.Controller.workers = [];
         } else{
-            keepMoving=true;
-            button.value="Pause Simulation";
-            startTime = new Date().getTime();
-            Move();
+            JSVTS.Controller.keepMoving=true;
+            JSVTS.Controller.startTime = new Date().getTime();
+            JSVTS.Controller.Move();
         }
     },
     
     Move: function () {
-        while (JSVTS.Controller.workers.length < MAX_THREADS) {
+        while (JSVTS.Controller.workers.length < JSVTS.Controller.MAX_THREADS) {
             worker = new Worker("MoverWorker.js");
             worker.onmessage = function (event) {
                 var vehicle = JSON.parse(event.data);
-                var v = new Vehicle(vehicle);
+                var v = new JSVTS.Vehicle(vehicle);
                 $('#tbox_ElapsedTime').val(v.ElapsedMs);
-                map.UpdateVehicles([v]);
-                plotter.DrawVehicles(map.GetVehicles(), map.Scale);
-                plotter.DrawStopLights(map, v.ElapsedMs);
-                if(keepMoving){
+                JSVTS.Controller.map.UpdateVehicles([v]);
+                JSVTS.Controller.plotter.DrawVehicles(map.GetVehicles(), map.Scale);
+                JSVTS.Controller.plotter.DrawStopLights(map, v.ElapsedMs);
+                if(JSVTS.Controller.keepMoving){
                     window.setTimeout(JSVTS.Controller.Move,1);
                 }
             }
@@ -96,8 +123,8 @@ JSVTS.Controller = {
             if (ids.length > 0) {
                 var message = JSON.stringify({
                     "vehicleIds": ids,
-                    "elapsedMilliseconds": (new Date().getTime() - startTime),
-                    "map": map
+                    "elapsedMilliseconds": (new Date().getTime() - JSVTS.Controller.startTime),
+                    "map": JSVTS.Controller.map
                 });
                 worker = JSVTS.Controller.workers[Math.floor(i/JSVTS.Controller.MAX_THREADS)];
                 if (worker) {
@@ -212,17 +239,20 @@ JSVTS.Controller = {
     
     AddVehicles: function (){
         var segments = JSVTS.Controller.map.GetSegments();
-        segments.forEach(function (segment) {
-            if (segment.IsInlet) {
-                var vehicle=new Vehicle();
-                vehicle.Width=5;
-                vehicle.Height=3;
-                vehicle.SegmentId = segment.Id;
-                JSVTS.Controller.map.AddVehicle(vehicle);
-            }
-        });
+        if (segments && segments.length > 0) {
+            segments.forEach(function (segment) {
+                if (segment.IsInlet) {
+                    var vehicle=new JSVTS.Vehicle();
+                    vehicle.SegmentId = segment.Id;
+                    JSVTS.Controller.map.AddVehicle(vehicle);
+                }
+            });
+        } else {
+            var vehicle = new JSVTS.Vehicle();
+            JSVTS.Controller.map.AddVehicle(vehicle);
+        }
 
-        JSVTS.Controller.plotter.DrawVehicles(map.GetVehicles(), map.Scale);
+        JSVTS.Controller.plotter.DrawVehicles(JSVTS.Controller.map.GetVehicles(), JSVTS.Controller.map.Scale);
     },
     
     SetPoint: function (){

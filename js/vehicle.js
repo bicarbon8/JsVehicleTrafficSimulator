@@ -32,7 +32,8 @@ JSVTS.VEH_ID_COUNT = 0;
 JSVTS.VEH_OPTIONS = {
     name: '',
     width: 2,
-    height: 4,
+    length: 4,
+    height: 2,
     x: 0,
     y: 0,
     z: 0,
@@ -116,10 +117,18 @@ JSVTS.Vehicle = function(options){
 
     this.generateBox = function() {
         // z coordinate used for vertical height
-        this.box = new THREE.Box3(
-            THREE.Vector3(this.config.width/-2,this.config.height/-2,-0.5), 
-            THREE.Vector3(this.config.width/2,this.config.height/2,0.5));
-        this.box.translate(new THREE.Vector3(this.config.x, this.config.y, this.config.z));
+        geometry = new THREE.BoxGeometry(this.config.width, this.config.length, this.config.height);
+        material = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            wireframe: true
+        });
+
+        mesh = new THREE.Mesh(geometry, material);
+        this.box = mesh;
+        // this.box = new THREE.Box3(
+        //     THREE.Vector3(this.config.width/-2,this.config.height/-2,-0.5), 
+        //     THREE.Vector3(this.config.width/2,this.config.height/2,0.5));
+        this.box.translateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), 10);
         // this.box.rotateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), this.config.heading);
     };
 

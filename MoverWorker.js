@@ -34,7 +34,7 @@ importScripts(
 	"Rectangle.js",
 	"Triangle.js",
 	"Driver.js",
-	"Vehicle.js", 
+	"js/vehicle.js", 
 	"Segment.js",
 	"GraphMap.js");
 var elapsed = new Date().getTime();

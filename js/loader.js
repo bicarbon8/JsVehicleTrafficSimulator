@@ -19,6 +19,7 @@ JSVTS.Loader = {
 
 JSVTS.Loader.load([
     "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js",
+    "ext/OrbitControls.js",
     "js/controller.js",
 	"Point.js",
     "Polygon.js",
@@ -32,8 +33,10 @@ JSVTS.Loader.load([
     "js/vehicle.js",
     "js/plotter.js",
     "TxtToMapParser.js",
-    "Line.js"
+    "Line.js",
+    "examples/maps/jsonMap.js"
 ], function () {
     JSVTS.Controller.InitPageElements();
     JSVTS.Controller.InitObjects();
+    JSVTS.Controller.initListeners();
 });
