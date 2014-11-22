@@ -28,19 +28,14 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 importScripts(
-	"Point.js",
-	"Line.js",
-	"Polygon.js", 
-	"Rectangle.js",
-	"Triangle.js",
-	"Driver.js",
-	"js/vehicle.js", 
-	"Segment.js",
-	"GraphMap.js");
+    "ext/threejs-69.min.js",
+	"js/objects/vehicle.js", 
+	"js/objects/segment.js",
+	"js/graphmap.js");
 var elapsed = new Date().getTime();
 onmessage = function(event) {
 	var data = JSON.parse(event.data);
-	var map = new GraphMap(data.map.Scale);
+	var map = new JSVTS.GraphMap(data.map.Scale);
 	var keys = Object.keys(data.map._segments);
 	for (var i in keys) {
 		var segArray = data.map._segments[keys[i]];

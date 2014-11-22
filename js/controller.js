@@ -10,6 +10,12 @@ JSVTS.Controller = {
     startTime     : 0,
     workers       : [],
     MAX_THREADS   : 1,
+
+    init: function () {
+        JSVTS.Controller.destroy();
+        JSVTS.Controller.InitPageElements();
+        JSVTS.Controller.InitObjects();
+    },
     
     InitPageElements: function () {
         var w = window,
@@ -21,16 +27,13 @@ JSVTS.Controller = {
         JSVTS.Controller.docWidth = x; // window.innerWidth;
         JSVTS.Controller.docHeight = y; // window.innerHeight;
         // JSVTS.Controller.SizePositionElement('div_Controls',JSVTS.Controller.docWidth-20,200,0,JSVTS.Controller.docHeight-200);
+        w.addEventListener("keypress", JSVTS.Controller.handleKeypress, false);
     },
     
     InitObjects: function () {
-        JSVTS.Controller.map = new GraphMap(1);
+        JSVTS.Controller.map = new JSVTS.GraphMap(1);
         JSVTS.Controller.plotter = new JSVTS.Plotter('viewport');
         JSVTS.Controller.render();
-    },
-
-    initListeners: function() {
-        window.addEventListener("keypress", JSVTS.Controller.handleKeypress, false);
     },
 
     handleKeypress: function(ev) {
@@ -45,38 +48,25 @@ JSVTS.Controller = {
             case 'a'.charCodeAt(0):
                 JSVTS.Controller.AddVehicles();
                 break;
+            case 'l'.charCodeAt(0):
+                JSVTS.Controller.SetFromJson();
+                break;
             default:
                 // do nothing
         }
     },
 
-    reset: function () {
+    destroy: function () {
         var canvas = document.querySelector('canvas');
-        document.querySelector('body').removeChild(canvas);
+        if (canvas) {
+            document.querySelector('body').removeChild(canvas);
+        }
         JSVTS.Controller.plotter = null;
         JSVTS.Controller.map = null;
     },
 
     render: function () {
-        JSVTS.Controller.plotter.drawAll(JSVTS.Controller.map, new Date().getTime() - JSVTS.Controller.startTime);
-    },
-
-    /**
-     * function will resize and position an element with an
-     * ID matching the passed in elementIdStr
-     * @param {String} elementIdStr the ID of the element to resize and reposition
-     * @param {int} width        the integer width to make the element
-     * @param {int} height       the integer height to make the element
-     * @param {int} xPos         the integer location within the window to place the element's left edge
-     * @param {int} yPos         the integer location within the window to place the element's top edge
-     */
-    SizePositionElement: function (elementIdStr,width,height,xPos,yPos) {
-        var eleObj = document.querySelector('#'+elementIdStr);
-        eleObj.style.width = width+"px";
-        eleObj.style.height = height+"px";
-        eleObj.style.position = 'absolute';
-        eleObj.style.top = yPos+"px";
-        eleObj.style.left = xPos+"px";
+        JSVTS.Controller.plotter.render();
     },
     
     ToggleSimulationState: function (){
@@ -102,8 +92,7 @@ JSVTS.Controller = {
                 var v = new JSVTS.Vehicle(vehicle);
                 $('#tbox_ElapsedTime').val(v.ElapsedMs);
                 JSVTS.Controller.map.UpdateVehicles([v]);
-                JSVTS.Controller.plotter.DrawVehicles(map.GetVehicles(), map.Scale);
-                JSVTS.Controller.plotter.DrawStopLights(map, v.ElapsedMs);
+                JSVTS.Controller.plotter.render();
                 if(JSVTS.Controller.keepMoving){
                     window.setTimeout(JSVTS.Controller.Move,1);
                 }
@@ -137,13 +126,11 @@ JSVTS.Controller = {
     },
     
     SetFromJson: function (){
-        var input=document.querySelector('#tbox_Xml').value;
-        var jsonObj = JSON.parse(input);
+        // var input=document.querySelector('#tbox_Xml').value;
+        // var jsonObj = JSON.parse(input);
+        var jsonObj = jsonMap;
         JSVTS.Controller.map=new TxtToMapParser().ParseMapJson(jsonObj.map);
-        JSVTS.Controller.plotter.DrawSegments(JSVTS.Controller.map);
-        // plotter.DrawRoadPoints(map);
-        JSVTS.Controller.plotter.DrawVehicles(JSVTS.Controller.map);
-        JSVTS.Controller.plotter.DrawStopLights(JSVTS.Controller.map,0);
+        JSVTS.Controller.plotter.render();
     },
     
     GetAsJson: function (){
@@ -241,8 +228,12 @@ JSVTS.Controller = {
         var segments = JSVTS.Controller.map.GetSegments();
         if (segments && segments.length > 0) {
             segments.forEach(function (segment) {
-                if (segment.IsInlet) {
-                    var vehicle=new JSVTS.Vehicle();
+                if (segment.config.isInlet) {
+                    var vehicle=new JSVTS.Vehicle({
+                        "x": segment.config.start.x,
+                        "y": segment.config.start.y,
+                        "z": segment.config.start.z
+                    });
                     vehicle.SegmentId = segment.Id;
                     JSVTS.Controller.map.AddVehicle(vehicle);
                 }
@@ -252,7 +243,7 @@ JSVTS.Controller = {
             JSVTS.Controller.map.AddVehicle(vehicle);
         }
 
-        JSVTS.Controller.plotter.DrawVehicles(JSVTS.Controller.map.GetVehicles(), JSVTS.Controller.map.Scale);
+        JSVTS.Controller.plotter.render();
     },
     
     SetPoint: function (){

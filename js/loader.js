@@ -18,25 +18,20 @@ JSVTS.Loader = {
 };
 
 JSVTS.Loader.load([
-    "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.min.js",
+    /** external libs **/
+    "ext/threejs-69.min.js",
     "ext/OrbitControls.js",
     "js/controller.js",
-	"Point.js",
-    "Polygon.js",
-    "Rectangle.js",
-    "Triangle.js",
-    "GraphMap.js",
-    "Segment.js",
+    "js/graphmap.js",
+    "js/objects/segment.js",
     "TrafficFlowControl.js",
     "StopLight.js",
     "Driver.js",
-    "js/vehicle.js",
+    "js/objects/vehicle.js",
     "js/plotter.js",
     "TxtToMapParser.js",
     "Line.js",
     "examples/maps/jsonMap.js"
 ], function () {
-    JSVTS.Controller.InitPageElements();
-    JSVTS.Controller.InitObjects();
-    JSVTS.Controller.initListeners();
+    JSVTS.Controller.init();
 });

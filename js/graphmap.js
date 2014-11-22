@@ -35,7 +35,8 @@
  * of the same lane group which allows vehicles to move from lane
  * to lane
  */
-function GraphMap(scale) {
+var JSVTS = JSVTS || {};
+JSVTS.GraphMap = function(scale) {
 	this.Scale=scale;
 	this._segments = {}; // use as a HashMap<Point,Array<Segment>>
 	this._vehicles = {}; // use as a HashMap<Id,Vehicle>

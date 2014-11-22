@@ -33,7 +33,7 @@ function TxtToMapParser(){
 
         if (jsonObj) {
             var scale = jsonObj.scale;
-            map = new GraphMap(scale);
+            map = new JSVTS.GraphMap(scale);
             segments = this.ParseSegmentsJson(jsonObj.segments);
             for (var i=0; i<segments.length; i++) {
                 map.AddSegment(segments[i]);
@@ -47,21 +47,15 @@ function TxtToMapParser(){
         var segments = [];
         for (var i=0; i<jsonObj.length; i++) {
             var seg = jsonObj[i];
-            var start = new Point(seg.start.x,seg.start.y);
-            var end = new Point(seg.end.x,seg.end.y);
-            var segment = new Segment(start,end);
-            segment.SpeedLimit = jsonObj[i].speedlimit;
-            segment.RoadName = jsonObj[i].roadname;
-            var stoplights = this.ParseStopLightsJson(jsonObj[i].stoplights);
-            for (var j=0; j<stoplights.length; j++) {
-                segment.AddStoplight(stoplights[j]);
-            }
-            var vehicles = this.ParseVehiclesJson(jsonObj[i].vehicles);
-            for (var j=0; j<vehicles.length; j++) {
-                segment.AddVehicle(vehicles[j]);
-            }
-            segment.Preference = jsonObj[i].preference;
-            segment.IsInlet = jsonObj[i].isinlet;
+            var start = new THREE.Vector3(seg.start.x,seg.start.y,0);
+            var end = new THREE.Vector3(seg.end.x,seg.end.y,0);
+            var segment = new JSVTS.Segment({
+                "start": start,
+                "end": end,
+                "speedLimit": jsonObj[i].speedlimit,
+                "name": jsonObj[i].roadname,
+                "isInlet": jsonObj[i].isinlet
+            });
             segments.push(segment);
         }
 
@@ -74,7 +68,7 @@ function TxtToMapParser(){
             for (var i=0; i<jsonObj.length; i++) {
                 var changeSeconds = jsonObj[i].changeseconds;
                 var startState = jsonObj[i].startstate;
-                var loc = new Point(jsonObj[i].location.x,jsonObj[i].location.y);
+                var loc = new THREE.Vector3(jsonObj[i].location.x,jsonObj[i].location.y,0);
                 var sl = new StopLight(changeSeconds, startState);
                 sl.Location = loc;
 

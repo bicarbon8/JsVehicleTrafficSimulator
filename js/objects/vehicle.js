@@ -47,13 +47,13 @@ JSVTS.Vehicle = function(options){
     this.changingLanes = false;
     this.changeLaneTime = 0;
     this.SegmentId = undefined;
-    this.box = undefined;
+    this.mesh = undefined;
     this.view = undefined;
 
     this.init=function(options) {
         this.Id = JSVTS.VEH_ID_COUNT++;
-        for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
-        this.generateBox();
+        for (var optionKey in this.config) { this.config[optionKey] = options[optionKey]; }
+        this.generateMesh();
     };
 
     this.copyFrom = function (vehicle) {
@@ -63,7 +63,7 @@ JSVTS.Vehicle = function(options){
             this.DesiredVelocity=vehicle.DesiredVelocity;
             this.SegmentId=vehicle.SegmentId;
             this.ElapsedMs=vehicle.ElapsedMs;
-            this.box=vehicle.box;
+            this.mesh=vehicle.mesh;
         }
     };
 
@@ -115,7 +115,7 @@ JSVTS.Vehicle = function(options){
         }
     };
 
-    this.generateBox = function() {
+    this.generateMesh = function() {
         // z coordinate used for vertical height
         geometry = new THREE.BoxGeometry(this.config.width, this.config.length, this.config.height);
         material = new THREE.MeshBasicMaterial({
@@ -124,12 +124,13 @@ JSVTS.Vehicle = function(options){
         });
 
         mesh = new THREE.Mesh(geometry, material);
-        this.box = mesh;
-        // this.box = new THREE.Box3(
+        this.mesh = mesh;
+        // this.mesh = new THREE.Box3(
         //     THREE.Vector3(this.config.width/-2,this.config.height/-2,-0.5), 
         //     THREE.Vector3(this.config.width/2,this.config.height/2,0.5));
-        this.box.translateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), 10);
-        // this.box.rotateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), this.config.heading);
+        this.mesh.translateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), 10);
+        // this.mesh.rotateOnAxis(new THREE.Vector3(this.config.x, this.config.y, this.config.z), this.config.heading);
+        JSVTS.Controller.plotter.scene.add(this.mesh);
     };
 
     function generateView() {

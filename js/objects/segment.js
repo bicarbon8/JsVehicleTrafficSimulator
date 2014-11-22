@@ -27,38 +27,51 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function Segment(start,end){
-    this.InheritFrom=Line;
-    this.InheritFrom();
+var JSVTS = JSVTS || {};
+JSVTS.SEG_ID_COUNT = 0;
+JSVTS.SEG_OPTIONS = {
+    start: THREE.Vector3(-10,0,0),
+    end: THREE.Vector3(10,0,0),
+    isInlet: false,
+    name: '',
+    speedLimit: 30, // Km/h
+};
+JSVTS.Segment = function(options){
     this.Id=null;
-    this._stopLights=[];
-    this.SpeedLimit=0;
-    this.Preference=0; // values used to more heavily weight a choice of this segment
-    this.IsInlet=false; // values used to determine which segments can have vehicles appear
-    this.RoadName=null; // segments that are part of the same road are available for lane changes
+    this.config = JSVTS.SEG_OPTIONS;
     this.LaneChangeLines=[];
 
-    this.Initialize=function(start,end) {
-        this.SetPoints(start,end);
+    this.Initialize=function(options) {
+        this.Id = JSVTS.SEG_ID_COUNT++;
+        for (var optionKey in this.config) { 
+            this.config[optionKey] = options[optionKey];
+        }
+        this.generateMesh();
 
         // build the "tendrils" that allow for lane changes
-        this.GenerateLaneChangeLines();
-    }
-
-    try{
-        this.Id="segment_"+SEG_ID_COUNT++;
-    } catch(e){
-        this.Id="segment_"+0;
+        // this.GenerateLaneChangeLines();
     }
     
     this.AttachVehicle=function(vehicle) {
         // set the vehicle's heading
-        vehicle.Heading = this.Heading();
+        vehicle.Heading = this.GetHeading();
         vehicle.DesiredVelocity = this.SpeedLimit;
         vehicle.Location = this.Start;
         vehicle.SegmentId = this.Id;
 
         return vehicle;
+    }
+
+    this.GetHeading=function(){
+        var heading=0;
+        if(this.Start!=null && this.End!=null){
+            var y=(this.End.Y-this.Start.Y);
+            var x=(this.End.X-this.Start.X);
+            var radians=Math.atan2(y,x);
+            heading=(radians*(180/Math.PI));
+        }
+        
+        return heading;
     }
 
     this.GetStopLights=function() {
@@ -92,7 +105,24 @@ function Segment(start,end){
 
             this.LaneChangeLines.push(line);
         }
+    };
+
+    this.generateMesh = function () {
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff,
+            wireframe: true
+        });
+
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            this.config.start,
+            this.config.end
+        );
+
+        var line = new THREE.Line( geometry, material );
+        this.mesh = line;
+        JSVTS.Controller.plotter.scene.add(this.mesh);
     }
 
-    this.Initialize(start, end);
+    this.Initialize(options);
 }
