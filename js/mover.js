@@ -63,7 +63,7 @@ JSVTS.Mover = {
                             bypassLaneCompare = true; // first time through
 
                             // set vehicle's heading towards new lane
-                            v.Heading = JSVTS.Mover.GetHeadingToNewLane(v,availableLane);
+                            v.config.heading = JSVTS.Mover.GetHeadingToNewLane(v,availableLane);
 
                             // switch ownership to new lane
                             v.segmentId = availableLane.Id;
@@ -91,7 +91,7 @@ JSVTS.Mover = {
 
                     if (v.changingLanes) {
                         // change our offset to move towards new lane
-                        offset = JSVTS.Mover.GetXYFromDistHeading(distTraveled,v.Heading);
+                        offset = JSVTS.Mover.GetXYFromDistHeading(distTraveled,v.config.heading);
                         nextPoint=new THREE.Vector3(v.config.location.x+offset.x,v.config.location.y+offset.y,0);
 
                         // reset heading if in lane
@@ -104,34 +104,35 @@ JSVTS.Mover = {
                             }
                             var line = new THREE.Line3(carBounds.Points[start], carBounds.Points[end]);
                             if (segment.IntersectsLine(carBounds) && !bypassLaneCompare){
-                                v.Heading = segment.Heading();
+                                v.config.heading = segment.heading;
                                 v.changingLanes = false;
                             }
                         }
                     }
 
-                    v.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(nextPoint.x+offset2.x, nextPoint.y+offset2.y, 0));
                     // ensure we don't move past the end of a segment
                     if(JSVTS.Mover.IsBeyondCurrentSegment(v,segment)){
                         var beyondDist=JSVTS.Mover.GetDistanceBetweenTwoPoints(v.config.location,
-                            segment.End);
+                            segment.config.end);
                         
                         // remove vehicle from current segment
                         v.segmentId = undefined;
 
                         // if there is a next Segment
-                        var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.End);
+                        var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);
                         if(nextSegments && nextSegments.length > 0){
                             // move to segment (pick randomly)
                             var randIndex = Math.floor((Math.random()*nextSegments.length));
                             v = nextSegments[randIndex].AttachVehicle(v);
-                            var offset2=JSVTS.Mover.GetXYFromDistHeading(beyondDist,nextSegments[randIndex].Heading());
-                            v.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(v.config.location.x+offset2.x, v.config.location.y+offset2.y, 0));
+                            var offset=JSVTS.Mover.GetXYFromDistHeading(beyondDist,nextSegments[randIndex].heading);
+                            nextPoint=new THREE.Vector3(v.config.location.x+offset.x,v.config.location.y+offset.y,0);
                         } else{
                             // remove v from the Simulation
                             delete JSVTS.Mover.Map._vehicles[v.Id];
                         }
                     }
+
+                    v.updateLocation(new THREE.Vector3(nextPoint.x, nextPoint.y, 0));
                 }
                 if(v && !IsStopping){
                     // speed up or slow down
@@ -214,7 +215,7 @@ JSVTS.Mover = {
         return lane;
     },
     GetHeadingToNewLane: function(v,availableLane) {
-        var heading = v.Heading;
+        var heading = v.config.heading;
 
         var laneTendrils = availableLane.LaneChangeLines;
         var carViewArea = v.GetViewArea();
@@ -222,7 +223,7 @@ JSVTS.Mover = {
             var laneTendril = laneTendrils[i];
             
             if (carViewArea.IntersectsLine(laneTendril)) {
-                var headingLine = new JSVTS.Segment(v.config.location,laneTendril.Start);
+                var headingLine = new JSVTS.Segment(v.config.location,laneTendril.config.start);
                 return headingLine.heading;
             }
         }
@@ -238,15 +239,15 @@ JSVTS.Mover = {
         // slow down when the next segment is in range and has a different heading
         // base the amount on how different the heading is
         var headingDiff = 0;
-        var distance = vehicle.GetLookAheadDistance();
-        var distToSegEnd = new THREE.Line3(vehicle.config.location,segment.End).distance();
+        var distance = vehicle.getLookAheadDistance();
+        var distToSegEnd = new THREE.Line3(vehicle.config.location,segment.config.end).distance();
         // if we can see past the end of this segment
         if (distToSegEnd < distance) {
             // then check the heading of the next segment(s)
-            var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.End);
+            var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);
             for (var i=0; i<nextSegments.length; i++) {
                 // get the largest heading difference
-                var tmp = Math.abs(segment.Heading() - nextSegments[i].Heading());
+                var tmp = Math.abs(segment.heading - nextSegments[i].heading);
                 if (tmp > headingDiff) {
                     headingDiff = tmp;
                 }
@@ -286,7 +287,7 @@ JSVTS.Mover = {
         return false;
     },
     ShouldStopForLight: function(vehicle,segment) {
-        var distance = vehicle.GetLookAheadDistance();
+        var distance = vehicle.getLookAheadDistance();
         var stoplights = JSVTS.Mover.Map.GetStopLightsWithinDistance(vehicle.config.location,segment,distance);
         // check for stoplights
         for(var i=0;i<stoplights.length;i++){
@@ -301,49 +302,49 @@ JSVTS.Mover = {
     },
     IsBeyondCurrentSegment: function(vehicle,segment){
         var currentSegment=segment;
-        var xDif=currentSegment.Start.x-currentSegment.End.x;
-        var yDif=currentSegment.Start.y-currentSegment.End.y;
+        var xDif=currentSegment.config.start.x-currentSegment.config.end.x;
+        var yDif=currentSegment.config.start.y-currentSegment.config.end.y;
         if(xDif==0){
             // horizontal line
-            if(currentSegment.Start.y<currentSegment.End.y){
-                if(vehicle.config.location.y>currentSegment.End.y){
+            if(currentSegment.config.start.y<currentSegment.config.end.y){
+                if(vehicle.config.location.y>currentSegment.config.end.y){
                     return true;
                 }
             } else{
-                if(vehicle.config.location.y<currentSegment.End.y){
+                if(vehicle.config.location.y<currentSegment.config.end.y){
                     return true;
                 }
             }
         } else{
             if(yDif==0){
                 // vertical line
-                if(currentSegment.Start.x<currentSegment.End.x){
-                    if(vehicle.config.location.x>currentSegment.End.x){
+                if(currentSegment.config.start.x<currentSegment.config.end.x){
+                    if(vehicle.config.location.x>currentSegment.config.end.x){
                         return true;
                     }
                 } else{
-                    if(vehicle.config.location.x<currentSegment.End.x){
+                    if(vehicle.config.location.x<currentSegment.config.end.x){
                         return true;
                     }
                 }
             } else{
                 if(Math.abs(xDif)>Math.abs(yDif)){
-                    if(currentSegment.Start.x<currentSegment.End.x){
-                        if(vehicle.config.location.x>currentSegment.End.x){
+                    if(currentSegment.config.start.x<currentSegment.config.end.x){
+                        if(vehicle.config.location.x>currentSegment.config.end.x){
                             return true;
                         }
                     } else{
-                        if(vehicle.config.location.x<currentSegment.End.x){
+                        if(vehicle.config.location.x<currentSegment.config.end.x){
                             return true;
                         }
                     }
                 } else{
-                    if(currentSegment.Start.y<currentSegment.End.y){
-                        if(vehicle.config.location.y>currentSegment.End.y){
+                    if(currentSegment.config.start.y<currentSegment.config.end.y){
+                        if(vehicle.config.location.y>currentSegment.config.end.y){
                             return true;
                         }
                     } else{
-                        if(vehicle.config.location.y<currentSegment.End.y){
+                        if(vehicle.config.location.y<currentSegment.config.end.y){
                             return true;
                         }
                     }

@@ -27,20 +27,27 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function Triangle(point0,point1,point2){
-    this.InheritFrom=Polygon;
-    this.InheritFrom();
-
-    this.Location=new Point(0,0);
-    
-    this.Initialize=function(p1,p2,p3) {
-        this.Points = [];
-        this.Points.push(p1);
-        this.Points.push(p2);
-        this.Points.push(p3);
-
-        this.Location=this.GetCenterPoint();
+var jsonMap = {
+    "map":{
+        "scale":1,
+        "segments":[
+            {
+                "start":{
+                    "x":0,
+                    "y":0,
+                    "z":0
+                },
+                "end":{
+                    "x":1000,
+                    "y":0,
+                    "z":1000
+                },
+                "speedlimit":60,
+                "roadname":"Sample Rd.",
+                "stoplights":[],
+                "vehicles":[],
+                "isinlet":true
+            }
+        ]
     }
-
-    this.Initialize(point0,point1,point2);
 }

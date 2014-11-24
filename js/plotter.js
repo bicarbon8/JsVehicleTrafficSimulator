@@ -53,9 +53,11 @@ JSVTS.Plotter = function (){
             FAR); 
         self.scene = new THREE.Scene();
         self.scene.add(self.camera);
-        self.camera.position.z = 500;
-        self.camera.position.x = 500;
-        self.camera.lookAt(self.scene.position);
+        self.scene.add(new THREE.AxisHelper(10000));
+        self.camera.position.z = 250;
+        self.camera.position.y = 250;
+        self.camera.position.x = 250;
+        self.camera.lookAt(new THREE.Vector3(0,0,0));
         self.controls = new THREE.OrbitControls(self.camera);
         self.controls.damping = 0.2;
         self.controls.addEventListener('change', function () { self.renderer.render(self.scene, self.camera); });

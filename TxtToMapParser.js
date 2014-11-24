@@ -33,7 +33,7 @@ function TxtToMapParser(){
 
         if (jsonObj) {
             var scale = jsonObj.scale;
-            map = new JSVTS.GraphMap(scale);
+            map = new JSVTS.Map(scale);
             segments = this.ParseSegmentsJson(jsonObj.segments);
             for (var i=0; i<segments.length; i++) {
                 map.AddSegment(segments[i]);
@@ -47,8 +47,8 @@ function TxtToMapParser(){
         var segments = [];
         for (var i=0; i<jsonObj.length; i++) {
             var seg = jsonObj[i];
-            var start = new THREE.Vector3(seg.start.x,seg.start.y,0);
-            var end = new THREE.Vector3(seg.end.x,seg.end.y,0);
+            var start = new THREE.Vector3(seg.start.x,seg.start.y,seg.start.z);
+            var end = new THREE.Vector3(seg.end.x,seg.end.y,seg.end.z);
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,

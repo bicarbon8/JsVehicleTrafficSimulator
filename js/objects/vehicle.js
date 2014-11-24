@@ -42,42 +42,43 @@ JSVTS.VEH_OPTIONS = function () {
     return self;
 };
 JSVTS.Vehicle = function(options){
-    this.id = null;
-    this.config = JSVTS.VEH_OPTIONS();
-    this.changingLanes = false;
-    this.changeLaneTime = 0;
-    this.segmentId = undefined;
-    this.mesh = undefined;
-    this.view = undefined;
-    this.velocity = 0; // Km/h
+    var self = this;
+    self.id = null;
+    self.config = JSVTS.VEH_OPTIONS();
+    self.changingLanes = false;
+    self.changeLaneTime = 0;
+    self.segmentId = undefined;
+    self.mesh = undefined;
+    self.view = undefined;
+    self.velocity = 0; // Km/h
 
-    this.init=function(options) {
-        this.id = JSVTS.VEH_ID_COUNT++;
-        for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
-        this.generateMesh();
+    self.init=function(options) {
+        self.id = JSVTS.VEH_ID_COUNT++;
+        for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
+        self.generateMesh();
     };
 
-    this.copyFrom = function (vehicle) {
+    self.copyFrom = function (vehicle) {
         if (vehicle) {
-            this.Initialize(vehicle.config);
-            this.id=vehicle.id;
-            this.desiredVelocity=vehicle.desiredVelocity;
-            this.segmentId=vehicle.segmentId;
-            this.ElapsedMs=vehicle.ElapsedMs;
-            this.mesh=vehicle.mesh;
+            self.Initialize(vehicle.config);
+            self.id=vehicle.id;
+            self.desiredVelocity=vehicle.desiredVelocity;
+            self.segmentId=vehicle.segmentId;
+            self.ElapsedMs=vehicle.ElapsedMs;
+            self.mesh=vehicle.mesh;
         }
     };
 
-    this.intersectsPoint=function(point){
+    self.intersectsPoint=function(point){
         var intersects=false;
-        var rect=this.GetBoundingBox();
+        var rect=self.GetBoundingBox();
         if(rect.ContainsPoint(point)){
             intersects=true;
         }
         return intersects;
     };
 
-    this.getViewArea=function(){
+    self.getViewArea=function(){
         /**
          * the view area is a pie-shaped region where the point of the
          * pie starts from the centrepoint of the vehicle and the crust
@@ -86,62 +87,68 @@ JSVTS.Vehicle = function(options){
          * towards the vehicle to initiate slowing
          */
         var tri=null;
-        if(this.Location){
-            var triP0=new THREE.Vector3().copy(this.config.location),
+        if(self.Location){
+            var triP0=new THREE.Vector3().copy(self.config.location),
                 triP1=new THREE.Vector3().copy(triP0),
                 triP2=new THREE.Vector3().copy(triP0);
-            if(this.velocity>=0.44){
-                // triP1.MoveBy(new Point(this.config.width+(this.Velocity),-(this.Height*2))); //-((this.Height+this.Velocity)/(this.Velocity/4))));
-                triP1.applyMatrix(new THREE.Matrix4().makeTranslation(this.config.width+(this.velocity),-(this.config.height*2), 0));
-                // triP2.MoveBy(new Point(this.config.width+(this.Velocity),(this.Height*2))); //((this.Height+this.Velocity)/(this.Velocity/4))));
-                triP2.applyMatrix(new THREE.Matrix4().makeTranslation(this.config.width+(this.velocity),(this.config.height*2), 0));
+            if(self.velocity>=0.44){
+                // triP1.MoveBy(new Point(self.config.width+(self.Velocity),-(self.Height*2))); //-((self.Height+self.Velocity)/(self.Velocity/4))));
+                triP1.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width+(self.velocity),-(self.config.height*2), 0));
+                // triP2.MoveBy(new Point(self.config.width+(self.Velocity),(self.Height*2))); //((self.Height+self.Velocity)/(self.Velocity/4))));
+                triP2.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width+(self.velocity),(self.config.height*2), 0));
             } else{
-                // triP1.MoveBy(new Point(this.config.width,-this.Height));
-                triP1.applyMatrix(new THREE.Matrix4().makeTranslation(this.config.width,-this.config.height, 0));
-                // triP2.MoveBy(new Point(this.config.width,this.Height));
-                triP2.applyMatrix(new THREE.Matrix4().makeTranslation(this.config.width,this.config.height, 0));
+                // triP1.MoveBy(new Point(self.config.width,-self.Height));
+                triP1.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width,-self.config.height, 0));
+                // triP2.MoveBy(new Point(self.config.width,self.Height));
+                triP2.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width,self.config.height, 0));
             }
             var tri=new THREE.Triangle(triP0,triP1,triP2);
-            // tri.Rotate(this.config.heading, triP0);
+            // tri.Rotate(self.config.heading, triP0);
         }
         return tri;
     };
 
-    this.getLookAheadDistance=function() {
-        if(this.velocity>=4.4704){
+    self.getLookAheadDistance=function() {
+        if(self.velocity>=4.4704){
             // distance is one car length per 16.1 kilometers per hour
-            return (this.config.width*(this.velocity/16.1)+(this.config.width/2));
+            return (self.config.width*(self.velocity/16.1)+(self.config.width/2));
         } else{
             // or slightly more than half a car length if going really slow
-            return this.config.width+(this.config.width/2);
+            return self.config.width+(self.config.width/2);
         }
     };
 
-    this.generateMesh = function() {
-        // z coordinate used for vertical height
-        geometry = new THREE.BoxGeometry(this.config.length, this.config.width, this.config.height);
-        material = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
-            wireframe: true
-        });
+    self.generateMesh = function() {
+        if (!self.mesh) {
+            // z coordinate used for vertical height
+            var geometry = new THREE.BoxGeometry(self.config.width, self.config.height, self.config.length);
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                wireframe: true
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            self.mesh = mesh;
+        }
 
-        mesh = new THREE.Mesh(geometry, material);
-        this.mesh = mesh;
-
-        // move to this.config.location and rotate to point at heading
-        this.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(this.config.location.x, this.config.location.y, this.config.location.z));
-        this.mesh.rotateOnAxis(new THREE.Vector3(0,1,0).normalize(), this.config.heading); // y-axis rotation
+        // move to self.config.location and rotate to point at heading
+        self.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.location.x, self.config.location.y, self.config.location.z));
+        var radians = self.config.heading - self.mesh.rotation.y;
+        var degrees = radians*(180/Math.PI);
+        if (degrees < -1 || degrees > 1) {
+            self.mesh.rotateOnAxis(new THREE.Vector3(0,1,0).normalize(), radians); // y-axis rotation
+        }        
 
         // indicate that we've updated
-        this.mesh.geometry.dynamic = true;
-        this.mesh.geometry.verticesNeedUpdate = true;
-        this.mesh.geometry.normalsNeedUpdate = true;
+        self.mesh.geometry.dynamic = true;
+        self.mesh.geometry.verticesNeedUpdate = true;
+        self.mesh.geometry.normalsNeedUpdate = true;
     };
 
-    function generateView() {
-
+    self.updateLocation = function(newLocation) {
+        self.config.location = newLocation;
+        self.generateMesh();
     }
 
     // configure this object if data was passed in
-    this.init(options);
+    self.init(options);
 }

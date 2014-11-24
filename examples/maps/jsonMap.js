@@ -28,10 +28,6 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var jsonMap = {
-    "mover":{
-        "millisecondstep":2,
-        "elapsedmillisec":0
-    },
     "map":{
         "scale":1,
         "segments":[

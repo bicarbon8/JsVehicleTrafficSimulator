@@ -118,7 +118,7 @@ JSVTS.Segment = function(options){
         var line = new THREE.Line(geometry, material);
         this.mesh = line;
         var heading=0;
-        var y=(this.config.end.y-this.config.start.y);
+        var y=(this.config.end.z-this.config.start.z);
         var x=(this.config.end.x-this.config.start.x);
         var radians=Math.atan2(y,x);
         

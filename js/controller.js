@@ -31,7 +31,7 @@ JSVTS.Controller = {
     },
     
     InitObjects: function () {
-        JSVTS.Controller.map = new JSVTS.GraphMap(1);
+        JSVTS.Controller.map = new JSVTS.Map();
         JSVTS.Controller.plotter = new JSVTS.Plotter('viewport');
         JSVTS.Controller.render();
     },

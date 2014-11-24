@@ -36,33 +36,34 @@
  * to lane
  */
 var JSVTS = JSVTS || {};
-JSVTS.GraphMap = function(scale) {
-	this.Scale=scale;
-	this._segments = {}; // use as a HashMap<Point,Array<Segment>>
-	this._vehicles = {}; // use as a HashMap<Id,Vehicle>
+JSVTS.Map = function(scale) {
+	var self = this;
+	self.Scale=scale || 1;
+	self._segments = {}; // use as a HashMap<Point,Array<Segment>>
+	self._vehicles = {}; // use as a HashMap<Id,Vehicle>
 
-	this.AddSegment=function(segment) {
+	self.AddSegment=function(segment) {
         var key = JSON.stringify(segment.Start);
-		if (!this._segments[key]) {
-			this._segments[key] = [];
+		if (!self._segments[key]) {
+			self._segments[key] = [];
 		}
-		this._segments[key].push(segment);
+		self._segments[key].push(segment);
 	}
 
-	this.AddVehicle=function(vehicle) {
+	self.AddVehicle=function(vehicle) {
 		if (vehicle.SegmentId) {
-			vehicle = this.GetSegmentById(vehicle.SegmentId).AttachVehicle(vehicle);
+			vehicle = self.GetSegmentById(vehicle.SegmentId).AttachVehicle(vehicle);
 		}
-		this._vehicles[vehicle.Id] = vehicle;
+		self._vehicles[vehicle.Id] = vehicle;
 	}
 
-	this.GetSegments=function() {
+	self.GetSegments=function() {
 		var segments = [];
-		var keys = Object.keys(this._segments);
+		var keys = Object.keys(self._segments);
 
 		for (var key in keys) {
 			var k = keys[key];
-			var segs = this._segments[k];
+			var segs = self._segments[k];
 
             segs.forEach(function (seg) {
                 segments.push(seg);
@@ -72,21 +73,21 @@ JSVTS.GraphMap = function(scale) {
 		return segments;
 	}
 
-	this.GetSegmentById=function (id) {
-		return this.GetSegments().filter(function (el) {
-			return el.Id === id;
+	self.GetSegmentById=function (id) {
+		return self.GetSegments().filter(function (el) {
+			return el.id === id;
 		})[0];
 	}
 
-	this.GetSegmentsStartingAt=function(point) {
-		return this._segments[JSON.stringify(point)] || [];
+	self.GetSegmentsStartingAt=function(point) {
+		return self._segments[JSON.stringify(point)] || [];
 	}
 
-	this.GetSimilarSegmentsInRoad=function(currentSegment) {
+	self.GetSimilarSegmentsInRoad=function(currentSegment) {
 		var results = [];
 		var searchRadius = 20; // pixels / meters to search for matches
 
-		var segments = this.GetSegments();
+		var segments = self.GetSegments();
 		for (var i=0; i<segments.length; i++) {
 			var segment = segments[i];
 			if (segment.Id != currentSegment.Id && segment.RoadName === currentSegment.RoadName && segment.Heading() == currentSegment.Heading()) {
@@ -108,28 +109,28 @@ JSVTS.GraphMap = function(scale) {
 		return results;
 	}
 
-	this.GetVehicles=function() {
+	self.GetVehicles=function() {
 		var vehicles = [];
 
-		var keys = Object.keys(this._vehicles);
+		var keys = Object.keys(self._vehicles);
 		for (var i in keys) {
-			var vehicle = this._vehicles[keys[i]];
+			var vehicle = self._vehicles[keys[i]];
 			vehicles.push(vehicle);
 		}
 
 		return vehicles;
 	}
 
-	this.GetVehiclesInSegment=function(id) {
-		return this.GetVehicles().filter(function (el) {
+	self.GetVehiclesInSegment=function(id) {
+		return self.GetVehicles().filter(function (el) {
         	return el.SegmentId === id;
         });
 	}
 
-	this.UpdateVehicles=function(vehicles) {
+	self.UpdateVehicles=function(vehicles) {
 		for (var i in vehicles) {
 			var v = vehicles[i];
-			this._vehicles[v.Id] = v;
+			self._vehicles[v.id] = v;
 		}
 	}
 
@@ -141,30 +142,31 @@ JSVTS.GraphMap = function(scale) {
      * @return {boolean} true if at least one vehicle found within range
      * otherwise false
      */
-    this.AreVehiclesWithinDistance=function(vehicle, segment, distance) {
+    self.AreVehiclesWithinDistance=function(vehicle, segment, distance) {
     	if (distance > 0) {
-    		var currentLoc = vehicle.Location;
+    		var currentLoc = vehicle.config.location;
 	        // get the distance from our current location to the end of the segment
-	        var lineSeg = new Line(new Point(currentLoc.X,currentLoc.Y), new Point(segment.End.X,segment.End.Y));
+	        var lineSeg = new THREE.Line3(
+	        	new THREE.Vector3(currentLoc.x,currentLoc.y), 
+	        	new THREE.Vector3(segment.config.end.x,segment.config.end.Y)
+	        );
 	        
 	        // if the distance is greater than the one passed in only check vehicles for this segment
-	        var segLength = lineSeg.GetLength();
+	        var segLength = lineSeg.distance();
 
 	        // get vehicles in the passed in segment first
-	        var vehicles = this.GetVehiclesInSegment(vehicle.SegmentId);
+	        var vehicles = self.GetVehiclesInSegment(vehicle.SegmentId);
 	        
             // loop through all the vehicles in this segment and compare the ones within range
             for (var i=0; i<vehicles.length; i++) {
                 var v = vehicles[i];
-                if (!v.Location.Equals(currentLoc)) { // avoid current car comparison
+                if (v.config.location.x !== currentLoc.x || v.config.location.y !== currentLoc.y) { // avoid current car comparison
 	                // ensure vehicle is within range (fast to check)
-	                var distToV = new Line(new Point(currentLoc.X,currentLoc.Y),new Point(v.Location.X,v.Location.Y)).GetLength();
+	                var distToV = new THREE.line3(new THREE.Vector3(currentLoc.x,currentLoc.y),new THREE.Vector3(v.config.location.x,v.config.location.y)).GetLength();
 	                if (distToV <= distance) {
 	                	// ensure vehicle is ahead and not behind (slower to check)
 		                var view = vehicle.GetViewArea();
-		                if (view.ContainsPoint(v.Location)) { // TODO: make bounds collision test here instead of center point
-		                    return true;
-		                }
+		                return view.containsPoint(v.config.location); // TODO: make bounds collision test here instead of center point
 		            }
             	}
             }
@@ -173,13 +175,13 @@ JSVTS.GraphMap = function(scale) {
 	        if (segLength < distance) {
 	            // otherwise move to the next segment(s) reducing the distance by the amount from currentLoc
 	            // to segment end
-	            var tmpVehicle = new Vehicle(vehicle);
-	            tmpVehicle.Location = segment.End;
-	            var nextSegments = this.GetSegmentsStartingAt(segment.End); // get segments starting from this one's end
+	            var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
+	            tmpVehicle.config.location = segment.config.end;
+	            var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
 	            if (nextSegments && nextSegments.length) {
 		            for (var i=0; i<nextSegments.length; i++) {
-		            	tmpVehicle.SegmentId = nextSegments[i].Id;
-		                this.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], distance-segLength);
+		            	tmpVehicle.segmentId = nextSegments[i].id;
+		                self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], distance-segLength);
 		            }
 		        }
 	        }
@@ -194,23 +196,26 @@ JSVTS.GraphMap = function(scale) {
      * nodes
      * @return {Array} an array of Vehicle objects
      */
-    this.GetStopLightsWithinDistance=function(currentLoc, segment, distance) {
+    self.GetStopLightsWithinDistance=function(currentLoc, segment, distance) {
         var stopLights = [];
 
         if (distance > 0) {
 	        // get the distance from our current location to the end of the segment
-	        var lineSeg = new Line(new Point(currentLoc.X,currentLoc.Y), new Point(segment.End.X,segment.End.Y));
+	        var lineSeg = new THREE.Line3(
+	        	new THREE.Vector3(currentLoc.x,currentLoc.y), 
+	        	new THREE.Vector3(segment.config.end.x,segment.config.end.y)
+	        );
 	        
 	        // if the distance is greater than the one passed in only check stopLights for this segment
-	        var segLength = lineSeg.GetLength();
+	        var segLength = lineSeg.distance();
 	        
             // loop through all the stopLights and add the ones within range
             var lights = segment.GetStopLights();
-            for (var i=0; i<lights.length; i++) {
+            for (var i in lights) {
                 var light = lights[i];
 
                 // ensure light is ahead and not behind vehicle
-                if (lineSeg.ContainsPoint(light.Location)) {
+                if (lineSeg.containsPoint(light.Location)) {
 	                var distToL = new Line(new Point(currentLoc.X,currentLoc.Y),new Point(light.Location.X,light.Location.Y)).GetLength();
 
 	                if (distToL <= distance) {
@@ -223,11 +228,11 @@ JSVTS.GraphMap = function(scale) {
 	        if (segLength < distance) {
 	            // otherwise move to the next segment(s) reducing the distance by the amount from currentLoc
 	            // to segment end
-	            var nextSegments = this.GetSegmentsStartingAt(segment.End);
+	            var nextSegments = self.GetSegmentsStartingAt(segment.config.end);
 	            if (nextSegments && nextSegments.length) {
-		            for (var i=0; i<nextSegments.length; i++) {
-		            	var lights = this.GetStopLightsWithinDistance(segment.End, nextSegments[i], distance-segLength);
-		                for (var j=0; j<lights.length; j++) {
+		            for (var i in nextSegments) {
+		            	var lights = self.GetStopLightsWithinDistance(segment.config.end, nextSegments[i], distance-segLength);
+		                for (var j in lights) {
 		                	stopLights.push(lights[j]);
 		                }
 		            }
@@ -238,8 +243,8 @@ JSVTS.GraphMap = function(scale) {
         return stopLights;
     }
 
-    this.ContainsStartPoint=function(point){
-        if (this.GetSegmentsStartingAt(point) > 0) {
+    self.ContainsStartPoint=function(point){
+        if (self.GetSegmentsStartingAt(point) > 0) {
         	return true;
         }
 

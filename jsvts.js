@@ -27,14 +27,10 @@ JSVTS.load([
     "js/graphmap.js",
     "js/mover.js",
     "js/objects/segment.js",
-    "TrafficFlowControl.js",
-    "StopLight.js",
-    "Driver.js",
     "js/objects/vehicle.js",
     "js/plotter.js",
     "TxtToMapParser.js",
-    "Line.js",
-    "examples/maps/jsonMap.js"
+    "examples/maps/sample.js"
 ], function () {
     JSVTS.Controller.init();
 });
