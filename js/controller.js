@@ -72,56 +72,18 @@ JSVTS.Controller = {
     ToggleSimulationState: function (){
         if(JSVTS.Controller.keepMoving){
             JSVTS.Controller.keepMoving=false;
-            for (var i in JSVTS.Controller.workers) {
-                JSVTS.Controller.workers[i].terminate();
-                delete JSVTS.Controller.workers[i];
-            }
-            JSVTS.Controller.workers = [];
         } else{
             JSVTS.Controller.keepMoving=true;
-            JSVTS.Controller.startTime = new Date().getTime();
             JSVTS.Controller.Move();
         }
     },
     
     Move: function () {
-        while (JSVTS.Controller.workers.length < JSVTS.Controller.MAX_THREADS) {
-            worker = new Worker("MoverWorker.js");
-            worker.onmessage = function (event) {
-                var vehicle = JSON.parse(event.data);
-                var v = new JSVTS.Vehicle(vehicle);
-                $('#tbox_ElapsedTime').val(v.ElapsedMs);
-                JSVTS.Controller.map.UpdateVehicles([v]);
-                JSVTS.Controller.plotter.render();
-                if(JSVTS.Controller.keepMoving){
-                    window.setTimeout(JSVTS.Controller.Move,1);
-                }
-            }
-            JSVTS.Controller.workers.push(worker);
-        }
+        JSVTS.Mover.move(2, JSVTS.Controller.map);
+        JSVTS.Controller.render();
 
-        var vehicles = JSVTS.Controller.map.GetVehicles();
-        for (var i=0; i<vehicles.length; i) {
-            var ids = [];
-            for (var j=0; i<vehicles.length && j<Math.ceil(vehicles.length/JSVTS.Controller.MAX_THREADS); j++) {
-                var v = vehicles[i++];
-                if (v) {
-                    ids.push(v.Id);
-                }
-            }
-            if (ids.length > 0) {
-                var message = JSON.stringify({
-                    "vehicleIds": ids,
-                    "elapsedMilliseconds": (new Date().getTime() - JSVTS.Controller.startTime),
-                    "map": JSVTS.Controller.map
-                });
-                worker = JSVTS.Controller.workers[Math.floor(i/JSVTS.Controller.MAX_THREADS)];
-                if (worker) {
-                    worker.postMessage(message);
-                }
-            } else {
-                break;
-            }
+        if (JSVTS.Controller.keepMoving) {
+            requestAnimationFrame(JSVTS.Controller.Move);
         }
     },
     
@@ -130,6 +92,13 @@ JSVTS.Controller = {
         // var jsonObj = JSON.parse(input);
         var jsonObj = jsonMap;
         JSVTS.Controller.map=new TxtToMapParser().ParseMapJson(jsonObj.map);
+        for (var key in JSVTS.Controller.map._segments) {
+            var ss = JSVTS.Controller.map._segments[key];
+            for (var i in ss) {
+                var segment = ss[i];
+                JSVTS.Controller.plotter.scene.add(segment.mesh);
+            }
+        }
         JSVTS.Controller.plotter.render();
     },
     
@@ -229,18 +198,16 @@ JSVTS.Controller = {
         if (segments && segments.length > 0) {
             segments.forEach(function (segment) {
                 if (segment.config.isInlet) {
-                    var vehicle=new JSVTS.Vehicle({
-                        "x": segment.config.start.x,
-                        "y": segment.config.start.y,
-                        "z": segment.config.start.z
-                    });
-                    vehicle.SegmentId = segment.Id;
+                    var vehicle=new JSVTS.Vehicle();
+                    vehicle = segment.attachVehicle(vehicle);
                     JSVTS.Controller.map.AddVehicle(vehicle);
+                    JSVTS.Controller.plotter.scene.add(vehicle.mesh);
                 }
             });
         } else {
             var vehicle = new JSVTS.Vehicle();
             JSVTS.Controller.map.AddVehicle(vehicle);
+            JSVTS.Controller.plotter.scene.add(vehicle.mesh);
         }
 
         JSVTS.Controller.plotter.render();

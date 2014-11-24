@@ -1,5 +1,5 @@
 var JSVTS = JSVTS || {};
-JSVTS.Loader = {	
+JSVTS = {	
 	injectJs: function (script, callback) {
 		var s = document.createElement('script');
 		s.setAttribute('type', 'text/javascript');
@@ -10,19 +10,22 @@ JSVTS.Loader = {
 	load: function (scriptArray, callback) {
 		if (scriptArray && scriptArray.length > 0) {
 			var script = scriptArray.shift();
-			JSVTS.Loader.injectJs(script, function () { JSVTS.Loader.load(scriptArray, callback); });
+			JSVTS.injectJs(script, function () { JSVTS.load(scriptArray, callback); });
 		} else if (callback) {
             callback();
         }
 	}
 };
 
-JSVTS.Loader.load([
+JSVTS.load([
     /** external libs **/
     "ext/threejs-69.min.js",
     "ext/OrbitControls.js",
+    "ext/stats.min.js",
+    /** main controllers **/
     "js/controller.js",
     "js/graphmap.js",
+    "js/mover.js",
     "js/objects/segment.js",
     "TrafficFlowControl.js",
     "StopLight.js",

@@ -29,49 +29,45 @@
  **********************************************************************/
 var JSVTS = JSVTS || {};
 JSVTS.SEG_ID_COUNT = 0;
-JSVTS.SEG_OPTIONS = {
-    start: THREE.Vector3(-10,0,0),
-    end: THREE.Vector3(10,0,0),
-    isInlet: false,
-    name: '',
-    speedLimit: 30, // Km/h
+JSVTS.SEG_OPTIONS = function () {
+    var self = {
+        start: THREE.Vector3(-10,0,0),
+        end: THREE.Vector3(10,0,0),
+        isInlet: false,
+        name: '',
+        speedLimit: 30, // Km/h
+    };
+    return self;
 };
 JSVTS.Segment = function(options){
-    this.Id=null;
-    this.config = JSVTS.SEG_OPTIONS;
+    this.id=null;
+    this.config = JSVTS.SEG_OPTIONS();
     this.LaneChangeLines=[];
+    this.mesh = null;
+    this.heading = null;
 
     this.Initialize=function(options) {
-        this.Id = JSVTS.SEG_ID_COUNT++;
-        for (var optionKey in this.config) { 
-            this.config[optionKey] = options[optionKey];
-        }
+        this.id = JSVTS.SEG_ID_COUNT++;
+        for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
         this.generateMesh();
 
         // build the "tendrils" that allow for lane changes
         // this.GenerateLaneChangeLines();
     }
     
-    this.AttachVehicle=function(vehicle) {
+    this.attachVehicle=function(vehicle) {
         // set the vehicle's heading
-        vehicle.Heading = this.GetHeading();
-        vehicle.DesiredVelocity = this.SpeedLimit;
-        vehicle.Location = this.Start;
-        vehicle.SegmentId = this.Id;
+        vehicle.config.heading = this.heading;
+        vehicle.config.desiredVelocity = this.config.speedLimit;
+        vehicle.config.location = new THREE.Vector3().copy(this.config.start);
+        vehicle.segmentId = this.id;
+        vehicle.generateMesh();
 
         return vehicle;
     }
 
     this.GetHeading=function(){
-        var heading=0;
-        if(this.Start!=null && this.End!=null){
-            var y=(this.End.Y-this.Start.Y);
-            var x=(this.End.X-this.Start.X);
-            var radians=Math.atan2(y,x);
-            heading=(radians*(180/Math.PI));
-        }
-        
-        return heading;
+        this.ray;
     }
 
     this.GetStopLights=function() {
@@ -119,9 +115,16 @@ JSVTS.Segment = function(options){
             this.config.end
         );
 
-        var line = new THREE.Line( geometry, material );
+        var line = new THREE.Line(geometry, material);
         this.mesh = line;
-        JSVTS.Controller.plotter.scene.add(this.mesh);
+        var heading=0;
+        var y=(this.config.end.y-this.config.start.y);
+        var x=(this.config.end.x-this.config.start.x);
+        var radians=Math.atan2(y,x);
+        
+        this.heading = radians;
+        // var heading = new THREE.Vector3().subVectors(this.config.end, this.config.start).normalize();
+        // this.ray = new THREE.Ray(new THREE.Vector3().copy(this.config.start), heading);
     }
 
     this.Initialize(options);

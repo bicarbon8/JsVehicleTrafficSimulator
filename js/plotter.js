@@ -36,6 +36,7 @@ JSVTS.Plotter = function (){
     self.scene = null;
     self.camera = null;
     self.controls = null;
+    self.stats = null;
 
     self.init = function() {
         var width = JSVTS.Controller.docWidth;
@@ -52,7 +53,8 @@ JSVTS.Plotter = function (){
             FAR); 
         self.scene = new THREE.Scene();
         self.scene.add(self.camera);
-        self.camera.position.z = 100;
+        self.camera.position.z = 500;
+        self.camera.position.x = 500;
         self.camera.lookAt(self.scene.position);
         self.controls = new THREE.OrbitControls(self.camera);
         self.controls.damping = 0.2;
@@ -64,11 +66,16 @@ JSVTS.Plotter = function (){
         pointLight.position.z = 130;
         self.scene.add(pointLight);
         document.querySelector('body').appendChild(self.renderer.domElement);
+        self.stats = new Stats();
+        self.stats.domElement.style.position = 'absolute';
+        self.stats.domElement.style.top = '0px';
+        document.querySelector('body').appendChild(self.stats.domElement);
         self.renderer.render(self.scene, self.camera);
     };
 
     self.render = function() {
         self.renderer.render(self.scene, self.camera);
+        self.stats.update();
     };
 
     self.Clear=function(elementId){
