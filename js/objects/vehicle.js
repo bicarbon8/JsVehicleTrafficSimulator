@@ -113,10 +113,9 @@ JSVTS.Vehicle = function(options){
         if (!self.mesh) {
             // z coordinate used for vertical height
             var geometry = new THREE.BoxGeometry(self.config.width, self.config.length, self.config.height);
-            var material = new THREE.LineBasicMaterial({
-                color: 0xff0000,
-                linewidth: 0.25
-                // wireframe: true
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                wireframe: true
             });
             mesh = new THREE.Mesh(geometry, material);
             self.mesh = mesh;

@@ -72,7 +72,7 @@ var jsonMap = {
                     "y":0,
                     "z":106
                 },
-                "speedlimit":60,
+                "speedlimit":20,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false
             },
@@ -147,7 +147,7 @@ var jsonMap = {
                     "y":0,
                     "z":100
                 },
-                "speedlimit":60,
+                "speedlimit":20,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false
             },

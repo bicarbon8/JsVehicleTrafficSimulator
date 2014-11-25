@@ -64,7 +64,7 @@ JSVTS.Mover = {
                             // move to segment (pick randomly)
                             var randIndex = Math.floor((Math.random()*nextSegments.length));
                             var nextSeg = nextSegments[randIndex];
-                            v = nextSeg.attachVehicle(v);
+                            nextSeg.attachVehicle(v);
 
                             var oldLength = length;
                             length = nextSeg.getLength();
@@ -79,9 +79,12 @@ JSVTS.Mover = {
                     } else {
                         t = distTraveled / length;
                     }
-                    // set the vehicle position
-                    var pt = seg.getPoint(t);
-                    v.updateLocation(pt);
+
+                    if (seg && v) {
+                        // set the vehicle position
+                        var pt = seg.getPoint(t);
+                        v.updateLocation(pt);
+                    }
                         
                     // var offset=JSVTS.Mover.GetXYFromDistHeading(distTraveled,v.config.heading);
                     // var nextPoint=new THREE.Vector3(v.config.location.x+offset.x,v.config.location.y+offset.y,v.config.z+offset.z);
@@ -176,9 +179,11 @@ JSVTS.Mover = {
                         if(v.config.desiredVelocity-v.velocity<0.1){
                             // close enough so just set to value
                             v.velocity=v.config.desiredVelocity;
+                            v.mesh.material.color.setHex(0xffffff);
                         } else{
                             // accelerate
                             v.velocity+=(3.5*elapsedSeconds);
+                            v.mesh.material.color.setHex(0x66ff66);
                         }
                     }
                     if(v.velocity>v.config.desiredVelocity){
@@ -186,14 +191,17 @@ JSVTS.Mover = {
                         if(v.velocity-v.config.desiredVelocity<0.1){
                             // close enough so just set to value
                             v.velocity=v.config.desiredVelocity;
+                            v.mesh.material.color.setHex(0xffffff);
                         } else{
                             // deccelerate
                             v.velocity-=(3.5*elapsedSeconds);
+                            v.mesh.material.color.setHex(0xff0000);
                         }
                         
                         // prevent going backwards
                         if(v.velocity<0){
                             v.velocity=0.44704;
+                            v.mesh.material.color.setHex(0x66ff66);
                         }
                     }
                 }
