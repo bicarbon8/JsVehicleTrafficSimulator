@@ -30,7 +30,8 @@ JSVTS.load([
     "js/objects/vehicle.js",
     "js/plotter.js",
     "TxtToMapParser.js",
-    "examples/maps/sample.js"
+    // "examples/maps/sample.js"
+    "examples/maps/jsonMap.js"
 ], function () {
     JSVTS.Controller.init();
 });

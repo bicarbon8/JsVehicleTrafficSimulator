@@ -49,13 +49,13 @@ JSVTS.Vehicle = function(options){
     self.changeLaneTime = 0;
     self.segmentId = undefined;
     self.mesh = undefined;
-    self.view = undefined;
     self.velocity = 0; // Km/h
+    self.previousLocation = undefined;
 
     self.init=function(options) {
         self.id = JSVTS.VEH_ID_COUNT++;
         for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
-        self.generateMesh();
+        self.updateLocation();
     };
 
     self.copyFrom = function (vehicle) {
@@ -67,15 +67,6 @@ JSVTS.Vehicle = function(options){
             self.ElapsedMs=vehicle.ElapsedMs;
             self.mesh=vehicle.mesh;
         }
-    };
-
-    self.intersectsPoint=function(point){
-        var intersects=false;
-        var rect=self.GetBoundingBox();
-        if(rect.ContainsPoint(point)){
-            intersects=true;
-        }
-        return intersects;
     };
 
     self.getViewArea=function(){
@@ -111,43 +102,50 @@ JSVTS.Vehicle = function(options){
     self.getLookAheadDistance=function() {
         if(self.velocity>=4.4704){
             // distance is one car length per 16.1 kilometers per hour
-            return (self.config.width*(self.velocity/16.1)+(self.config.width/2));
+            return (self.config.length*(self.velocity/16.1)+(self.config.length/2));
         } else{
             // or slightly more than half a car length if going really slow
-            return self.config.width+(self.config.width/2);
+            return self.config.length+(self.config.length/2);
         }
     };
 
     self.generateMesh = function() {
         if (!self.mesh) {
             // z coordinate used for vertical height
-            var geometry = new THREE.BoxGeometry(self.config.width, self.config.height, self.config.length);
-            var material = new THREE.MeshBasicMaterial({
+            var geometry = new THREE.BoxGeometry(self.config.width, self.config.length, self.config.height);
+            var material = new THREE.LineBasicMaterial({
                 color: 0xff0000,
-                wireframe: true
+                linewidth: 0.25
+                // wireframe: true
             });
             mesh = new THREE.Mesh(geometry, material);
             self.mesh = mesh;
         }
+    };
 
+    self.offsetBy = function(offset) {
+        var pos = THREE.Vector3(
+            self.config.location.x + offset.x, 
+            self.config.location.y + offset.y,
+            self.config.location.z + offset.z);
+        self.updateLocation(pos);
+    }
+
+    self.updateLocation = function(newLocation) {
+        if (newLocation) {
+            self.previousLocation = self.config.location;
+            self.config.location.copy(newLocation);
+        }
+        self.generateMesh(); // generates if doesn't already exist
         // move to self.config.location and rotate to point at heading
-        self.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.location.x, self.config.location.y, self.config.location.z));
-        var radians = self.config.heading - self.mesh.rotation.y;
-        var degrees = radians*(180/Math.PI);
-        if (degrees < -1 || degrees > 1) {
-            self.mesh.rotateOnAxis(new THREE.Vector3(0,1,0).normalize(), radians); // y-axis rotation
-        }        
+        // self.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.location.x, self.config.location.y, self.config.location.z));
+        self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
 
         // indicate that we've updated
         self.mesh.geometry.dynamic = true;
         self.mesh.geometry.verticesNeedUpdate = true;
         self.mesh.geometry.normalsNeedUpdate = true;
     };
-
-    self.updateLocation = function(newLocation) {
-        self.config.location = newLocation;
-        self.generateMesh();
-    }
 
     // configure this object if data was passed in
     self.init(options);

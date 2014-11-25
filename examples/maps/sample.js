@@ -39,7 +39,7 @@ var jsonMap = {
                 },
                 "end":{
                     "x":1000,
-                    "y":0,
+                    "y":1000,
                     "z":1000
                 },
                 "speedlimit":60,

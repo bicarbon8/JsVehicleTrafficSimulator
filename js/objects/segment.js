@@ -40,92 +40,73 @@ JSVTS.SEG_OPTIONS = function () {
     return self;
 };
 JSVTS.Segment = function(options){
-    this.id=null;
-    this.config = JSVTS.SEG_OPTIONS();
-    this.LaneChangeLines=[];
-    this.mesh = null;
-    this.heading = null;
+    var self = this;
+    self.id=null;
+    self.config = JSVTS.SEG_OPTIONS();
+    self.LaneChangeLines=[];
+    self.mesh = null;
+    self.spline = null; // used for directionality
+    self.tangent = null;
+    self.axis = null;
+    self.radians = null;
 
-    this.Initialize=function(options) {
-        this.id = JSVTS.SEG_ID_COUNT++;
-        for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
-        this.generateMesh();
+    self.Initialize=function(options) {
+        self.id = JSVTS.SEG_ID_COUNT++;
+        for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
+        self.generateMesh();
 
         // build the "tendrils" that allow for lane changes
-        // this.GenerateLaneChangeLines();
-    }
+        // self.GenerateLaneChangeLines();
+    };
     
-    this.attachVehicle=function(vehicle) {
-        // set the vehicle's heading
-        vehicle.config.heading = this.heading;
-        vehicle.config.desiredVelocity = this.config.speedLimit;
-        vehicle.config.location = new THREE.Vector3().copy(this.config.start);
-        vehicle.segmentId = this.id;
-        vehicle.generateMesh();
+    self.attachVehicle=function(vehicle) {
+        // set reference data
+        vehicle.config.desiredVelocity = self.config.speedLimit;
+        vehicle.segmentId = self.id;
 
-        return vehicle;
-    }
-
-    this.GetHeading=function(){
-        this.ray;
-    }
-
-    this.GetStopLights=function() {
-        return this._stopLights;
-    }
-
-    this.AddStoplight=function(stoplight) {
-        this._stopLights.push(stoplight);
-    }
-
-    this.GenerateLaneChangeLines=function() {
-        var distance = 5; // separate lines by this much distance of segment
-        var length = this.GetLength();
-        var heading = this.Heading();
-        var alternator = -1;
-
-        for (var i=0; i<length; i+=distance) {
-            var x1=Math.cos(heading*(Math.PI/180))*i;
-            var y1=Math.sin(heading*(Math.PI/180))*i;
-            var x2=Math.cos(heading*(Math.PI/180))*(i+(distance*2));
-            var y2=Math.sin(heading*(Math.PI/180))*(i+(distance*2));
-            var p1 = new Point(this.Start.X,this.Start.Y);
-            p1.MoveBy(new Point(x1,y1));
-            var p2 = new Point(this.Start.X,this.Start.Y);
-            p2.MoveBy(new Point(x2,y2));
-            
-            var line = new Line(p1, p2);
-            // rotate to 90 and -90 alternating each step
-            line.Rotate((90*alternator), p1);
-            alternator*=-1; // reverse polarity
-
-            this.LaneChangeLines.push(line);
+        // set the vehicle's position and heading
+        vehicle.updateLocation(new THREE.Vector3().copy(self.config.start));
+        
+        // get the tangent to the curve
+        if (!self.tangent) {
+            self.tangent = self.spline.getTangent(0).normalize();
+            self.axis = new THREE.Vector3();
+            self.axis.crossVectors(JSVTS.Controller.up, self.tangent).normalize();
+            // calcluate the angle between the up vector and the tangent
+            self.radians = Math.acos(JSVTS.Controller.up.dot(self.tangent));
         }
+            
+        // set the quaternion
+        vehicle.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
     };
 
-    this.generateMesh = function () {
+    self.GetStopLights=function() {
+        return self._stopLights;
+    };
+
+    self.AddStoplight=function(stoplight) {
+        self._stopLights.push(stoplight);
+    };
+
+    self.generateMesh = function () {
+        self.spline = new THREE.SplineCurve3([
+            self.config.start,
+            self.config.end
+        ]);
+
         var material = new THREE.LineBasicMaterial({
-            color: 0x0000ff,
-            wireframe: true
+            color: 0xffffff,
         });
 
         var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            this.config.start,
-            this.config.end
-        );
-
+        geometry.vertices = self.spline.getPoints(2);
         var line = new THREE.Line(geometry, material);
-        this.mesh = line;
-        var heading=0;
-        var y=(this.config.end.z-this.config.start.z);
-        var x=(this.config.end.x-this.config.start.x);
-        var radians=Math.atan2(y,x);
-        
-        this.heading = radians;
-        // var heading = new THREE.Vector3().subVectors(this.config.end, this.config.start).normalize();
-        // this.ray = new THREE.Ray(new THREE.Vector3().copy(this.config.start), heading);
+        self.mesh = line;
+    };
+
+    self.getLength = function () {
+        return self.spline.getLength(0);
     }
 
-    this.Initialize(options);
+    self.Initialize(options);
 }

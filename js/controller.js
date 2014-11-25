@@ -10,9 +10,9 @@ JSVTS.Controller = {
     startTime     : 0,
     workers       : [],
     MAX_THREADS   : 1,
+    up            : null,
 
     init: function () {
-        JSVTS.Controller.destroy();
         JSVTS.Controller.InitPageElements();
         JSVTS.Controller.InitObjects();
     },
@@ -31,6 +31,7 @@ JSVTS.Controller = {
     },
     
     InitObjects: function () {
+        JSVTS.Controller.up = new THREE.Vector3(0, 1, 0);
         JSVTS.Controller.map = new JSVTS.Map();
         JSVTS.Controller.plotter = new JSVTS.Plotter('viewport');
         JSVTS.Controller.render();
@@ -39,8 +40,8 @@ JSVTS.Controller = {
     handleKeypress: function(ev) {
         // console.log(ev.charCode);
         switch (ev.charCode) {
-            case 'd'.charCodeAt(0):
-                JSVTS.Controller.toggleDebugInfo();
+            case 'x'.charCodeAt(0):
+                JSVTS.Controller.reset();
                 break;
             case 's'.charCodeAt(0):
                 JSVTS.Controller.ToggleSimulationState();
@@ -56,13 +57,14 @@ JSVTS.Controller = {
         }
     },
 
-    destroy: function () {
+    reset: function () {
         var canvas = document.querySelector('canvas');
         if (canvas) {
             document.querySelector('body').removeChild(canvas);
         }
         JSVTS.Controller.plotter = null;
         JSVTS.Controller.map = null;
+        JSVTS.Controller.init();
     },
 
     render: function () {
@@ -79,7 +81,7 @@ JSVTS.Controller = {
     },
     
     Move: function () {
-        JSVTS.Mover.move(2, JSVTS.Controller.map);
+        JSVTS.Mover.move(250, JSVTS.Controller.map);
         JSVTS.Controller.render();
 
         if (JSVTS.Controller.keepMoving) {
@@ -128,6 +130,7 @@ JSVTS.Controller = {
     
     AddStopLight: function (){
         var foundRoad=false;
+        var foundLane=false;
         for(var i=0;i<map.Roads.length;i++){
             var roadName=document.getElementById("tbox_RoadName").value;
             if(roadName==map.Roads[i].Name){
@@ -199,7 +202,7 @@ JSVTS.Controller = {
             segments.forEach(function (segment) {
                 if (segment.config.isInlet) {
                     var vehicle=new JSVTS.Vehicle();
-                    vehicle = segment.attachVehicle(vehicle);
+                    segment.attachVehicle(vehicle);
                     JSVTS.Controller.map.AddVehicle(vehicle);
                     JSVTS.Controller.plotter.scene.add(vehicle.mesh);
                 }
