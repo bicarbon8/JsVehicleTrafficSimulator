@@ -73,7 +73,7 @@ JSVTS.Mover = {
                         } else{
                             // remove v from the Simulation
                             delete JSVTS.Mover.Map._vehicles[v.Id];
-                            JSVTS.Plotter.scene.remove(v.mesh);
+                            JSVTS.Controller.plotter.scene.remove(v.mesh);
                             v = null;
                         }
                     } else {
@@ -86,46 +86,41 @@ JSVTS.Mover = {
                         v.updateLocation(pt);
                     }
                         
-                    // var offset=JSVTS.Mover.GetXYFromDistHeading(distTraveled,v.config.heading);
-                    // var nextPoint=new THREE.Vector3(v.config.location.x+offset.x,v.config.location.y+offset.y,v.config.z+offset.z);
-                    // var bypassLaneCompare = false;
+                    var bypassLaneCompare = false;
 
-                    // // check for vehicles in range
-                    // if (JSVTS.Mover.ShouldStopForVehicles(v,segment)) {
-                    //     // check for alternate lanes to move to
-                    //     var currentSegment = segment;
-                    //     var availableLane = JSVTS.Mover.AvailableLane(v,currentSegment);
+                    // check for vehicles in range
+                    if (JSVTS.Mover.ShouldStopForVehicles(v,segment)) {
+                        // check for alternate lanes to move to
+                        // var currentSegment = segment;
+                        // var availableLane = JSVTS.Mover.AvailableLane(v,currentSegment);
                         
-                    //     if (availableLane) { // TODO: driver decides to change lanes or not
-                    //         v.changingLanes = true;
-                    //         bypassLaneCompare = true; // first time through
+                        // if (availableLane) { // TODO: driver decides to change lanes or not
+                        //     v.changingLanes = true;
+                        //     bypassLaneCompare = true; // first time through
 
-                    //         // set vehicle's heading towards new lane
-                    //         v.config.heading = JSVTS.Mover.GetHeadingToNewLane(v,availableLane);
+                        //     // set vehicle's heading towards new lane
+                        //     v.config.heading = JSVTS.Mover.GetHeadingToNewLane(v,availableLane);
 
-                    //         // switch ownership to new lane
-                    //         v.segmentId = availableLane.Id;
-                    //     }
+                        //     // switch ownership to new lane
+                        //     v.segmentId = availableLane.Id;
+                        // }
 
-                    //     // begin stopping for Vehicles (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
-                    //     v.velocity-=(14*elapsedSeconds);
-                    //     IsStopping=true;
-                    // } else if (JSVTS.Mover.ShouldStopForLight(v,segment)) { // and then check for traffic lights in range
-                    //     // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
-                    //     v.velocity-=(14*elapsedSeconds);
-                    //     IsStopping=true;
-                    // } else { // and finally check for cornering in range
-                    //     var headingDiff = JSVTS.Mover.ShouldSlowDown(v,segment);
-                    //     if (headingDiff !== 0) {
-                    //         var corneringSpeed = JSVTS.Mover.CorneringSpeedCalculator(headingDiff);
+                        // // begin stopping for Vehicles (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
+                        IsStopping=true;
+                    } else if (JSVTS.Mover.ShouldStopForLight(v,segment)) { // and then check for traffic lights in range
+                        // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
+                        IsStopping=true;
+                    } else { // and finally check for cornering in range
+                        var headingDiff = JSVTS.Mover.ShouldSlowDown(v,segment);
+                        if (headingDiff !== 0) {
+                            var corneringSpeed = JSVTS.Mover.CorneringSpeedCalculator(headingDiff);
                         
-                    //         // begin slowing down (-15ft/s^2); 60mph (88f/s) takes 140ft to stop, but don't fully stop
-                    //         if (v.velocity > (v.config.desiredVelocity*corneringSpeed)) {
-                    //             v.velocity-=(14*elapsedSeconds);
-                    //             IsStopping=true;
-                    //         }
-                    //     }
-                    // }
+                            // begin slowing down (-15ft/s^2); 60mph (88f/s) takes 140ft to stop, but don't fully stop
+                            if (v.velocity > (v.config.desiredVelocity*corneringSpeed)) {
+                                IsStopping=true;
+                            }
+                        }
+                    }
 
                     // if (v.changingLanes) {
                     //     // change our offset to move towards new lane
@@ -172,9 +167,9 @@ JSVTS.Mover = {
 
                     // v.updateLocation(new THREE.Vector3(nextPoint.x, nextPoint.y, nextPoint.z));
                 }
-                if(v && !IsStopping){
+                if(v){
                     // speed up or slow down
-                    if(v.velocity<v.config.desiredVelocity){
+                    if(v.velocity<v.config.desiredVelocity && !IsStopping){
                         // speed up: avg. rate of acceleration is 3.5 m/s^2
                         if(v.config.desiredVelocity-v.velocity<0.1){
                             // close enough so just set to value
@@ -186,9 +181,9 @@ JSVTS.Mover = {
                             v.mesh.material.color.setHex(0x66ff66);
                         }
                     }
-                    if(v.velocity>v.config.desiredVelocity){
+                    if(v.velocity>v.config.desiredVelocity || IsStopping){
                         // slow down: avg. rate of decceleration is 3.5 m/s^2
-                        if(v.velocity-v.config.desiredVelocity<0.1){
+                        if(v.velocity-v.config.desiredVelocity<0.1 && !IsStopping){
                             // close enough so just set to value
                             v.velocity=v.config.desiredVelocity;
                             v.mesh.material.color.setHex(0xffffff);
@@ -323,9 +318,13 @@ JSVTS.Mover = {
         }
     },
     ShouldStopForVehicles: function(vehicle,segment){
-        var distance = vehicle.getLookAheadDistance();
-        if (JSVTS.Mover.Map.AreVehiclesWithinDistance(vehicle,segment,distance)) {
-            return true;
+        if (vehicle && segment) {
+            var distance = vehicle.getLookAheadDistance();
+            if (JSVTS.Mover.Map.AreVehiclesWithinDistance(vehicle,segment,distance)) {
+                return true;
+            }
+        }else {
+            console.log("vehicle: "+vehicle+"; segment: "+segment);
         }
         
         return false;
@@ -352,6 +351,6 @@ JSVTS.Mover = {
         return backRay.isIntersectionSphere(sphere);
     },
     GetDistanceBetweenTwoPoints: function(p1,p2){
-        return THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
+        return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
     }
 }

@@ -60,12 +60,13 @@ JSVTS.Vehicle = function(options){
 
     self.copyFrom = function (vehicle) {
         if (vehicle) {
-            self.Initialize(vehicle.config);
-            self.id=vehicle.id;
-            self.desiredVelocity=vehicle.desiredVelocity;
-            self.segmentId=vehicle.segmentId;
-            self.ElapsedMs=vehicle.ElapsedMs;
-            self.mesh=vehicle.mesh;
+            self.init(vehicle.config);
+            for (var property in vehicle) {
+                if (typeof vehicle[property] !== "function" && typeof vehicle[property] !== "object") {
+                    self[property] = vehicle[property];
+                }
+            }
+            return self;
         }
     };
 
