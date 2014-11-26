@@ -68,17 +68,17 @@ JSVTS.Map = function(scale) {
 		}
 
 		return segments;
-	}
+	};
 
 	self.GetSegmentById=function (id) {
 		return self.GetSegments().filter(function (el) {
 			return el.id === id;
 		})[0];
-	}
+	};
 
 	self.GetSegmentsStartingAt=function(point) {
 		return self._segments[JSON.stringify(point)] || [];
-	}
+	};
 
 	self.GetSimilarSegmentsInRoad=function(currentSegment) {
 		var results = [];
@@ -87,7 +87,7 @@ JSVTS.Map = function(scale) {
 		var segments = self.GetSegments();
 		for (var i=0; i<segments.length; i++) {
 			var segment = segments[i];
-			if (segment.Id != currentSegment.Id && segment.RoadName === currentSegment.RoadName && segment.Heading() == currentSegment.Heading()) {
+			if (segment.id !== currentSegment.id) {
 				// ensure segment is within specified radius
 				var inRange = false;
 				var currLines = currentSegment.LaneChangeLines;
@@ -104,7 +104,7 @@ JSVTS.Map = function(scale) {
 		}
 
 		return results;
-	}
+	};
 
 	self.GetVehicles=function() {
 		var vehicles = [];
@@ -115,11 +115,11 @@ JSVTS.Map = function(scale) {
 		}
 
 		return vehicles;
-	}
+	};
 
 	self.GetVehiclesInSegment=function(id) {
 		return self.GetVehicles().filter(function (el) {
-        	return el.SegmentId === id;
+            return el.segmentId === id;
         });
 	};
 
@@ -131,65 +131,6 @@ JSVTS.Map = function(scale) {
 	};
 
 	/**
-     * this function will return true if any vehicles on this segment
-     * and any subsegments recursively down to the terminating 
-     * nodes are within the passed in distance to the passed in
-     * currentLoc
-     * @return {boolean} true if at least one vehicle found within range
-     * otherwise false
-     */
-    self.AreVehiclesWithinDistance=function(vehicle, segment, distance) {
-        if (distance > 0) {
-            var currentLoc = vehicle.config.location;
-            var previousLoc = vehicle.previousLocation;
-            // get the distance from our current location to the end of the segment
-            var lineSeg = new THREE.Line3(
-                new THREE.Vector3(currentLoc.x,currentLoc.y,currentLoc.z), 
-                new THREE.Vector3(segment.config.end.x,segment.config.end.y,segment.config.end.z)
-            );
-            
-            // if the distance is greater than the one passed in only check vehicles for this segment
-            var segLength = lineSeg.distance();
-
-            // get vehicles in the passed in segment first
-            var vehicles = self.GetVehiclesInSegment(vehicle.SegmentId);
-            
-            // loop through all the vehicles in this segment and compare the ones within range
-            for (var i in vehicles) {
-                var v = vehicles[i];
-                if (v.config.location.x !== currentLoc.x && v.config.location.y !== currentLoc.y && v.config.location.z !== currentLoc.z) { // avoid current car comparison
-                    // ensure vehicle is within range (fast to check)
-                    var distToV = new THREE.Line3(new THREE.Vector3().copy(currentLoc),new THREE.Vector3().copy(v.config.location)).distance();
-                    if (distToV <= distance) {
-                        // ensure vehicle is ahead and not behind (use Ray facing backwards and if intersects ignore)
-                        var backRay = THREE.Ray(new THREE.Vector3().copy(currentLoc), new THREE.Vector3().copy(previousLoc).normalize());
-                        if (!backRay.isIntersectionBox(v.mesh.getBoundingBox)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            
-            // move on to viewing vehicles in next segment if we see past the end of this segment
-            if (segLength < distance) {
-                // otherwise move to the next segment(s) reducing the distance by the amount from currentLoc
-                // to segment end
-                var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
-                tmpVehicle.config.location = segment.config.end;
-                var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
-                if (nextSegments && nextSegments.length) {
-                    for (var i in nextSegments) {
-                        tmpVehicle.segmentId = nextSegments[i].id;
-                        self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], distance-segLength);
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * this function will return all the stoplights on this segment
      * and any subsegments recursively down to the terminating 
      * nodes
@@ -240,13 +181,76 @@ JSVTS.Map = function(scale) {
 	    }
 
         return stopLights;
-    }
+    };
 
-    self.ContainsStartPoint=function(point){
-        if (self.GetSegmentsStartingAt(point) > 0) {
-        	return true;
+    /**
+     * this function will return true if any vehicles on this segment
+     * and any subsegments recursively down to the terminating 
+     * nodes are within the passed in distance to the passed in
+     * currentLoc
+     * @return {boolean} true if at least one vehicle found within range
+     * otherwise false
+     */
+    self.AreVehiclesWithinDistance = function(vehicle, segment, distance) {
+        if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {
+            var currentLoc = new THREE.Vector3().copy(vehicle.config.location);
+            
+            // get vehicles in the passed in segment first
+            var vehicles = self.GetVehiclesInSegment(vehicle.segmentId);
+            if (vehicles && vehicles.length > 0) {
+                // get all vehicle meshes except the passed in one
+                var boxes = vehicles.map(function (v) {
+                    if (v.id !== vehicle.id) {
+                        var box = new THREE.Box3().setFromObject(v.mesh);
+                        return box;
+                    }
+                }).filter(function (v) {
+                    return v;
+                });
+                for (var key in boxes) {
+                    var box = boxes[key];
+                    var direction = new THREE.Vector3().copy(segment.config.end).normalize();
+                    var ray = new THREE.Ray(currentLoc, direction);
+                    if (ray.isIntersectionBox(box)) {
+                        var dist = new THREE.Line3(
+                            new THREE.Vector3().copy(currentLoc),
+                            new THREE.Vector3().copy(box.min)
+                        ).distance();
+                        if (dist <= distance) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // get the distance from our current location to the end of the segment
+            var segLength = new THREE.Line3(
+                new THREE.Vector3(currentLoc.x,currentLoc.y,currentLoc.z),
+                new THREE.Vector3(segment.config.end.x,segment.config.end.y,segment.config.end.z)
+            ).distance();
+            // if the distance is greater than the remaining segment length
+            // move on to viewing vehicles in next segment
+            if (segLength < distance) {
+                var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
+                tmpVehicle.config.location = segment.config.end;
+                var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
+                if (nextSegments && nextSegments.length > 0) {
+                    for (var i in nextSegments) {
+                        nextSegments[i].attachVehicle(tmpVehicle);
+                        self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                    }
+                }
+            }
         }
 
         return false;
-    }
-}
+    };
+
+    self.ContainsStartPoint=function(point){
+        if (self.GetSegmentsStartingAt(point) > 0) {
+            return true;
+        }
+
+        return false;
+    };
+};

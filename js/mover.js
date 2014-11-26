@@ -32,7 +32,7 @@ JSVTS.Mover = {
     Map: undefined,
     TotalElapsedTime: 0,
     ChangeLaneDelay: 15000, // don't change lanes for 15 seconds after a change
-    move: function(elapsedMilliseconds, map){
+    move: function(elapsedMilliseconds, map, vehicleIds){
         JSVTS.Mover.Map = map;
         var fulfilled = 0;
         var segments = JSVTS.Mover.Map.GetSegments();
@@ -41,6 +41,14 @@ JSVTS.Mover = {
         for (var m in vehicles) {
             var v = vehicles[m];
             // only move the vehicles we're interested in
+            if (vehicleIds && vehicleIds.length > 0) {
+                var match = vehicleIds.filter(function (el) {
+                    return el.id === v.id;
+                });
+                if (!match) {
+                    break;
+                }
+            }
             var segment = map.GetSegmentById(v.segmentId);
             var speed=v.velocity;
             if(elapsedMilliseconds>0){
@@ -56,7 +64,7 @@ JSVTS.Mover = {
                     var t = 0; // 0 = start, 1 = end, 0.5 = middle
                     if (distTraveled >= length) {
                         // remove vehicle from current segment
-                        v.segmentId = undefined;
+                        v.segmentId = null;
 
                         // if there is a next Segment
                         var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);

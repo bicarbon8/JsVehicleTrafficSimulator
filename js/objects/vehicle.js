@@ -47,10 +47,10 @@ JSVTS.Vehicle = function(options){
     self.config = JSVTS.VEH_OPTIONS();
     self.changingLanes = false;
     self.changeLaneTime = 0;
-    self.segmentId = undefined;
-    self.mesh = undefined;
+    self.segmentId = null;
+    self.mesh = null;
     self.velocity = 0; // Km/h
-    self.previousLocation = undefined;
+    self.previousLocation = null;
 
     self.init=function(options) {
         self.id = JSVTS.VEH_ID_COUNT++;
@@ -101,12 +101,15 @@ JSVTS.Vehicle = function(options){
     };
 
     self.getLookAheadDistance=function() {
-        if(self.velocity>=4.4704){
+        // if(self.velocity>=4.4704){
+        if(self.velocity>=30){
             // distance is one car length per 16.1 kilometers per hour
-            return (self.config.length*(self.velocity/16.1)+(self.config.length/2));
+            // return (self.config.length*(self.velocity/16.1)+(self.config.length/2));
+            return self.velocity*2;
         } else{
             // or slightly more than half a car length if going really slow
-            return self.config.length+(self.config.length/2);
+            // return self.config.length+(self.config.length/2);
+            return self.config.length+(self.velocity/2);
         }
     };
 
@@ -145,6 +148,11 @@ JSVTS.Vehicle = function(options){
         self.mesh.geometry.dynamic = true;
         self.mesh.geometry.verticesNeedUpdate = true;
         self.mesh.geometry.normalsNeedUpdate = true;
+    };
+
+    self.getBoundingBox = function () {
+        self.mesh.geometry.computeBoundingBox();
+        return self.mesh.geometry.boundingBox;
     };
 
     // configure this object if data was passed in
