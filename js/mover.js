@@ -53,6 +53,7 @@ JSVTS.Mover = {
             var speed=v.velocity;
             if(elapsedMilliseconds>0){
                 var IsStopping=false;
+                var stopDistance = null;
                 var elapsedSeconds=(elapsedMilliseconds/1000);
                 var distTraveled=(speed*elapsedSeconds);
                 if(distTraveled>0){
@@ -97,24 +98,10 @@ JSVTS.Mover = {
                     var bypassLaneCompare = false;
 
                     // check for vehicles in range
-                    if (JSVTS.Mover.ShouldStopForVehicles(v,segment)) {
-                        // check for alternate lanes to move to
-                        // var currentSegment = segment;
-                        // var availableLane = JSVTS.Mover.AvailableLane(v,currentSegment);
-                        
-                        // if (availableLane) { // TODO: driver decides to change lanes or not
-                        //     v.changingLanes = true;
-                        //     bypassLaneCompare = true; // first time through
-
-                        //     // set vehicle's heading towards new lane
-                        //     v.config.heading = JSVTS.Mover.GetHeadingToNewLane(v,availableLane);
-
-                        //     // switch ownership to new lane
-                        //     v.segmentId = availableLane.Id;
-                        // }
-
-                        // // begin stopping for Vehicles (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
+                    var result = JSVTS.Mover.ShouldStopForVehicles(v,segment);
+                    if (typeof result === "number") {
                         IsStopping=true;
+                        stopDistance = result;
                     } else if (JSVTS.Mover.ShouldStopForLight(v,segment)) { // and then check for traffic lights in range
                         // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
                         IsStopping=true;
@@ -197,8 +184,16 @@ JSVTS.Mover = {
                             v.mesh.material.color.setHex(0xffffff);
                         } else{
                             // deccelerate
-                            v.velocity-=(3.5*elapsedSeconds);
-                            v.mesh.material.color.setHex(0xff0000);
+                            var lookahead = v.getLookAheadDistance();
+                            if (stopDistance > (lookahead/2)) {
+                                // normal braking pressure
+                                v.velocity-=(3.5*elapsedSeconds);
+                                v.mesh.material.color.setHex(0xff6666);
+                            } else {
+                                // really jam on the brakes
+                                v.velocity-=(7*elapsedSeconds);
+                                v.mesh.material.color.setHex(0xff0000);
+                            }
                         }
                         
                         // prevent going backwards
@@ -328,14 +323,15 @@ JSVTS.Mover = {
     ShouldStopForVehicles: function(vehicle,segment){
         if (vehicle && segment) {
             var distance = vehicle.getLookAheadDistance();
-            if (JSVTS.Mover.Map.AreVehiclesWithinDistance(vehicle,segment,distance)) {
-                return true;
+            var result = JSVTS.Mover.Map.AreVehiclesWithinDistance(vehicle,segment,distance);
+            if (typeof result === "number") {
+                return result;
             }
         }else {
             console.log("vehicle: "+vehicle+"; segment: "+segment);
         }
         
-        return false;
+        return null;
     },
     ShouldStopForLight: function(vehicle,segment) {
         return false;

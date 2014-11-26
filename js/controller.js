@@ -81,7 +81,7 @@ JSVTS.Controller = {
     },
     
     Move: function () {
-        JSVTS.Mover.move(50, JSVTS.Controller.map);
+        JSVTS.Mover.move(25, JSVTS.Controller.map);
         JSVTS.Controller.render();
 
         if (JSVTS.Controller.keepMoving) {

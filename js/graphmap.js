@@ -217,7 +217,7 @@ JSVTS.Map = function(scale) {
                             new THREE.Vector3().copy(box.min)
                         ).distance();
                         if (dist <= distance) {
-                            return true;
+                            return dist;
                         }
                     }
                 }
@@ -237,13 +237,12 @@ JSVTS.Map = function(scale) {
                 if (nextSegments && nextSegments.length > 0) {
                     for (var i in nextSegments) {
                         nextSegments[i].attachVehicle(tmpVehicle);
-                        self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                        return self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
                     }
                 }
             }
-        }
-
-        return false;
+        } 
+        return null; 
     };
 
     self.ContainsStartPoint=function(point){
