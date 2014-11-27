@@ -49,6 +49,7 @@ function TxtToMapParser(){
             var seg = jsonObj[i];
             var start = new THREE.Vector3(seg.start.x,seg.start.y,seg.start.z);
             var end = new THREE.Vector3(seg.end.x,seg.end.y,seg.end.z);
+            var stoplight = this.ParseStopLightsJson(seg.stoplight);
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,
@@ -56,6 +57,9 @@ function TxtToMapParser(){
                 "name": jsonObj[i].roadname,
                 "isInlet": jsonObj[i].isinlet
             });
+            if (stoplight) {
+                segment.attachTrafficFlowControl(stoplight);
+            }
             segments.push(segment);
         }
 
@@ -63,20 +67,21 @@ function TxtToMapParser(){
     }
 
     this.ParseStopLightsJson=function(jsonObj) {
-        var stoplights = [];
-        if (jsonObj && jsonObj.length) {
-            for (var i=0; i<jsonObj.length; i++) {
-                var changeSeconds = jsonObj[i].changeseconds;
-                var startState = jsonObj[i].startstate;
-                var loc = new THREE.Vector3(jsonObj[i].location.x,jsonObj[i].location.y,0);
-                var sl = new StopLight(changeSeconds, startState);
-                sl.Location = loc;
+        var stoplight = null;
+        if (jsonObj) {
+            var changeSeconds = jsonObj.changeseconds;
+            var startState = jsonObj.startstate;
+            var loc = new THREE.Vector3(jsonObj.location.x,jsonObj.location.y,0);
+            var sl = new JSVTS.StopLight({
+                "changeSeconds": changeSeconds, 
+                "startState": startState
+            });
+            sl.Location = loc;
 
-                stoplights.push(sl);
-            }
+            stoplight = sl;
         }
 
-        return stoplights;
+        return stoplight;
     }
 
     this.ParseVehiclesJson=function(jsonObj) {

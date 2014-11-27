@@ -134,53 +134,49 @@ JSVTS.Map = function(scale) {
      * this function will return all the stoplights on this segment
      * and any subsegments recursively down to the terminating 
      * nodes
-     * @return {Array} an array of Vehicle objects
+     * @return true if tfc's are within distance
      */
-    self.GetStopLightsWithinDistance=function(currentLoc, segment, distance) {
-        var stopLights = [];
+    self.AreTfcsWithinDistance = function(vehicle, segment, distance) {
+        if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {
+            var currentLoc = new THREE.Vector3().copy(vehicle.config.location);
+            
+            // get tfc from passed in segment first
+            var tfc = segment.tfc;
+            if (tfc) {
+                var box = new THREE.Box3().setFromObject(tfc.mesh);
 
-        if (distance > 0) {
-	        // get the distance from our current location to the end of the segment
-	        var lineSeg = new THREE.Line3(
-	        	new THREE.Vector3(currentLoc.x,currentLoc.y), 
-	        	new THREE.Vector3(segment.config.end.x,segment.config.end.y)
-	        );
-	        
-	        // if the distance is greater than the one passed in only check stopLights for this segment
-	        var segLength = lineSeg.distance();
-	        
-            // loop through all the stopLights and add the ones within range
-            var lights = segment.GetStopLights();
-            for (var i in lights) {
-                var light = lights[i];
-
-                // ensure light is ahead and not behind vehicle
-                if (lineSeg.containsPoint(light.Location)) {
-	                var distToL = new Line(new Point(currentLoc.X,currentLoc.Y),new Point(light.Location.X,light.Location.Y)).GetLength();
-
-	                if (distToL <= distance) {
-	                    stopLights.push(light);
-	                }
-	            }
+                // check for tfc in front of and close to
+                var direction = new THREE.Vector3().copy(segment.config.end).sub(currentLoc).normalize();
+                var ray = new THREE.Ray(currentLoc, direction);
+                if (ray.isIntersectionBox(box)) {
+                    var dist = new THREE.Line3(
+                        new THREE.Vector3().copy(currentLoc),
+                        new THREE.Vector3().copy(box.min)
+                    ).distance();
+                    if (dist <= distance) {
+                        return tfc.shouldStop();
+                    }
+                }
             }
+            
+            // get the distance from our current location to the end of the segment
+            var segLength = JSVTS.Mover.GetDistanceBetweenTwoPoints(currentLoc, segment.config.end);
+            // if the distance is greater than the remaining segment length
+            // move on to viewing vehicles in next segment
+            if (segLength < distance) {
+                var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
+                tmpVehicle.config.location = segment.config.end;
+                var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
+                if (nextSegments && nextSegments.length > 0) {
+                    for (var i in nextSegments) {
+                        nextSegments[i].attachVehicle(tmpVehicle);
+                        return self.AreTfcsWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                    }
+                }
+            }
+        }
 
-            // move on to viewing lights in next segment if we see past the end of this segment
-	        if (segLength < distance) {
-	            // otherwise move to the next segment(s) reducing the distance by the amount from currentLoc
-	            // to segment end
-	            var nextSegments = self.GetSegmentsStartingAt(segment.config.end);
-	            if (nextSegments && nextSegments.length) {
-		            for (var i in nextSegments) {
-		            	var lights = self.GetStopLightsWithinDistance(segment.config.end, nextSegments[i], distance-segLength);
-		                for (var j in lights) {
-		                	stopLights.push(lights[j]);
-		                }
-		            }
-		        }
-	        }
-	    }
-
-        return stopLights;
+        return false;
     };
 
     /**

@@ -27,67 +27,118 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function StopLight(changeSeconds,startState){
-    this.InheritFrom=TrafficFlowControl;
-    this.InheritFrom();
+var JSVTS = JSVTS || {};
+JSVTS.StopLightState = {
+    GREEN: 0,
+    YELLOW: 1,
+    RED: 2
+};
+JSVTS.STOPLIGHT_OPTIONS = function () {
+    var self = {
+        changeSeconds: 60,
+        startState: JSVTS.StopLightState.GREEN,
+        radius: 1
+    };
+    return self;
+}
+JSVTS.StopLight = function (options) {
+    var self = this;
+    self.inheritFrom = JSVTS.TrafficFlowControl;
+    self.inheritFrom(options);
+    self.mesh = null;
+    self.currentState = null;
 
-    this.Initialize=function(changeSeconds,startState) {
-        this.GreenInterval=changeSeconds;
-        this.YellowInterval=4;
-        this.RedInterval=changeSeconds+this.YellowInterval;
-        this.StartState=startState;
-    }
+    self.init = function (options) {
+        var defaults = JSVTS.STOPLIGHT_OPTIONS();
+        for (var optionKey in defaults) { self.config[optionKey] = defaults[optionKey]; }
+        for (var key in options) { self.config[key] = options[key]; }
+        self.GreenInterval = self.config.changeSeconds;
+        self.YellowInterval = 4;
+        self.RedInterval = self.config.changeSeconds+self.YellowInterval;
+        self.startState = self.config.startState;
+        self.currentState = self.startState;
+    };
 
-    this.Initialize(changeSeconds,startState);
-    
-    this.GetState=function(elapsedSeconds){
-        var state=this.StartState;
+    self.getState = function (elapsedMs) {
+        var elapsedSeconds = elapsedMs/1000;
+        var state = self.startState;
         
-        var remainingSeconds=elapsedSeconds%(this.GreenInterval+this.YellowInterval+
-            this.RedInterval);
+        var remainingSeconds = elapsedSeconds % (self.GreenInterval + self.YellowInterval + self.RedInterval);
         
         switch(state){
-            case new StopLightState().Green:
-                if(remainingSeconds>this.GreenInterval){
-                    if(remainingSeconds>(this.GreenInterval+this.YellowInterval)){
-                        state=new StopLightState().Red;
+            case JSVTS.StopLightState.GREEN:
+                if(remainingSeconds > self.GreenInterval){
+                    if(remainingSeconds > (self.GreenInterval + self.YellowInterval)){
+                        state = JSVTS.StopLightState.RED;
                     } else{
-                        state=new StopLightState().Yellow;
+                        state = JSVTS.StopLightState.YELLOW;
                     }
                 } else{
-                    state=new StopLightState().Green;
+                    state = JSVTS.StopLightState.GREEN;
                 }
                 break;
-            case new StopLightState().Yellow:
-                if(remainingSeconds>this.YellowInterval){
-                    if(remainingSeconds>(this.YellowInterval+this.RedInterval)){
-                        state=new StopLightState().Green;
+            case JSVTS.StopLightState.YELLOW:
+                if(remainingSeconds > self.YellowInterval){
+                    if(remainingSeconds > (self.YellowInterval + self.RedInterval)){
+                        state = JSVTS.StopLightState.GREEN;
                     } else{
-                        state=new StopLightState().Red;
+                        state = JSVTS.StopLightState.RED;
                     }
                 } else{
-                    state=new StopLightState().Yellow;
+                    state = JSVTS.StopLightState.YELLOW;
                 }
                 break;
-            case new StopLightState().Red:
-                if(remainingSeconds>this.RedInterval){
-                    if(remainingSeconds>(this.RedInterval+this.GreenInterval)){
-                        state=new StopLightState().Yellow;
+            case JSVTS.StopLightState.RED:
+                if(remainingSeconds > self.RedInterval){
+                    if(remainingSeconds > (self.RedInterval + self.GreenInterval)){
+                        state = JSVTS.StopLightState.YELLOW;
                     } else{
-                        state=new StopLightState().Green;
+                        state = JSVTS.StopLightState.GREEN;
                     }
                 } else{
-                    state=new StopLightState().Red;
+                    state = JSVTS.StopLightState.RED;
                 }
                 break;
         }
         
         return state;
-    }
-}
+    };
 
-function StopLightState(){
-    this.Green=0;
-    this.Yellow=1;
-    this.Red=2;
+    self.generateMesh = function () {
+        if (!self.mesh) {
+            // z coordinate used for vertical height
+            var geometry = new THREE.SphereGeometry(self.config.radius);
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xffffff
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            self.mesh = mesh;
+        }
+        self.update(0);
+    };
+
+    self.update = function (elapsedMs) {
+        self.currentState = self.getState(elapsedMs);
+        switch (self.currentState) {
+            case JSVTS.StopLightState.GREEN:
+                self.mesh.material.color.setHex(0x00ff00);
+                break;
+            case JSVTS.StopLightState.YELLOW:
+                self.mesh.material.color.setHex(0xffff00);
+                break;
+            case JSVTS.StopLightState.RED:
+                self.mesh.material.color.setHex(0xff0000);
+                break;
+        }
+    };
+
+    self.shouldStop = function() {
+        if (self.currentState === JSVTS.StopLightState.YELLOW || self.currentState === JSVTS.StopLightState.RED) {
+            return true;
+        }
+
+        return false;
+    }
+
+    self.init(options);
 }

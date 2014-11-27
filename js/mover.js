@@ -52,6 +52,9 @@ JSVTS.Mover = {
                 }
             }
             var segment = map.GetSegmentById(v.segmentId);
+            if (segment.tfc) {
+                segment.tfc.update(JSVTS.Mover.TotalElapsedTime);
+            }
             var speed=v.velocity;
             
             var IsStopping=false;
@@ -101,24 +104,26 @@ JSVTS.Mover = {
             }
 
             if (v) {
-                // if (v.crashed) {
-                //     v.velocity = 0;
-                //     if (v.crashCleanupTime) {
-                //         // remove vehicle after
-                //         if (v.crashCleanupTime <= JSVTS.Mover.TotalElapsedTime) {
-                //             // remove v from the Simulation
-                //             JSVTS.Mover.removeVehicle(v);
-                //         }
-                //     } else {
-                //         var rand = Math.random();
-                //         if (rand <= 0.8) {
-                //             v.crashCleanupTime = Math.random() * JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY
-                //         }
-                //         v.crashCleanupTime = Math.random() * (JSVTS.Mover.CRASH_CLEANUP_MAX_DELAY - JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY) + JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
-                //     }
-                // } else {
+                if (v.crashed) {
+                    v.velocity = 0;
+                    if (v.crashCleanupTime) {
+                        // remove vehicle after
+                        if (v.crashCleanupTime <= JSVTS.Mover.TotalElapsedTime) {
+                            // remove v from the Simulation
+                            console.log("Vehicle removed: "+v.id);
+                            JSVTS.Mover.removeVehicle(v);
+                        }
+                    } else {
+                        console.log("Vehicle crashed: "+v.id);
+                        var rand = Math.random();
+                        if (rand <= 0.8) {
+                            v.crashCleanupTime = Math.random() * JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY
+                        }
+                        v.crashCleanupTime = Math.random() * (JSVTS.Mover.CRASH_CLEANUP_MAX_DELAY - JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY) + JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
+                    }
+                } else {
                     v.updateVelocity(elapsedMilliseconds, IsStopping);
-                // }
+                }
             }
         }
             
@@ -256,19 +261,14 @@ JSVTS.Mover = {
         return null;
     },
     ShouldStopForLight: function(vehicle,segment) {
-        return false;
-        // var distance = vehicle.getLookAheadDistance();
-        // var stoplights = JSVTS.Mover.Map.GetStopLightsWithinDistance(vehicle.config.location,segment,distance);
-        // // check for stoplights
-        // for(var i=0;i<stoplights.length;i++){
-        //     var l=stoplights[i];
-        //     if(l.GetState(JSVTS.Mover.TotalElapsedTime/1000)==new StopLightState().yellow || 
-        //         l.GetState(JSVTS.Mover.TotalElapsedTime/1000)==new StopLightState().Red){
-        //         return true;
-        //     }
-        // }
-
-        // return false;
+        if (vehicle && segment) {
+            var distance = vehicle.getLookAheadDistance();
+            return JSVTS.Mover.Map.AreTfcsWithinDistance(vehicle,segment,distance);
+        }else {
+            console.log("vehicle: "+vehicle+"; segment: "+segment);
+        }
+        
+        return null;
     },
     GetDistanceBetweenTwoPoints: function (p1, p2) {
         return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();

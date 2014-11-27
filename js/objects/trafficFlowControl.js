@@ -27,13 +27,41 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function TrafficFlowControl(){
-    this.Id=null;
-    try{
-        this.Id="tfc_"+TFC_ID_COUNT++;
-    } catch(e){
-        this.Id="tfc_"+0;
-    }
-    this.Location=new Point(0,0);
-    this.Lane=null;
+var JSVTS = JSVTS || {};
+JSVTS.TFC_ID_COUNT = 0;
+JSVTS.TFC_OPTIONS = function () {
+    var self = {
+        location: new THREE.Vector3()
+    };
+    return self;
+};
+// abstract base class
+JSVTS.TrafficFlowControl = function (options) {
+    var self = this;
+    self.id = null;
+    self.config = JSVTS.TFC_OPTIONS();
+    self.segmentId = null;
+    self.mesh = null;
+
+    self.init = function (options) {
+        self.id = JSVTS.TFC_ID_COUNT++;
+        for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
+    };
+
+    self.updateLocation = function(newLocation) {
+        if (newLocation) {
+            self.config.location.copy(newLocation);
+        }
+        self.generateMesh(); // generates if doesn't already exist
+        // move to self.config.location and rotate to point at heading
+        // self.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.location.x, self.config.location.y, self.config.location.z));
+        self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
+
+        // indicate that we've updated
+        self.mesh.geometry.dynamic = true;
+        self.mesh.geometry.verticesNeedUpdate = true;
+        self.mesh.geometry.normalsNeedUpdate = true;
+    };
+
+    self.init(options);
 }

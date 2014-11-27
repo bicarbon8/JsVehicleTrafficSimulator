@@ -194,17 +194,15 @@ var jsonMap = {
                 },
                 "speedlimit":35,
                 "roadname":"On Ramp",
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":50,
-                            "y":0,
-                            "z":206
-                        },
-                        "changeseconds":5,
-                        "startstate":0
-                    }
-                ],
+                "stoplight": {
+                    "location":{
+                        "x":50,
+                        "y":0,
+                        "z":206
+                    },
+                    "changeseconds":5,
+                    "startstate":0
+                },
                 "isinlet":true
             },
             {

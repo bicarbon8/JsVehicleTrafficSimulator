@@ -49,6 +49,7 @@ JSVTS.Segment = function(options){
     self.tangent = null;
     self.axis = null;
     self.radians = null;
+    self.tfc = null;
 
     self.init=function(options) {
         self.id = JSVTS.SEG_ID_COUNT++;
@@ -71,12 +72,17 @@ JSVTS.Segment = function(options){
         vehicle.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
     };
 
-    self.GetStopLights=function() {
-        return self._stopLights;
-    };
+    self.attachTrafficFlowControl=function(tfc) {
+        // set reference data
+        tfc.segmentId = self.id;
 
-    self.AddStoplight=function(stoplight) {
-        self._stopLights.push(stoplight);
+        // set the vehicle's position and heading
+        tfc.updateLocation(new THREE.Vector3().copy(self.config.end));
+        
+        // set the quaternion
+        tfc.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
+
+        self.tfc = tfc;
     };
 
     self.generateMesh = function () {

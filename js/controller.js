@@ -99,6 +99,9 @@ JSVTS.Controller = {
             for (var i in ss) {
                 var segment = ss[i];
                 JSVTS.Controller.plotter.scene.add(segment.mesh);
+                if (segment.tfc) {
+                    JSVTS.Controller.plotter.scene.add(segment.tfc.mesh);
+                }
             }
         }
         JSVTS.Controller.plotter.render();

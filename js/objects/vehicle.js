@@ -105,7 +105,7 @@ JSVTS.Vehicle = function(options){
 
     self.getLookAheadDistance = function(cof) {
         var FRICTION = cof || 0.5;
-        var VEHICLE_LENGTH = (self.config.length/2); // start from front bumper
+        var VEHICLE_LENGTH = (self.config.length); // start from front bumper
         var GRAVITY = 9.81;
         var METERS_PER_SEC = self.convertKilometersPerHourToMetersPerSecond(self.velocity);
         var REACTION_DISTANCE = METERS_PER_SEC*self.config.reactionTime;
