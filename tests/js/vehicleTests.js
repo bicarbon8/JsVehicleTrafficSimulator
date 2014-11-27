@@ -8,6 +8,7 @@ var VT = {
             "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js",
             "../js/objects/vehicle.js",
             "../js/objects/segment.js",
+            "../js/mover.js",
             "../js/graphmap.js"
         ], function () {
             JSVTS.Controller = { up: new THREE.Vector3(0,1,0) };
@@ -80,14 +81,13 @@ QUnit.cases([
     });
 QUnit.cases([
         { velocity: 100 },
-        { velocity: 0 },
         { velocity: 9 },
         { velocity: 35 }
     ]).test("vehicle should not detect other vehicle in range behind itself", function (params, assert) {
         var veh = new JSVTS.Vehicle();
         VT.primarySegment.attachVehicle(veh);
         veh.velocity = params.velocity;
-        var xLoc = VT.testVehicles[0].config.location.x+veh.getLookAheadDistance()-veh.config.length;
+        var xLoc = VT.testVehicles[0].config.location.x+veh.getLookAheadDistance()-(veh.config.length/2);
         veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.testVehicles[0] and in range, but should not match
         VT.map.AddVehicle(veh);
         assert.ok(!VT.map.AreVehiclesWithinDistance(veh, VT.primarySegment, veh.getLookAheadDistance()),
@@ -102,7 +102,7 @@ QUnit.cases([
         var veh = new JSVTS.Vehicle();
         VT.primarySegment.attachVehicle(veh);
         veh.velocity = params.velocity;
-        var xLoc = VT.testVehicles[0].config.location.x+veh.getLookAheadDistance();
+        var xLoc = VT.testVehicles[0].config.location.x+veh.getLookAheadDistance()+(veh.config.length/2)+0.1;
         veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.testVehicles[0] and in range, but should not match
         VT.map.AddVehicle(veh);
         assert.ok(!VT.map.AreVehiclesWithinDistance(veh, VT.primarySegment, veh.getLookAheadDistance()),

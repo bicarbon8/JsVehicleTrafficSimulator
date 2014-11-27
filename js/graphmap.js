@@ -207,27 +207,31 @@ JSVTS.Map = function(scale) {
                 }).filter(function (v) {
                     return v;
                 });
+
+                // check for vehicle in front of and close to
                 for (var key in boxes) {
                     var box = boxes[key];
-                    var direction = new THREE.Vector3().copy(segment.config.end).sub(currentLoc).normalize();
-                    var ray = new THREE.Ray(currentLoc, direction);
-                    if (ray.isIntersectionBox(box)) {
-                        var dist = new THREE.Line3(
-                            new THREE.Vector3().copy(currentLoc),
-                            new THREE.Vector3().copy(box.min)
-                        ).distance();
-                        if (dist <= distance) {
-                            return dist;
+                    // check for collision
+                    if (vehicle.isCollidingWith(box)) {
+                        return true;
+                    } else {
+                        var direction = new THREE.Vector3().copy(segment.config.end).sub(currentLoc).normalize();
+                        var ray = new THREE.Ray(currentLoc, direction);
+                        if (ray.isIntersectionBox(box)) {
+                            var dist = new THREE.Line3(
+                                new THREE.Vector3().copy(currentLoc),
+                                new THREE.Vector3().copy(box.min)
+                            ).distance();
+                            if (dist <= distance) {
+                                return true;
+                            }
                         }
                     }
                 }
             }
             
             // get the distance from our current location to the end of the segment
-            var segLength = new THREE.Line3(
-                new THREE.Vector3(currentLoc.x,currentLoc.y,currentLoc.z),
-                new THREE.Vector3(segment.config.end.x,segment.config.end.y,segment.config.end.z)
-            ).distance();
+            var segLength = JSVTS.Mover.GetDistanceBetweenTwoPoints(currentLoc, segment.config.end);
             // if the distance is greater than the remaining segment length
             // move on to viewing vehicles in next segment
             if (segLength < distance) {
@@ -241,8 +245,9 @@ JSVTS.Map = function(scale) {
                     }
                 }
             }
-        } 
-        return null; 
+        }
+
+        return false;
     };
 
     self.ContainsStartPoint=function(point){

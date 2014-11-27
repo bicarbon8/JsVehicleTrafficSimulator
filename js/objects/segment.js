@@ -50,7 +50,7 @@ JSVTS.Segment = function(options){
     self.axis = null;
     self.radians = null;
 
-    self.Initialize=function(options) {
+    self.init=function(options) {
         self.id = JSVTS.SEG_ID_COUNT++;
         for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
         self.generateMesh();
@@ -67,15 +67,6 @@ JSVTS.Segment = function(options){
         // set the vehicle's position and heading
         vehicle.updateLocation(new THREE.Vector3().copy(self.config.start));
         
-        // get the tangent to the curve
-        if (!self.tangent) {
-            self.tangent = self.spline.getTangent(0).normalize();
-            self.axis = new THREE.Vector3();
-            self.axis.crossVectors(JSVTS.Controller.up, self.tangent).normalize();
-            // calcluate the angle between the up vector and the tangent
-            self.radians = Math.acos(JSVTS.Controller.up.dot(self.tangent));
-        }
-            
         // set the quaternion
         vehicle.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
     };
@@ -102,11 +93,26 @@ JSVTS.Segment = function(options){
         geometry.vertices = self.spline.getPoints(2);
         var line = new THREE.Line(geometry, material);
         self.mesh = line;
+
+        // get the tangent to the curve
+        if (!self.tangent) {
+            self.tangent = self.spline.getTangent(0).normalize();
+            self.axis = new THREE.Vector3();
+            self.axis.crossVectors(JSVTS.Controller.up, self.tangent).normalize();
+            // calcluate the angle between the up vector and the tangent
+            self.radians = Math.acos(JSVTS.Controller.up.dot(self.tangent));
+        }
     };
 
     self.getLength = function () {
         return self.spline.getLength(0);
-    }
+    };
 
-    self.Initialize(options);
+    self.angleFormedBy = function (segment) {
+        var a = new THREE.Vector3().copy(self.config.end).sub(self.config.start).normalize();
+        var b = new THREE.Vector3().copy(segment.config.end).sub(segment.config.start).normalize();
+        return (Math.acos(a.dot(b))*(180/Math.PI));
+    };
+
+    self.init(options);
 }

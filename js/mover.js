@@ -32,6 +32,8 @@ JSVTS.Mover = {
     Map: undefined,
     TotalElapsedTime: 0,
     ChangeLaneDelay: 15000, // don't change lanes for 15 seconds after a change
+    CRASH_CLEANUP_MAX_DELAY: 216000000, // 1 hour
+    CRASH_CLEANUP_MIN_DELAY: 36000000, // 10 min
     move: function(elapsedMilliseconds, map, vehicleIds){
         JSVTS.Mover.Map = map;
         var fulfilled = 0;
@@ -51,178 +53,82 @@ JSVTS.Mover = {
             }
             var segment = map.GetSegmentById(v.segmentId);
             var speed=v.velocity;
-            if(elapsedMilliseconds>0){
-                var IsStopping=false;
-                var stopDistance = null;
-                var elapsedSeconds=(elapsedMilliseconds/1000);
-                var distTraveled=(speed*elapsedSeconds);
-                if(distTraveled>0){
-                    var seg = new THREE.SplineCurve3([
-                        new THREE.Vector3().copy(v.config.location),
-                        new THREE.Vector3().copy(segment.config.end)
-                    ]);
-                    var length = seg.getLength(0);
-                    var t = 0; // 0 = start, 1 = end, 0.5 = middle
-                    if (distTraveled >= length) {
-                        // remove vehicle from current segment
-                        v.segmentId = null;
+            
+            var IsStopping=false;
+            var stopDistance = null;
+            var elapsedSeconds=(elapsedMilliseconds/1000);
+            var distTraveled=(speed*elapsedSeconds);
+            if(distTraveled>0){
+                var seg = new THREE.SplineCurve3([
+                    new THREE.Vector3().copy(v.config.location),
+                    new THREE.Vector3().copy(segment.config.end)
+                ]);
+                var length = seg.getLength(0);
+                var t = 0; // 0 = start, 1 = end, 0.5 = middle
+                if (distTraveled >= length) {
+                    // remove vehicle from current segment
+                    v.segmentId = null;
 
-                        // if there is a next Segment
-                        var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);
-                        if(nextSegments && nextSegments.length > 0){
-                            // move to segment (pick randomly)
-                            var randIndex = Math.floor((Math.random()*nextSegments.length));
-                            var nextSeg = nextSegments[randIndex];
-                            nextSeg.attachVehicle(v);
+                    // if there is a next Segment
+                    var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);
+                    if(nextSegments && nextSegments.length > 0){
+                        // move to segment (pick randomly)
+                        var randIndex = Math.floor((Math.random()*nextSegments.length));
+                        var nextSeg = nextSegments[randIndex];
+                        nextSeg.attachVehicle(v);
 
-                            var oldLength = length;
-                            length = nextSeg.getLength();
-                            t = ((distTraveled - oldLength) / length);
-                            seg = nextSeg.spline;
-                        } else{
-                            // remove v from the Simulation
-                            delete JSVTS.Mover.Map._vehicles[v.Id];
-                            JSVTS.Controller.plotter.scene.remove(v.mesh);
-                            v = null;
-                        }
-                    } else {
-                        t = distTraveled / length;
+                        var oldLength = length;
+                        length = nextSeg.getLength();
+                        t = ((distTraveled - oldLength) / length);
+                        seg = nextSeg.spline;
+                    } else{
+                        // remove v from the Simulation
+                        JSVTS.Mover.removeVehicle(v);
                     }
-
-                    if (seg && v) {
-                        // set the vehicle position
-                        var pt = seg.getPoint(t);
-                        v.updateLocation(pt);
-                    }
-                        
-                    var bypassLaneCompare = false;
-
-                    // check for vehicles in range
-                    var result = JSVTS.Mover.ShouldStopForVehicles(v,segment);
-                    if (typeof result === "number") {
-                        IsStopping=true;
-                        stopDistance = result;
-                    } else if (JSVTS.Mover.ShouldStopForLight(v,segment)) { // and then check for traffic lights in range
-                        // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
-                        IsStopping=true;
-                    } else { // and finally check for cornering in range
-                        var headingDiff = JSVTS.Mover.ShouldSlowDown(v,segment);
-                        if (headingDiff !== 0) {
-                            var corneringSpeed = JSVTS.Mover.CorneringSpeedCalculator(headingDiff);
-                        
-                            // begin slowing down (-15ft/s^2); 60mph (88f/s) takes 140ft to stop, but don't fully stop
-                            if (v.velocity > (v.config.desiredVelocity*corneringSpeed)) {
-                                IsStopping=true;
-                            }
-                        }
-                    }
-
-                    // if (v.changingLanes) {
-                    //     // change our offset to move towards new lane
-                    //     offset = JSVTS.Mover.GetXYFromDistHeading(distTraveled,v.config.heading);
-                    //     nextPoint=new THREE.Vector3(v.config.location.x+offset.x,v.config.location.y+offset.y,v.config.location.z+offset.z);
-
-                    //     // reset heading if in lane
-                    //     var carBounds = v.GetBoundingBox();
-                    //     for (var i=0; i<4; i++) {
-                    //         var start = i;
-                    //         var end = i+1;
-                    //         if (end>=4) {
-                    //             end = 0;
-                    //         }
-                    //         var line = new THREE.Line3(carBounds.Points[start], carBounds.Points[end]);
-                    //         if (segment.IntersectsLine(carBounds) && !bypassLaneCompare){
-                    //             v.config.heading = segment.heading;
-                    //             v.changingLanes = false;
-                    //         }
-                    //     }
-                    // }
-
-                    // // ensure we don't move past the end of a segment
-                    // if(JSVTS.Mover.IsBeyondCurrentSegment(v,segment)){
-                    //     var beyondDist=JSVTS.Mover.GetDistanceBetweenTwoPoints(v.config.location,
-                    //         segment.config.end);
-                        
-                    //     // remove vehicle from current segment
-                    //     v.segmentId = undefined;
-
-                    //     // if there is a next Segment
-                    //     var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);
-                    //     if(nextSegments && nextSegments.length > 0){
-                    //         // move to segment (pick randomly)
-                    //         var randIndex = Math.floor((Math.random()*nextSegments.length));
-                    //         v = nextSegments[randIndex].AttachVehicle(v);
-                    //         var offset=JSVTS.Mover.GetXYFromDistHeading(beyondDist,nextSegments[randIndex].heading);
-                    //         nextPoint=new THREE.Vector3(v.config.location.x+offset.x,v.config.location.y+offset.y,v.config.location.z+offset.z);
-                    //     } else{
-                    //         // remove v from the Simulation
-                    //         delete JSVTS.Mover.Map._vehicles[v.Id];
-                    //     }
-                    // }
-
-                    // v.updateLocation(new THREE.Vector3(nextPoint.x, nextPoint.y, nextPoint.z));
+                } else {
+                    t = distTraveled / length;
                 }
-                if(v){
-                    // speed up or slow down
-                    if(v.velocity<v.config.desiredVelocity && !IsStopping){
-                        // speed up: avg. rate of acceleration is 3.5 m/s^2
-                        if(v.config.desiredVelocity-v.velocity<0.1){
-                            // close enough so just set to value
-                            v.velocity=v.config.desiredVelocity;
-                            v.mesh.material.color.setHex(0xffffff);
-                        } else{
-                            // accelerate
-                            v.velocity+=(3.5*elapsedSeconds);
-                            v.mesh.material.color.setHex(0x66ff66);
-                        }
-                    }
-                    if(v.velocity>v.config.desiredVelocity || IsStopping){
-                        // slow down: avg. rate of decceleration is 3.5 m/s^2
-                        if(v.velocity-v.config.desiredVelocity<0.1 && !IsStopping){
-                            // close enough so just set to value
-                            v.velocity=v.config.desiredVelocity;
-                            v.mesh.material.color.setHex(0xffffff);
-                        } else{
-                            // deccelerate
-                            var lookahead = v.getLookAheadDistance();
-                            if (stopDistance > (lookahead/2)) {
-                                // normal braking pressure
-                                v.velocity-=(3.5*elapsedSeconds);
-                                v.mesh.material.color.setHex(0xff6666);
-                            } else {
-                                // really jam on the brakes
-                                v.velocity-=(7*elapsedSeconds);
-                                v.mesh.material.color.setHex(0xff0000);
-                            }
-                        }
-                        
-                        // prevent going backwards
-                        if(v.velocity<0){
-                            v.velocity=0.44704;
-                            v.mesh.material.color.setHex(0x66ff66);
-                        }
-                    }
+
+                if (seg && v) {
+                    // set the vehicle position
+                    var pt = seg.getPoint(t);
+                    v.updateLocation(pt);
                 }
+
+                if (JSVTS.Mover.shouldStop(v, segment)) {
+                    IsStopping = true;
+                }
+            }
+
+            if (v) {
+                // if (v.crashed) {
+                //     v.velocity = 0;
+                //     if (v.crashCleanupTime) {
+                //         // remove vehicle after
+                //         if (v.crashCleanupTime <= JSVTS.Mover.TotalElapsedTime) {
+                //             // remove v from the Simulation
+                //             JSVTS.Mover.removeVehicle(v);
+                //         }
+                //     } else {
+                //         var rand = Math.random();
+                //         if (rand <= 0.8) {
+                //             v.crashCleanupTime = Math.random() * JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY
+                //         }
+                //         v.crashCleanupTime = Math.random() * (JSVTS.Mover.CRASH_CLEANUP_MAX_DELAY - JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY) + JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
+                //     }
+                // } else {
+                    v.updateVelocity(elapsedMilliseconds, IsStopping);
+                // }
             }
         }
             
         JSVTS.Mover.TotalElapsedTime+=elapsedMilliseconds;
     },
-    ConvertMilesPerHourToMetersPerSecond: function(milesPerHour){
-        var metersPerSec=0;
-        var METERS_PER_MILE=1609.344;
-        var SECONDS_PER_HOUR=3600;
-        
-        metersPerSec = ((milesPerHour*METERS_PER_MILE)/SECONDS_PER_HOUR);
-        return metersPerSec;
-    },
-    ConvertMetersPerSecondToMilesPerHour: function(metersPerSec){
-        var milesPerHour=0;
-        var METERS_PER_MILE=1609.344;
-        var SECONDS_PER_HOUR=3600;
-        
-        milesPerHour = ((metersPerSec/METERS_PER_MILE)*SECONDS_PER_HOUR);
-        return milesPerHour;
+    removeVehicle: function(v) {
+        // remove v from the Simulation
+        JSVTS.Mover.Map._vehicles = JSVTS.Mover.Map._vehicles.splice(JSVTS.Mover.Map._vehicles.indexOf(v));
+        JSVTS.Controller.plotter.scene.remove(v.mesh);
+        v = null;
     },
     AvailableLane: function(v,currentSegment) {
         var lane = null;
@@ -271,32 +177,51 @@ JSVTS.Mover = {
 
         return heading;
     },
-    GetXYFromDistHeading: function(distance,heading){
-        var x=Math.cos(heading)*distance;
-        var y=Math.sin(heading)*distance;
-        var z=Math.sin(heading)*distance;
-        return new THREE.Vector3(x,y,z);
+    shouldStop: function (vehicle, segment) {
+        var vehicles = false;
+        var trafficControls = false;
+        var cornering = false;
+        // check for vehicles in range
+        if (JSVTS.Mover.ShouldStopForVehicles(vehicle,segment)) {
+            // TODO: implement lane changing logic
+            return true;
+        }
+        if (JSVTS.Mover.ShouldStopForLight(vehicle,segment)) { // and then check for traffic lights in range
+            // begin stopping for Traffic Light (-15ft/s^2); 60mph (88f/s) takes 140ft to stop
+            return true;
+        }
+        if (JSVTS.Mover.shouldSlowForCorner(vehicle, segment)) { // and finally check for cornering in range
+            return true;
+        }
     },
-    ShouldSlowDown: function(vehicle,segment){
+    shouldSlowForCorner: function(vehicle, segment){
         // slow down when the next segment is in range and has a different heading
         // base the amount on how different the heading is
         var headingDiff = 0;
         var distance = vehicle.getLookAheadDistance();
-        var distToSegEnd = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location,segment.config.end);
+        var distToSegEnd = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, segment.config.end);
         // if we can see past the end of this segment
         if (distToSegEnd < distance) {
             // then check the heading of the next segment(s)
             var nextSegments = JSVTS.Mover.Map.GetSegmentsStartingAt(segment.config.end);
-            for (var i=0; i<nextSegments.length; i++) {
+            for (var i in nextSegments) {
                 // get the largest heading difference
-                var tmp = Math.abs(segment.heading - nextSegments[i].heading);
+                var tmp = segment.angleFormedBy(nextSegments[i]);
                 if (tmp > headingDiff) {
                     headingDiff = tmp;
                 }
             }
         }
 
-        return headingDiff; // don't slow down
+        var corneringSpeed = JSVTS.Mover.CorneringSpeedCalculator(headingDiff);
+        if (corneringSpeed !== 1) {
+            // begin slowing down (-15ft/s^2); 60mph (88f/s) takes 140ft to stop, but don't fully stop
+            if (vehicle.velocity > (vehicle.config.desiredVelocity*corneringSpeed)) {
+                return true;
+            }
+        }
+
+        return false;
     },
     CorneringSpeedCalculator: function(headingDifference) {
         if (headingDifference < 12) {
@@ -305,28 +230,25 @@ JSVTS.Mover = {
         }
         if (headingDifference < 25) {
             // mild / gentle curve
-            return 0.9;
-        }
-        if (headingDifference < 45) {
             return 0.75;
         }
-        if (headingDifference < 90) {
+        if (headingDifference < 45) {
             return 0.5;
         }
-        if (headingDifference < 135) {
+        if (headingDifference < 90) {
             return 0.25;
         }
-        if (headingDifference >= 135) {
+        if (headingDifference < 135) {
             return 0.175;
+        }
+        if (headingDifference >= 135) {
+            return 0.0875;
         }
     },
     ShouldStopForVehicles: function(vehicle,segment){
         if (vehicle && segment) {
             var distance = vehicle.getLookAheadDistance();
-            var result = JSVTS.Mover.Map.AreVehiclesWithinDistance(vehicle,segment,distance);
-            if (typeof result === "number") {
-                return result;
-            }
+            return JSVTS.Mover.Map.AreVehiclesWithinDistance(vehicle,segment,distance);
         }else {
             console.log("vehicle: "+vehicle+"; segment: "+segment);
         }
@@ -348,13 +270,7 @@ JSVTS.Mover = {
 
         // return false;
     },
-    IsBeyondCurrentSegment: function(vehicle,segment){
-        // create Ray looking backwards and see if it intersects with end of segment
-        var sphere = THREE.Sphere(new THREE.Vector3().copy(segment.config.end), 1);
-        var backRay = THREE.Ray(new THREE.Vector3().copy(vehicle.confic.location), new THREE.Vector3().copy(vehicle.previousLocation).normalize());
-        return backRay.isIntersectionSphere(sphere);
-    },
-    GetDistanceBetweenTwoPoints: function(p1,p2){
+    GetDistanceBetweenTwoPoints: function (p1, p2) {
         return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
     }
 }

@@ -37,7 +37,8 @@ JSVTS.VEH_OPTIONS = function () {
         height: 2,
         location: new THREE.Vector3(0,0,0),
         heading: 0,
-        desiredVelocity: 0
+        desiredVelocity: 0,
+        reactionTime: 1.5, // seconds to react
     };
     return self;
 };
@@ -51,6 +52,8 @@ JSVTS.Vehicle = function(options){
     self.mesh = null;
     self.velocity = 0; // Km/h
     self.previousLocation = null;
+    self.crashed = false;
+    self.crashCleanupTime = null;
 
     self.init=function(options) {
         self.id = JSVTS.VEH_ID_COUNT++;
@@ -100,17 +103,15 @@ JSVTS.Vehicle = function(options){
         return tri;
     };
 
-    self.getLookAheadDistance=function() {
-        // if(self.velocity>=4.4704){
-        if(self.velocity>=30){
-            // distance is one car length per 16.1 kilometers per hour
-            // return (self.config.length*(self.velocity/16.1)+(self.config.length/2));
-            return self.velocity*2;
-        } else{
-            // or slightly more than half a car length if going really slow
-            // return self.config.length+(self.config.length/2);
-            return (self.config.length+(self.config.length/2))+(self.velocity);
-        }
+    self.getLookAheadDistance = function(cof) {
+        var FRICTION = cof || 0.5;
+        var VEHICLE_LENGTH = (self.config.length/2); // start from front bumper
+        var GRAVITY = 9.81;
+        var METERS_PER_SEC = self.convertKilometersPerHourToMetersPerSecond(self.velocity);
+        var REACTION_DISTANCE = METERS_PER_SEC*self.config.reactionTime;
+        var result = REACTION_DISTANCE + VEHICLE_LENGTH + (Math.pow(METERS_PER_SEC, 2)) / (2*(FRICTION*GRAVITY));
+
+        return result;
     };
 
     self.generateMesh = function() {
@@ -150,9 +151,67 @@ JSVTS.Vehicle = function(options){
         self.mesh.geometry.normalsNeedUpdate = true;
     };
 
+    self.updateVelocity = function (elapsedMs, isStopping) {
+        // speed up or slow down
+        if (self.velocity<self.config.desiredVelocity && !isStopping) {
+            // speed up: avg. rate of acceleration is 3.5 m/s^2
+            if (self.config.desiredVelocity-self.velocity<0.1) {
+                // close enough so just set to value
+                self.velocity=self.config.desiredVelocity;
+                self.mesh.material.color.setHex(0xffffff);
+            } else {
+                // accelerate
+                self.accelerate(elapsedMs);
+            }
+        }
+        if (self.velocity>self.config.desiredVelocity || isStopping) {
+            // slow down: avg. rate of decceleration is 3.5 m/s^2
+            if (self.velocity-self.config.desiredVelocity<0.1 && !isStopping) {
+                // close enough so just set to value
+                self.velocity=self.config.desiredVelocity;
+                self.mesh.material.color.setHex(0xffffff);
+            } else {
+                // deccelerate
+                self.brake(elapsedMs);
+            }
+        }
+    };
+
+    self.accelerate = function (elapsedMs) {
+        var elapsedSeconds = elapsedMs/1000;
+        self.velocity+=(3.5*elapsedSeconds);
+        self.mesh.material.color.setHex(0x66ff66);
+    };
+
+    self.brake = function (elapsedMs) {
+        var elapsedSeconds = elapsedMs/1000;
+        self.velocity-=(20*elapsedSeconds);
+        // prevent going backwards
+        if (self.velocity < 0) {
+            self.velocity = 0;
+        }
+        self.mesh.material.color.setHex(0xff0000);
+    };
+
     self.getBoundingBox = function () {
         self.mesh.geometry.computeBoundingBox();
         return self.mesh.geometry.boundingBox;
+    };
+
+    self.isCollidingWith = function (box) {
+        if (box.isIntersectionBox(new THREE.Box3().setFromObject(self.mesh))) {
+            self.crashed = true;
+            return true;
+        }
+        return false;
+    }
+
+    self.convertKilometersPerHourToMetersPerSecond = function(kilometersPerHour) {
+        var result = 0;
+        var SECONDS_PER_HOUR=3600;
+        var METERS_PER_KILOMETER = 1000;
+        result = (kilometersPerHour/(SECONDS_PER_HOUR))*METERS_PER_KILOMETER;
+        return result;
     };
 
     // configure this object if data was passed in

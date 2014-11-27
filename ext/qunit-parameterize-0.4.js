@@ -10,7 +10,7 @@ QUnit.extend(QUnit, {
 
         var createTest = function(methodName, title, expected, callback, parameters) {
             QUnit[methodName](
-                title,
+                title + ": " + JSON.stringify(parameters),
                 expected,
                 function(assert) { return callback.call(this, parameters, assert); }
             );
