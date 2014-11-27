@@ -109,7 +109,7 @@ JSVTS.Vehicle = function(options){
         } else{
             // or slightly more than half a car length if going really slow
             // return self.config.length+(self.config.length/2);
-            return (self.config.length+(self.config.length/2))+(self.velocity/2);
+            return (self.config.length+(self.config.length/2))+(self.velocity);
         }
     };
 

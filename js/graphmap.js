@@ -209,7 +209,7 @@ JSVTS.Map = function(scale) {
                 });
                 for (var key in boxes) {
                     var box = boxes[key];
-                    var direction = new THREE.Vector3().copy(segment.config.end).normalize();
+                    var direction = new THREE.Vector3().copy(segment.config.end).sub(currentLoc).normalize();
                     var ray = new THREE.Ray(currentLoc, direction);
                     if (ray.isIntersectionBox(box)) {
                         var dist = new THREE.Line3(
