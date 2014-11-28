@@ -69,7 +69,8 @@ JSVTS.Segment = function(options){
         vehicle.updateLocation(new THREE.Vector3().copy(self.config.start));
         
         // set the quaternion
-        vehicle.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
+        vehicle.mesh.lookAt(self.config.end);
+        // vehicle.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
     };
 
     self.attachTrafficFlowControl=function(tfc) {
@@ -104,9 +105,9 @@ JSVTS.Segment = function(options){
         if (!self.tangent) {
             self.tangent = self.spline.getTangent(0).normalize();
             self.axis = new THREE.Vector3();
-            self.axis.crossVectors(JSVTS.Controller.up, self.tangent).normalize();
+            self.axis.crossVectors(JSVTS.Map.up, self.tangent).normalize();
             // calcluate the angle between the up vector and the tangent
-            self.radians = Math.acos(JSVTS.Controller.up.dot(self.tangent));
+            self.radians = Math.acos(JSVTS.Map.up.dot(self.tangent));
         }
     };
 
@@ -121,4 +122,4 @@ JSVTS.Segment = function(options){
     };
 
     self.init(options);
-}
+};

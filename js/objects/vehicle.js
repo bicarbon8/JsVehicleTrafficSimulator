@@ -49,6 +49,7 @@ JSVTS.Vehicle = function(options){
     self.changingLanes = false;
     self.changeLaneTime = 0;
     self.segmentId = null;
+    self.nextSegmentId = null;
     self.mesh = null;
     self.velocity = 0; // Km/h
     self.previousLocation = null;
@@ -117,7 +118,7 @@ JSVTS.Vehicle = function(options){
     self.generateMesh = function() {
         if (!self.mesh) {
             // z coordinate used for vertical height
-            var geometry = new THREE.BoxGeometry(self.config.width, self.config.length, self.config.height);
+            var geometry = new THREE.BoxGeometry(self.config.width, self.config.height, self.config.length);
             var material = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
                 wireframe: true
@@ -133,22 +134,39 @@ JSVTS.Vehicle = function(options){
             self.config.location.y + offset.y,
             self.config.location.z + offset.z);
         self.updateLocation(pos);
-    }
+    };
 
-    self.updateLocation = function(newLocation) {
-        if (newLocation) {
+    self.updateLocation = function (newPosition) {
+        if (newPosition) {
+            self.generateMesh(); // generates if doesn't already exist
+            // move to self.config.location and rotate to point at heading
+            self.config.location = newPosition;
+            self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
+
+            // indicate that we've updated
+            self.mesh.geometry.dynamic = true;
+            self.mesh.geometry.verticesNeedUpdate = true;
+            self.mesh.geometry.normalsNeedUpdate = true;
+
             self.previousLocation = self.config.location;
-            self.config.location.copy(newLocation);
+            self.config.location.copy(self.mesh.position);
         }
-        self.generateMesh(); // generates if doesn't already exist
-        // move to self.config.location and rotate to point at heading
-        // self.mesh.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.location.x, self.config.location.y, self.config.location.z));
-        self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
+    };
 
-        // indicate that we've updated
-        self.mesh.geometry.dynamic = true;
-        self.mesh.geometry.verticesNeedUpdate = true;
-        self.mesh.geometry.normalsNeedUpdate = true;
+    self.moveBy = function(distance) {
+        if (distance) {
+            self.generateMesh(); // generates if doesn't already exist
+            // move to self.config.location and rotate to point at heading
+            self.mesh.translateZ(distance);
+
+            // indicate that we've updated
+            self.mesh.geometry.dynamic = true;
+            self.mesh.geometry.verticesNeedUpdate = true;
+            self.mesh.geometry.normalsNeedUpdate = true;
+
+            self.previousLocation = self.config.location;
+            self.config.location.copy(self.mesh.position);
+        }
     };
 
     self.updateVelocity = function (elapsedMs, isStopping) {
@@ -197,13 +215,6 @@ JSVTS.Vehicle = function(options){
         self.mesh.geometry.computeBoundingBox();
         return self.mesh.geometry.boundingBox;
     };
-
-    self.isCollidingWith = function (box) {
-        if (box.isIntersectionBox(new THREE.Box3().setFromObject(self.mesh))) {
-            return true;
-        }
-        return false;
-    }
 
     self.convertKilometersPerHourToMetersPerSecond = function(kilometersPerHour) {
         var result = 0;

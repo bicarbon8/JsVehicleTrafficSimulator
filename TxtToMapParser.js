@@ -27,29 +27,25 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-function TxtToMapParser(){
-    this.ParseMapJson=function(jsonObj) {
-        var map;
-
+var JSVTS = JSVTS || {};
+JSVTS.TxtToMapParser = {
+    ParseMapJson: function (jsonObj) {
         if (jsonObj) {
             var scale = jsonObj.scale;
-            map = new JSVTS.Map(scale);
-            segments = this.ParseSegmentsJson(jsonObj.segments);
+            segments = JSVTS.TxtToMapParser.ParseSegmentsJson(jsonObj.segments);
             for (var i=0; i<segments.length; i++) {
-                map.AddSegment(segments[i]);
+                JSVTS.Map.AddSegment(segments[i]);
             }
         }
+    },
 
-        return map;
-    }
-
-    this.ParseSegmentsJson=function(jsonObj) {
+    ParseSegmentsJson: function (jsonObj) {
         var segments = [];
         for (var i=0; i<jsonObj.length; i++) {
             var seg = jsonObj[i];
             var start = new THREE.Vector3(seg.start.x,seg.start.y,seg.start.z);
             var end = new THREE.Vector3(seg.end.x,seg.end.y,seg.end.z);
-            var stoplight = this.ParseStopLightsJson(seg.stoplight);
+            var stoplight = JSVTS.TxtToMapParser.ParseStopLightsJson(seg.stoplight);
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,
@@ -64,16 +60,16 @@ function TxtToMapParser(){
         }
 
         return segments;
-    }
+    },
 
-    this.ParseStopLightsJson=function(jsonObj) {
+    ParseStopLightsJson: function (jsonObj) {
         var stoplight = null;
         if (jsonObj) {
             var changeSeconds = jsonObj.changeseconds;
             var startState = jsonObj.startstate;
             var loc = new THREE.Vector3(jsonObj.location.x,jsonObj.location.y,0);
             var sl = new JSVTS.StopLight({
-                "changeSeconds": changeSeconds, 
+                "changeSeconds": changeSeconds,
                 "startState": startState
             });
             sl.Location = loc;
@@ -82,10 +78,10 @@ function TxtToMapParser(){
         }
 
         return stoplight;
-    }
+    },
 
-    this.ParseVehiclesJson=function(jsonObj) {
+    ParseVehiclesJson: function (jsonObj) {
         // TODO: implement
         return [];
     }
-}
+};

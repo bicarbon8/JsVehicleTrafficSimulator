@@ -28,62 +28,117 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.Plotter = function (){
-    var self = this;
-    self.LaneThickness = 2;
-    self.RoadColor = "#808080";
-    self.renderer = null;
-    self.scene = null;
-    self.camera = null;
-    self.controls = null;
-    self.stats = null;
+JSVTS.Plotter = {
+    renderer: null,
+    scene: null,
+    camera: null,
+    controls: null,
+    stats: null,
+    light: null,
 
-    self.init = function() {
-        var width = JSVTS.Controller.docWidth;
-        var height = JSVTS.Controller.docHeight;
-        self.renderer = new THREE.WebGLRenderer();
+    init: function (width, height) {
+        JSVTS.Plotter.reset();
+        
+        JSVTS.Plotter.initRenderer(width, height);
+        JSVTS.Plotter.initCamera(width, height);
+        JSVTS.Plotter.initControls();
+        JSVTS.Plotter.initLight();
+        JSVTS.Plotter.initStats();
+        JSVTS.Plotter.initScene([
+            JSVTS.Plotter.camera,
+            JSVTS.Plotter.light
+        ]);
+        
+        JSVTS.Plotter.initDom([
+            JSVTS.Plotter.renderer.domElement,
+            JSVTS.Plotter.stats.domElement
+        ]);
+        JSVTS.Plotter.render();
+    },
+
+    initRenderer: function (width, height) {
+        JSVTS.Plotter.renderer = new THREE.WebGLRenderer();
+        JSVTS.Plotter.renderer.setSize(width, height);
+    },
+
+    initLight: function () {
+        var pointLight = new THREE.PointLight(0xFFFFFF);
+            pointLight.position.x = 10;
+            pointLight.position.y = 50;
+            pointLight.position.z = 130;
+        JSVTS.Plotter.light = pointLight;
+    },
+
+    initCamera: function (width, height) {
         var VIEW_ANGLE = 45,
             ASPECT = width / height,
             NEAR = 0.1,
             FAR = 10000;
-        self.camera = new THREE.PerspectiveCamera(
+        JSVTS.Plotter.camera = new THREE.PerspectiveCamera(
             VIEW_ANGLE,
             ASPECT,
             NEAR,
-            FAR); 
-        self.scene = new THREE.Scene();
-        self.scene.add(self.camera);
-        self.scene.add(new THREE.AxisHelper(10000));
-        self.camera.position.z = 250;
-        self.camera.position.y = 250;
-        self.camera.position.x = 250;
-        self.camera.lookAt(self.scene.position);
-        self.controls = new THREE.OrbitControls(self.camera);
-        self.controls.damping = 0.2;
-        self.controls.addEventListener('change', function () { self.renderer.render(self.scene, self.camera); });
-        self.renderer.setSize(width, height);
-        var pointLight = new THREE.PointLight(0xFFFFFF);
-        pointLight.position.x = 10;
-        pointLight.position.y = 50;
-        pointLight.position.z = 130;
-        self.scene.add(pointLight);
-        document.querySelector('body').appendChild(self.renderer.domElement);
-        self.stats = new Stats();
-        self.stats.domElement.style.position = 'absolute';
-        self.stats.domElement.style.top = '0px';
-        document.querySelector('body').appendChild(self.stats.domElement);
-        self.renderer.render(self.scene, self.camera);
-    };
+            FAR);
+        JSVTS.Plotter.camera.position.z = 250;
+        JSVTS.Plotter.camera.position.y = 250;
+        JSVTS.Plotter.camera.position.x = 250;
+        JSVTS.Plotter.camera.lookAt(new THREE.Vector3()); // origin
+    },
 
-    self.render = function() {
-        self.renderer.render(self.scene, self.camera);
-        self.stats.update();
-    };
+    initStats: function () {
+        JSVTS.Plotter.stats = new Stats();
+        JSVTS.Plotter.stats.domElement.style.position = 'absolute';
+        JSVTS.Plotter.stats.domElement.style.top = '0px';
+    },
 
-    self.Clear=function(elementId){
-        // canvas.removeLayerGroup(elementId);
-        // canvas.drawLayers();
-    };
+    initControls: function () {
+        JSVTS.Plotter.controls = new THREE.OrbitControls(JSVTS.Plotter.camera);
+        JSVTS.Plotter.controls.damping = 0.2;
+        JSVTS.Plotter.controls.addEventListener('change', function () { JSVTS.Plotter.render(); });
+    },
 
-    self.init();
+    initScene: function (sceneObjects) {
+        JSVTS.Plotter.scene = new THREE.Scene();
+        JSVTS.Plotter.scene.add(new THREE.AxisHelper(10000));
+
+        for (var i in sceneObjects) {
+            var obj = sceneObjects[i];
+            JSVTS.Plotter.scene.add(obj);
+        }
+    },
+
+    initDom: function (domObjects) {
+        for (var i in domObjects) {
+            var obj = domObjects[i];
+            document.querySelector('body').appendChild(obj);
+        }
+    },
+
+    render: function() {
+        JSVTS.Plotter.renderer.render(JSVTS.Plotter.scene, JSVTS.Plotter.camera);
+        JSVTS.Plotter.stats.update();
+    },
+
+    reset: function(elementId){
+        if (JSVTS.Plotter.renderer) {
+            document.querySelector('body').removeChild(JSVTS.Plotter.renderer.domElement);
+        }
+        if (JSVTS.Plotter.stats) {
+            document.querySelector('body').removeChild(JSVTS.Plotter.stats.domElement);
+        }
+        
+        JSVTS.Plotter.renderer = null;
+        JSVTS.Plotter.scene = null;
+        JSVTS.Plotter.camera = null;
+        JSVTS.Plotter.controls = null;
+        JSVTS.Plotter.stats = null;
+    },
+
+    addObject: function(objectMesh) {
+        JSVTS.Plotter.scene.add(objectMesh);
+    },
+
+    removeObject: function(objectMesh) {
+        JSVTS.Plotter.scene.remove(objectMesh);
+    }
 }
