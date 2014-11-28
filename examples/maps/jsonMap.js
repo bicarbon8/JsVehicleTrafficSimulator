@@ -212,9 +212,9 @@ var jsonMap = {
                     "z":206
                 },
                 "end":{
-                    "x":100,
+                    "x":75,
                     "y":0,
-                    "z":206
+                    "z":204
                 },
                 "speedlimit":35,
                 "roadname":"Jason Ave. N.",
@@ -222,9 +222,9 @@ var jsonMap = {
             },
             {
                 "start":{
-                    "x":100,
+                    "x":75,
                     "y":0,
-                    "z":206
+                    "z":204
                 },
                 "end":{
                     "x":106,

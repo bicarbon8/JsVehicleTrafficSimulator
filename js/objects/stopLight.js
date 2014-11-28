@@ -132,7 +132,7 @@ JSVTS.StopLight = function (options) {
         }
     };
 
-    self.shouldStop = function() {
+    self.shouldStop = function(vehicle) {
         if (self.currentState === JSVTS.StopLightState.YELLOW || self.currentState === JSVTS.StopLightState.RED) {
             return true;
         }

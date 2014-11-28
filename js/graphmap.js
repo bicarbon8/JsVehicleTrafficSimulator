@@ -35,6 +35,7 @@
  * of the same lane group which allows vehicles to move from lane
  * to lane
  */
+"strict mode"
 var JSVTS = JSVTS || {};
 JSVTS.Map = function(scale) {
 	var self = this;
@@ -130,6 +131,45 @@ JSVTS.Map = function(scale) {
 		}
 	};
 
+    /**
+     * @param decay {number} - percentage to shorten distance when at maxAngle
+     *                         Ex: distance=100, maxAngle=90, decay=0.50
+     *                             at 90 degrees the distance will be 50
+     */
+    self.getClosestObjectWithinDistanceAndView = function (baseline, objects, distance, maxAngle, decay) {
+        var closest = { obj: null, dist: 0 };
+        if ((distance > 0) && (baseline) && (objects && objects.length > 0)) {
+            if (!maxAngle) { maxAngle = 90; }
+            if (!decay) { decay = 1.0; } // 100% of length when at maxAngle 
+            for (var i in objects) {
+                var obj = objects[i];
+                // create segment to obj
+                var segToTfc = new THREE.Line3(baseline.start, obj.config.location);
+
+                // create segment to current segment end
+                var segToEnd = baseline;
+
+                // get angle formed by both lines
+                var angleToObj = self.angleFormedBy(segToTfc, segToEnd);
+
+                if (angleToObj >= -maxAngle && angleToObj <= maxAngle) {
+                    var distanceToObj = JSVTS.Mover.GetDistanceBetweenTwoPoints(baseline.start, obj.config.location);
+                    // compare distance and angle
+                    var dist = distance;
+                    dist = distance - (distance*((angleToObj/maxAngle)*decay))
+                    if (distanceToObj <= dist) {
+                        if (closest.obj === null || closest.dist > distanceToObj) {
+                            closest.obj = obj;
+                            closest.dist = distanceToObj;
+                        }
+                    }
+                }
+            }
+        }
+
+        return closest.obj;
+    };
+
 	/**
      * this function will return all the stoplights on this segment
      * and any subsegments recursively down to the terminating 
@@ -138,39 +178,33 @@ JSVTS.Map = function(scale) {
      */
     self.AreTfcsWithinDistance = function(vehicle, segment, distance) {
         if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {
-            var currentLoc = new THREE.Vector3().copy(vehicle.config.location);
-            
-            // get tfc from passed in segment first
-            var tfc = segment.tfc;
-            if (tfc) {
-                var box = new THREE.Box3().setFromObject(tfc.mesh);
+            var baseline = new THREE.Line3(vehicle.config.location, segment.config.end);
+            if (segment.tfc) {
+                var closestTfc = self.getClosestObjectWithinDistanceAndView(baseline, [segment.tfc], distance);
 
-                // check for tfc in front of and close to
-                var direction = new THREE.Vector3().copy(segment.config.end).sub(currentLoc).normalize();
-                var ray = new THREE.Ray(currentLoc, direction);
-                if (ray.isIntersectionBox(box)) {
-                    var dist = new THREE.Line3(
-                        new THREE.Vector3().copy(currentLoc),
-                        new THREE.Vector3().copy(box.min)
-                    ).distance();
-                    if (dist <= distance) {
-                        return tfc.shouldStop();
+                if (closestTfc) {
+                    // if TFC is RED or YELLOW
+                    if (closestTfc.shouldStop(vehicle)) {
+                        // don't stop if touching tfc
+                        if (!vehicle.isCollidingWith(new THREE.Box3().setFromObject(closestTfc.mesh))) {
+                            return true;
+                        }
                     }
-                }
-            }
-            
-            // get the distance from our current location to the end of the segment
-            var segLength = JSVTS.Mover.GetDistanceBetweenTwoPoints(currentLoc, segment.config.end);
-            // if the distance is greater than the remaining segment length
-            // move on to viewing vehicles in next segment
-            if (segLength < distance) {
-                var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
-                tmpVehicle.config.location = segment.config.end;
-                var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
-                if (nextSegments && nextSegments.length > 0) {
-                    for (var i in nextSegments) {
-                        nextSegments[i].attachVehicle(tmpVehicle);
-                        return self.AreTfcsWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                } else {
+                    // get the distance from our current location to the end of the segment
+                    var segLength = JSVTS.Mover.GetDistanceBetweenTwoPoints(baseline.start, segment.config.end);
+                    // if the distance is greater than the remaining segment length
+                    // move on to viewing vehicles in next segment
+                    if (segLength < distance) {
+                        var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
+                        tmpVehicle.config.location = segment.config.end;
+                        var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
+                        if (nextSegments && nextSegments.length > 0) {
+                            for (var i in nextSegments) {
+                                nextSegments[i].attachVehicle(tmpVehicle);
+                                return self.AreTfcsWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                            }
+                        }
                     }
                 }
             }
@@ -189,61 +223,44 @@ JSVTS.Map = function(scale) {
      */
     self.AreVehiclesWithinDistance = function(vehicle, segment, distance) {
         if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {
-            var currentLoc = new THREE.Vector3().copy(vehicle.config.location);
+            var baseline = new THREE.Line3(vehicle.config.location, segment.config.end);
+            var vehicles = self.GetVehicles().filter(function (v) {
+                return v.id !== vehicle.id;
+            });
+            var closestVeh = self.getClosestObjectWithinDistanceAndView(baseline, vehicles, distance);
             
-            // get vehicles in the passed in segment first
-            var vehicles = self.GetVehiclesInSegment(vehicle.segmentId);
-            if (vehicles && vehicles.length > 0) {
-                // get all vehicle meshes except the passed in one
-                var boxes = vehicles.map(function (v) {
-                    if (v.id !== vehicle.id) {
-                        var box = new THREE.Box3().setFromObject(v.mesh);
-                        return box;
-                    }
-                }).filter(function (v) {
-                    return v;
-                });
-
-                // check for vehicle in front of and close to
-                for (var key in boxes) {
-                    var box = boxes[key];
-                    // check for collision
-                    if (vehicle.isCollidingWith(box)) {
-                        return true;
-                    } else {
-                        var direction = new THREE.Vector3().copy(segment.config.end).sub(currentLoc).normalize();
-                        var ray = new THREE.Ray(currentLoc, direction);
-                        if (ray.isIntersectionBox(box)) {
-                            var dist = new THREE.Line3(
-                                new THREE.Vector3().copy(currentLoc),
-                                new THREE.Vector3().copy(box.min)
-                            ).distance();
-                            if (dist <= distance) {
-                                return true;
-                            }
-                        }
-                    }
+            if (closestVeh) {
+                // perform collision check
+                if (vehicle.isCollidingWith(new THREE.Box3().setFromObject(closestVeh.mesh))) {
+                    vehicle.crashed = true;
                 }
-            }
-            
-            // get the distance from our current location to the end of the segment
-            var segLength = JSVTS.Mover.GetDistanceBetweenTwoPoints(currentLoc, segment.config.end);
-            // if the distance is greater than the remaining segment length
-            // move on to viewing vehicles in next segment
-            if (segLength < distance) {
-                var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
-                tmpVehicle.config.location = segment.config.end;
-                var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
-                if (nextSegments && nextSegments.length > 0) {
-                    for (var i in nextSegments) {
-                        nextSegments[i].attachVehicle(tmpVehicle);
-                        return self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                return true;
+            } else {
+                // get the distance from our current location to the end of the segment
+                var segLength = JSVTS.Mover.GetDistanceBetweenTwoPoints(baseline.start, segment.config.end);
+                // if the distance is greater than the remaining segment length
+                // move on to viewing vehicles in next segment
+                if (segLength < distance) {
+                    var tmpVehicle = new JSVTS.Vehicle().copyFrom(vehicle);
+                    tmpVehicle.config.location = segment.config.end;
+                    var nextSegments = self.GetSegmentsStartingAt(segment.config.end); // get segments starting from this one's end
+                    if (nextSegments && nextSegments.length > 0) {
+                        for (var i in nextSegments) {
+                            nextSegments[i].attachVehicle(tmpVehicle);
+                            return self.AreVehiclesWithinDistance(tmpVehicle, nextSegments[i], (distance-segLength));
+                        }
                     }
                 }
             }
         }
 
         return false;
+    };
+
+    self.angleFormedBy = function (line1, line2) {
+        var a = new THREE.Vector3().copy(line1.end).sub(line1.start).normalize();
+        var b = new THREE.Vector3().copy(line2.end).sub(line2.start).normalize();
+        return (Math.acos(a.dot(b))*(180/Math.PI));
     };
 
     self.ContainsStartPoint=function(point){

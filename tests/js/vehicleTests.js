@@ -184,3 +184,69 @@ QUnit.test("vehicle should detect other vehicle in range ahead of itself on diff
         assert.ok(VT.map.AreVehiclesWithinDistance(veh2, seg1, distance),
             "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(veh1.config.location)+"; Back Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
     });
+QUnit.cases([
+        { sx: 0, sy: 0, sz: 0, ex: 75, ey: 0, ez: 75, v: 100 },
+        { sx: 100, sy: 0, sz: 75, ex: 25, ey: 0, ez: 105, v: 100 }
+    ]).test("vehicle should detect other vehicle in range ahead of itself on segment with angled heading", function (p, assert) {
+        VT.teardown();
+        JSVTS.Controller = { up: new THREE.Vector3(0,1,0) };
+        VT.map = new JSVTS.Map(1);
+        var seg1 = new JSVTS.Segment({
+            start: new THREE.Vector3(p.sx,p.sy,p.sz),
+            end: new THREE.Vector3(p.ex,p.ey,p.ez),
+            isInlet: true,
+            speedLimit: p.v,
+            name: "Road 1"
+        });
+        var veh1 = new JSVTS.Vehicle();
+        seg1.attachVehicle(veh1);
+        var pt = seg1.spline.getPoint(0.5); // middle of segment
+        veh1.updateLocation(pt);
+        veh1.velocity = p.v;
+        var veh2 = new JSVTS.Vehicle();
+        seg1.attachVehicle(veh2);
+        var pt = seg1.spline.getPoint(0.25); // 1st quarter of segment
+        veh1.updateLocation(pt);
+        veh2.velocity = p.v;
+
+        VT.map.AddSegment(seg1);
+        VT.map.AddVehicle(veh1);
+        VT.map.AddVehicle(veh2);
+
+        var distance = veh2.getLookAheadDistance();
+        assert.ok(VT.map.AreVehiclesWithinDistance(veh2, seg1, distance),
+            "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(veh1.config.location)+"; Back Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
+    });
+QUnit.cases([
+        { sx: 0, sy: 0, sz: 0, ex: 75, ey: 0, ez: 75, v: 100 },
+        { sx: 100, sy: 0, sz: 75, ex: 25, ey: 0, ez: 105, v: 100 }
+    ]).test("vehicle should not detect other vehicle in range behind itself on segment with angled heading", function (p, assert) {
+        VT.teardown();
+        JSVTS.Controller = { up: new THREE.Vector3(0,1,0) };
+        VT.map = new JSVTS.Map(1);
+        var seg1 = new JSVTS.Segment({
+            start: new THREE.Vector3(p.sx,p.sy,p.sz),
+            end: new THREE.Vector3(p.ex,p.ey,p.ez),
+            isInlet: true,
+            speedLimit: p.v,
+            name: "Road 1"
+        });
+        var veh1 = new JSVTS.Vehicle();
+        seg1.attachVehicle(veh1);
+        var pt = seg1.spline.getPoint(0.5); // middle of segment
+        veh1.updateLocation(pt);
+        veh1.velocity = p.v;
+        var veh2 = new JSVTS.Vehicle();
+        seg1.attachVehicle(veh2);
+        var pt = seg1.spline.getPoint(0.75); // 1st quarter of segment
+        veh1.updateLocation(pt);
+        veh2.velocity = p.v;
+
+        VT.map.AddSegment(seg1);
+        VT.map.AddVehicle(veh1);
+        VT.map.AddVehicle(veh2);
+
+        var distance = veh2.getLookAheadDistance();
+        assert.ok(VT.map.AreVehiclesWithinDistance(veh2, seg1, distance),
+            "vehicle not detected when it should have been. Back Vehicle: "+JSON.stringify(veh1.config.location)+"; Front Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
+    });

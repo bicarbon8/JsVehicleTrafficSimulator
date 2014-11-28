@@ -105,7 +105,7 @@ JSVTS.Vehicle = function(options){
 
     self.getLookAheadDistance = function(cof) {
         var FRICTION = cof || 0.5;
-        var VEHICLE_LENGTH = (self.config.length); // start from front bumper
+        var VEHICLE_LENGTH = (self.config.length*1.5); // start from front bumper
         var GRAVITY = 9.81;
         var METERS_PER_SEC = self.convertKilometersPerHourToMetersPerSecond(self.velocity);
         var REACTION_DISTANCE = METERS_PER_SEC*self.config.reactionTime;
@@ -185,7 +185,7 @@ JSVTS.Vehicle = function(options){
 
     self.brake = function (elapsedMs) {
         var elapsedSeconds = elapsedMs/1000;
-        self.velocity-=(20*elapsedSeconds);
+        self.velocity-=(10*elapsedSeconds);
         // prevent going backwards
         if (self.velocity < 0) {
             self.velocity = 0;
@@ -200,7 +200,6 @@ JSVTS.Vehicle = function(options){
 
     self.isCollidingWith = function (box) {
         if (box.isIntersectionBox(new THREE.Box3().setFromObject(self.mesh))) {
-            self.crashed = true;
             return true;
         }
         return false;
