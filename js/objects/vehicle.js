@@ -143,13 +143,7 @@ JSVTS.Vehicle = function(options){
             self.config.location = newPosition;
             self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
 
-            // indicate that we've updated
-            self.mesh.geometry.dynamic = true;
-            self.mesh.geometry.verticesNeedUpdate = true;
-            self.mesh.geometry.normalsNeedUpdate = true;
-
-            self.previousLocation = self.config.location;
-            self.config.location.copy(self.mesh.position);
+            self.updated();
         }
     };
 
@@ -159,14 +153,15 @@ JSVTS.Vehicle = function(options){
             // move to self.config.location and rotate to point at heading
             self.mesh.translateZ(distance);
 
-            // indicate that we've updated
-            self.mesh.geometry.dynamic = true;
-            self.mesh.geometry.verticesNeedUpdate = true;
-            self.mesh.geometry.normalsNeedUpdate = true;
-
-            self.previousLocation = self.config.location;
-            self.config.location.copy(self.mesh.position);
+            self.updated();
         }
+    };
+
+    self.updated = function () {
+        // indicate that we've updated
+        self.mesh.geometry.dynamic = true;
+        self.mesh.geometry.verticesNeedUpdate = true;
+        self.mesh.geometry.normalsNeedUpdate = true;
     };
 
     self.updateVelocity = function (elapsedMs, isStopping) {

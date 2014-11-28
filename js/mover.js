@@ -80,7 +80,7 @@ JSVTS.Mover = {
                         // remove v from the Simulation
                         JSVTS.Mover.removeVehicle(v);
                     }
-                } 
+                }
                 if (v) {
                     v.moveBy(distTraveled);
 
@@ -287,7 +287,7 @@ JSVTS.Mover = {
                     var distanceToObj = JSVTS.Mover.GetDistanceBetweenTwoPoints(baseline.start, obj.config.location);
                     // compare distance and angle
                     var dist = distance;
-                    dist = distance - (distance*((angleToObj/maxAngle)*decay))
+                    dist = distance - (distance*((angleToObj/maxAngle)*decay));
                     if (distanceToObj <= dist) {
                         if (closest.obj === null || closest.dist > distanceToObj) {
                             closest.obj = obj;
