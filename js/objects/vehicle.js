@@ -152,6 +152,7 @@ JSVTS.Vehicle = function(options){
             self.generateMesh(); // generates if doesn't already exist
             // move to self.config.location and rotate to point at heading
             self.mesh.translateZ(distance);
+            self.config.location = self.mesh.position;
 
             self.updated();
         }

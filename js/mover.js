@@ -64,7 +64,6 @@ JSVTS.Mover = {
             var distTraveled=(speed*elapsedSeconds);
             if(distTraveled>0){
                 var length = segment.spline.getLength(0);
-                var t = 0; // 0 = start, 1 = end, 0.5 = middle
                 var remainingDistOnSegment = JSVTS.Mover.GetDistanceBetweenTwoPoints(v.config.location, segment.config.end);
                 if (distTraveled >= remainingDistOnSegment) {
                     // if there is a next Segment
@@ -275,13 +274,13 @@ JSVTS.Mover = {
             for (var i in objects) {
                 var obj = objects[i];
                 // create segment to obj
-                var segToTfc = new THREE.Line3(baseline.start, obj.config.location);
+                var segToObj = new THREE.Line3(baseline.start, obj.config.location);
 
                 // create segment to current segment end
                 var segToEnd = baseline;
 
                 // get angle formed by both lines
-                var angleToObj = JSVTS.Mover.angleFormedBy(segToTfc, segToEnd);
+                var angleToObj = JSVTS.Mover.angleFormedBy(segToObj, segToEnd);
 
                 if (angleToObj >= -maxAngle && angleToObj <= maxAngle) {
                     var distanceToObj = JSVTS.Mover.GetDistanceBetweenTwoPoints(baseline.start, obj.config.location);
