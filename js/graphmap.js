@@ -90,30 +90,39 @@ JSVTS.Map = {
 		})[0];
 	},
 
-	GetSegmentsStartingAt: function(point) {
-		return JSVTS.Map._segments[JSON.stringify(point)] || [];
+	GetAvailableSegmentsContainingPoint: function(point) {
+        var segments = [];
+        var allSegments = JSVTS.Map.GetSegments();
+        for (var i in allSegments) {
+            var segment = allSegments[i];
+            if (JSON.stringify(segment.config.start) === JSON.stringify(point)) {
+                segments.push(segment);
+            } else {
+                for (var j in segment.laneChangePoints) {
+                    var changePoint = segment.laneChangePoints[j];
+                    if (JSON.stringify(changePoint) === JSON.stringify(point)) {
+                        segments.push(segment);
+                    }
+                }
+            }
+        }
+		return segments;
 	},
 
 	GetSimilarSegmentsInRoad: function(currentSegment) {
 		var results = [];
-		var searchRadius = 20; // pixels / meters to search for matches
 
-		var segments = GetSegments();
-		for (var i=0; i<segments.length; i++) {
+		var segments = JSVTS.Map.GetSegments();
+		for (var i in segments) {
 			var segment = segments[i];
-			if (segment.id !== currentSegment.id) {
-				// ensure segment is within specified radius
-				var inRange = false;
-				var currLines = currentSegment.LaneChangeLines;
-				for (var j=0; j<currLines.length; j++) {
-					if (currLines[j].IntersectsLine(segment)) {
-						inRange = true;
-					}
-				}
 
-				if (inRange) {
-					results.push(segment);
-				}
+			if (segment.id !== currentSegment.id) {
+                var line1 = new THREE.Line3(segment.config.start, segment.config.end);
+                var line2 = new THREE.Line3(currentSegment.config.start, currentSegment.config.end);
+				if (segment.config.name === currentSegment.config.name &&
+                Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 5) {
+                    results.push(segment);
+                }
 			}
 		}
 

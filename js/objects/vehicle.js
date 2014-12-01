@@ -38,7 +38,7 @@ JSVTS.VEH_OPTIONS = function () {
         location: new THREE.Vector3(0,0,0),
         heading: 0,
         desiredVelocity: 0,
-        reactionTime: 1.5, // seconds to react
+        reactionTime: 2.5, // seconds to react
     };
     return self;
 };
@@ -47,9 +47,10 @@ JSVTS.Vehicle = function(options){
     self.id = null;
     self.config = JSVTS.VEH_OPTIONS();
     self.changingLanes = false;
-    self.changeLaneTime = 0;
+    self.changeLaneTime = null;
     self.segmentId = null;
-    self.nextSegmentId = null;
+    self.segmentStart = null;
+    self.segmentEnd = null;
     self.mesh = null;
     self.velocity = 0; // Km/h
     self.previousLocation = null;
@@ -74,43 +75,13 @@ JSVTS.Vehicle = function(options){
         }
     };
 
-    self.getViewArea=function(){
-        /**
-         * the view area is a pie-shaped region where the point of the
-         * pie starts from the centrepoint of the vehicle and the crust
-         * is ahead and to the sides.  Use 3 triangle to represent this
-         * where vehicles in the two side triangles must be traveling 
-         * towards the vehicle to initiate slowing
-         */
-        var tri=null;
-        if(self.Location){
-            var triP0=new THREE.Vector3().copy(self.config.location),
-                triP1=new THREE.Vector3().copy(triP0),
-                triP2=new THREE.Vector3().copy(triP0);
-            if(self.velocity>=0.44){
-                // triP1.MoveBy(new Point(self.config.width+(self.Velocity),-(self.Height*2))); //-((self.Height+self.Velocity)/(self.Velocity/4))));
-                triP1.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width+(self.velocity),-(self.config.height*2), 0));
-                // triP2.MoveBy(new Point(self.config.width+(self.Velocity),(self.Height*2))); //((self.Height+self.Velocity)/(self.Velocity/4))));
-                triP2.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width+(self.velocity),(self.config.height*2), 0));
-            } else{
-                // triP1.MoveBy(new Point(self.config.width,-self.Height));
-                triP1.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width,-self.config.height, 0));
-                // triP2.MoveBy(new Point(self.config.width,self.Height));
-                triP2.applyMatrix(new THREE.Matrix4().makeTranslation(self.config.width,self.config.height, 0));
-            }
-            var tri=new THREE.Triangle(triP0,triP1,triP2);
-            // tri.Rotate(self.config.heading, triP0);
-        }
-        return tri;
-    };
-
     self.getLookAheadDistance = function(cof) {
-        var FRICTION = cof || 0.5;
-        var VEHICLE_LENGTH = (self.config.length*1.5); // start from front bumper
+        var FRICTION = cof || 0.8;
+        var VEHICLE_LENGTH = (self.config.length); // start from 1/2 car length ahead
         var GRAVITY = 9.81;
-        var METERS_PER_SEC = self.convertKilometersPerHourToMetersPerSecond(self.velocity);
-        var REACTION_DISTANCE = METERS_PER_SEC*self.config.reactionTime;
-        var result = REACTION_DISTANCE + VEHICLE_LENGTH + (Math.pow(METERS_PER_SEC, 2)) / (2*(FRICTION*GRAVITY));
+        var METERS_PER_SEC = self.convertKmphToMps(self.velocity);
+        var REACTION_DISTANCE = METERS_PER_SEC * self.config.reactionTime;
+        var result = REACTION_DISTANCE + VEHICLE_LENGTH + (self.velocity / 3.4); //(Math.pow(METERS_PER_SEC, 2)) / (2 * (FRICTION * GRAVITY));
 
         return result;
     };
@@ -130,7 +101,7 @@ JSVTS.Vehicle = function(options){
 
     self.offsetBy = function(offset) {
         var pos = THREE.Vector3(
-            self.config.location.x + offset.x, 
+            self.config.location.x + offset.x,
             self.config.location.y + offset.y,
             self.config.location.z + offset.z);
         self.updateLocation(pos);
@@ -179,7 +150,7 @@ JSVTS.Vehicle = function(options){
             }
         }
         if (self.velocity>self.config.desiredVelocity || isStopping) {
-            // slow down: avg. rate of decceleration is 3.5 m/s^2
+            // slow down: avg. rate of deceleration is 3.5 m/s^2
             if (self.velocity-self.config.desiredVelocity<0.1 && !isStopping) {
                 // close enough so just set to value
                 self.velocity=self.config.desiredVelocity;
@@ -199,7 +170,7 @@ JSVTS.Vehicle = function(options){
 
     self.brake = function (elapsedMs) {
         var elapsedSeconds = elapsedMs/1000;
-        self.velocity-=(10*elapsedSeconds);
+        self.velocity-=(self.convertMpsToKmph(3.4 * elapsedSeconds));
         // prevent going backwards
         if (self.velocity < 0) {
             self.velocity = 0;
@@ -212,11 +183,19 @@ JSVTS.Vehicle = function(options){
         return self.mesh.geometry.boundingBox;
     };
 
-    self.convertKilometersPerHourToMetersPerSecond = function(kilometersPerHour) {
+    self.convertKmphToMps = function(kilometersPerHour) {
         var result = 0;
         var SECONDS_PER_HOUR=3600;
         var METERS_PER_KILOMETER = 1000;
         result = (kilometersPerHour/(SECONDS_PER_HOUR))*METERS_PER_KILOMETER;
+        return result;
+    };
+
+    self.convertMpsToKmph = function(metersPerSecond) {
+        var result = 0;
+        var SECONDS_PER_HOUR=3600;
+        var METERS_PER_KILOMETER = 1000;
+        result = (metersPerSecond * SECONDS_PER_HOUR) / METERS_PER_KILOMETER;
         return result;
     };
 

@@ -79,10 +79,10 @@ JSVTS.Plotter = {
             ASPECT,
             NEAR,
             FAR);
-        JSVTS.Plotter.camera.position.z = 250;
+        JSVTS.Plotter.camera.position.z = 228;
         JSVTS.Plotter.camera.position.y = 250;
-        JSVTS.Plotter.camera.position.x = 250;
-        JSVTS.Plotter.camera.lookAt(new THREE.Vector3()); // origin
+        JSVTS.Plotter.camera.position.x = 115;
+        JSVTS.Plotter.camera.lookAt(new THREE.Vector3(75, 0, 115)); 
     },
 
     initStats: function () {

@@ -43,47 +43,46 @@ JSVTS.Segment = function(options){
     var self = this;
     self.id=null;
     self.config = JSVTS.SEG_OPTIONS();
-    self.LaneChangeLines=[];
     self.mesh = null;
     self.spline = null; // used for directionality
     self.tangent = null;
     self.axis = null;
     self.radians = null;
     self.tfc = null;
+    self.laneChangePoints = [];
 
     self.init=function(options) {
         self.id = JSVTS.SEG_ID_COUNT++;
         for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
         self.generateMesh();
 
-        // build the "tendrils" that allow for lane changes
-        // self.GenerateLaneChangeLines();
+        self.generateLaneChangePoints();
     };
     
-    self.attachVehicle=function(vehicle) {
-        // set reference data
+    self.attachVehicle=function(vehicle, atPoint) {
+        if (!atPoint) {
+            atPoint = self.config.start;
+        }
         vehicle.config.desiredVelocity = self.config.speedLimit;
-        vehicle.segmentId = self.id;
-
-        // set the vehicle's position and heading
-        vehicle.updateLocation(new THREE.Vector3().copy(self.config.start));
-        
-        // set the quaternion
-        vehicle.mesh.lookAt(self.config.end);
-        // vehicle.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
+        self.attachObject(vehicle, atPoint, self.config.end);
+        vehicle.segmentStart = self.config.start;
+        vehicle.segmentEnd = self.config.end;
     };
 
     self.attachTrafficFlowControl=function(tfc) {
-        // set reference data
-        tfc.segmentId = self.id;
-
-        // set the vehicle's position and heading
-        tfc.updateLocation(new THREE.Vector3().copy(self.config.end));
-        
-        // set the quaternion
-        tfc.mesh.quaternion.setFromAxisAngle(self.axis, self.radians);
-
+        self.attachObject(tfc, self.config.end, self.config.start);
         self.tfc = tfc;
+    };
+
+    self.attachObject = function (obj, location, lookAt) {
+        // set reference data
+        obj.segmentId = self.id;
+
+        // set the obj's position to passed in location
+        obj.updateLocation(new THREE.Vector3().copy(location));
+        
+        // rotate to face segment end so movement will just be Z translation
+        obj.mesh.lookAt(lookAt);
     };
 
     self.generateMesh = function () {
@@ -111,14 +110,23 @@ JSVTS.Segment = function(options){
         }
     };
 
-    self.getLength = function () {
-        return self.spline.getLength(0);
+    self.generateLaneChangePoints = function() {
+        // place point every [spacing] units (metres)
+        var spacing = 10;
+        for (var i=spacing; i<self.getLength(); i+=spacing) {
+            var point = new THREE.SphereGeometry(1);
+            var pointMat = new THREE.MeshBasicMaterial();
+            var sphere = new THREE.Mesh(point, pointMat);
+            sphere.position.set(self.config.start.x, self.config.start.y, self.config.start.z);
+            sphere.lookAt(self.config.end);
+            sphere.translateZ(i);
+            self.laneChangePoints.push(sphere.position);
+            sphere.geometry.dispose();
+        }
     };
 
-    self.angleFormedBy = function (segment) {
-        var a = new THREE.Vector3().copy(self.config.end).sub(self.config.start).normalize();
-        var b = new THREE.Vector3().copy(segment.config.end).sub(segment.config.start).normalize();
-        return (Math.acos(a.dot(b))*(180/Math.PI));
+    self.getLength = function () {
+        return self.spline.getLength(0);
     };
 
     self.init(options);
