@@ -36,6 +36,7 @@ JSVTS.SEG_OPTIONS = function () {
         isInlet: false,
         name: '',
         speedLimit: 30, // Km/h
+        isMergeLane: false
     };
     return self;
 };
@@ -67,6 +68,9 @@ JSVTS.Segment = function(options){
         self.attachObject(vehicle, atPoint, self.config.end);
         vehicle.segmentStart = self.config.start;
         vehicle.segmentEnd = self.config.end;
+        if (self.config.isMergeLane) {
+            vehicle.isChangingLanes = true;
+        }
     };
 
     self.attachTrafficFlowControl=function(tfc) {
@@ -108,11 +112,24 @@ JSVTS.Segment = function(options){
             // calcluate the angle between the up vector and the tangent
             self.radians = Math.acos(JSVTS.Map.up.dot(self.tangent));
         }
+
+        var identity = self.id;
+        if (self.config.name && self.config.name !== "") {
+            identity = self.config.name;
+        }
+        var text = new THREE.TextGeometry(identity, { size: 2, height: 0.05 });
+        var tMesh = new THREE.Mesh(text, material);
+        var pt = self.spline.getPoint(0.5);
+        tMesh.position.set(pt.x, pt.y, pt.z);
+        tMesh.lookAt(self.config.end);
+        tMesh.rotateY(90*(Math.PI/180));
+        tMesh.translateY(self.mesh.position.y + 5);
+        self.mesh.add(tMesh);
     };
 
     self.generateLaneChangePoints = function() {
         // place point every [spacing] units (metres)
-        var spacing = 10;
+        var spacing = 1;
         for (var i=spacing; i<self.getLength(); i+=spacing) {
             var point = new THREE.SphereGeometry(1);
             var pointMat = new THREE.MeshBasicMaterial();

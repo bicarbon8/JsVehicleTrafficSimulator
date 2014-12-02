@@ -8,7 +8,8 @@ var VT = {
             "../js/objects/vehicle.js",
             "../js/objects/segment.js",
             "../js/mover.js",
-            "../js/graphmap.js"
+            "../js/map.js",
+            "../ext/helvetiker_regular.typeface.js"
         ], function () {
             var seg1 = new JSVTS.Segment({
                 start: new THREE.Vector3(0,0,0),
@@ -138,21 +139,23 @@ QUnit.test("vehicle should detect other vehicle in range ahead of itself on diff
         JSVTS.Map.AddVehicle(veh2);
 
         var distance = veh2.getLookAheadDistance();
-        assert.ok(JSVTS.Mover.AreVehiclesWithinDistance(veh2, seg1, distance),
+        var actual = JSVTS.Mover.shouldStop(veh2, seg1);
+        assert.ok(actual,
             "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(veh1.config.location)+"; Back Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
+        assert.equal(actual.type, "vehicle");
     });
 QUnit.test("vehicle should detect other vehicle in range ahead of itself on different segment, different heading", function (assert) {
         VT.teardown();
         var seg1 = new JSVTS.Segment({
             start: new THREE.Vector3(0,0,0),
-            end: new THREE.Vector3(75,0,0),
+            end: new THREE.Vector3(25,0,0),
             isInlet: true,
             speedLimit: 100,
             name: "Road 1"
         });
         var seg2 = new JSVTS.Segment({
-            start: new THREE.Vector3(75,0,0),
-            end: new THREE.Vector3(75,0,75),
+            start: new THREE.Vector3(25,0,0),
+            end: new THREE.Vector3(50,0,2),
             isInlet: true,
             speedLimit: 100,
             name: "Road 1"
@@ -174,8 +177,10 @@ QUnit.test("vehicle should detect other vehicle in range ahead of itself on diff
         JSVTS.Map.AddVehicle(veh2);
 
         var distance = veh2.getLookAheadDistance();
-        assert.ok(JSVTS.Mover.AreVehiclesWithinDistance(veh2, seg1, distance),
+        var actual = JSVTS.Mover.shouldStop(veh2, seg1);
+        assert.ok(actual,
             "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(veh1.config.location)+"; Back Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
+        assert.equal(actual.type, "vehicle");
     });
 QUnit.cases([
         { sx: 0, sy: 0, sz: 0, ex: 75, ey: 0, ez: 75, v: 100 },
@@ -205,8 +210,10 @@ QUnit.cases([
         JSVTS.Map.AddVehicle(veh2);
 
         var distance = veh2.getLookAheadDistance();
-        assert.ok(JSVTS.Mover.AreVehiclesWithinDistance(veh2, seg1, distance),
+        var actual = JSVTS.Mover.shouldStop(veh2, seg1);
+        assert.ok(actual,
             "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(veh1.config.location)+"; Back Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
+        assert.equal(actual.type, "vehicle");
     });
 QUnit.cases([
         { sx: 0, sy: 0, sz: 0, ex: 75, ey: 0, ez: 75, v: 100 },
@@ -227,7 +234,7 @@ QUnit.cases([
         veh1.velocity = p.v;
         var veh2 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh2);
-        var pt = seg1.spline.getPoint(0.75); // 1st quarter of segment
+        var pt = seg1.spline.getPoint(0.75); // 3rd quarter of segment
         veh1.updateLocation(pt);
         veh2.velocity = p.v;
 
@@ -236,6 +243,8 @@ QUnit.cases([
         JSVTS.Map.AddVehicle(veh2);
 
         var distance = veh2.getLookAheadDistance();
-        assert.ok(JSVTS.Mover.AreVehiclesWithinDistance(veh2, seg1, distance),
+        var actual = JSVTS.Mover.shouldStop(veh2, seg1);
+        assert.ok(actual,
             "vehicle not detected when it should have been. Back Vehicle: "+JSON.stringify(veh1.config.location)+"; Front Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
+        assert.equal(actual.type, "vehicle");
     });

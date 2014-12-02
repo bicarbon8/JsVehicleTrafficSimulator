@@ -46,7 +46,7 @@ JSVTS.Vehicle = function(options){
     var self = this;
     self.id = null;
     self.config = JSVTS.VEH_OPTIONS();
-    self.changingLanes = false;
+    self.isChangingLanes = false;
     self.changeLaneTime = null;
     self.segmentId = null;
     self.segmentStart = null;
@@ -56,6 +56,7 @@ JSVTS.Vehicle = function(options){
     self.previousLocation = null;
     self.crashed = false;
     self.crashCleanupTime = null;
+    self.idMesh = null;
 
     self.init=function(options) {
         self.id = JSVTS.VEH_ID_COUNT++;
@@ -77,7 +78,7 @@ JSVTS.Vehicle = function(options){
 
     self.getLookAheadDistance = function(cof) {
         var FRICTION = cof || 0.8;
-        var VEHICLE_LENGTH = (self.config.length); // start from 1/2 car length ahead
+        var VEHICLE_LENGTH = (self.config.length*2); // start from 1/2 car length ahead
         var GRAVITY = 9.81;
         var METERS_PER_SEC = self.convertKmphToMps(self.velocity);
         var REACTION_DISTANCE = METERS_PER_SEC * self.config.reactionTime;
@@ -94,17 +95,15 @@ JSVTS.Vehicle = function(options){
                 color: 0xffffff,
                 wireframe: true
             });
-            mesh = new THREE.Mesh(geometry, material);
+            var mesh = new THREE.Mesh(geometry, material);
             self.mesh = mesh;
-        }
-    };
 
-    self.offsetBy = function(offset) {
-        var pos = THREE.Vector3(
-            self.config.location.x + offset.x,
-            self.config.location.y + offset.y,
-            self.config.location.z + offset.z);
-        self.updateLocation(pos);
+            // TODO: add debug switch
+            var text = new THREE.TextGeometry(self.id, { size: 2, height: 0.05 });
+            var tMesh = new THREE.Mesh(text, material);
+            tMesh.translateY(self.config.height + 5);
+            self.idMesh = tMesh;
+        }
     };
 
     self.updateLocation = function (newPosition) {
@@ -113,6 +112,7 @@ JSVTS.Vehicle = function(options){
             // move to self.config.location and rotate to point at heading
             self.config.location = newPosition;
             self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
+            self.idMesh.position.set(self.config.location.x, self.config.location.y + 5, self.config.location.z);
 
             self.updated();
         }
@@ -123,6 +123,7 @@ JSVTS.Vehicle = function(options){
             self.generateMesh(); // generates if doesn't already exist
             // move to self.config.location and rotate to point at heading
             self.mesh.translateZ(distance);
+            self.idMesh.position.set(self.mesh.position.x, self.mesh.position.y + 5, self.mesh.position.z);
             self.config.location = self.mesh.position;
 
             self.updated();
@@ -134,6 +135,13 @@ JSVTS.Vehicle = function(options){
         self.mesh.geometry.dynamic = true;
         self.mesh.geometry.verticesNeedUpdate = true;
         self.mesh.geometry.normalsNeedUpdate = true;
+
+        if (JSVTS.Plotter && JSVTS.Plotter.camera) {
+            self.idMesh.lookAt(JSVTS.Plotter.camera.position);
+        }
+        self.idMesh.geometry.dynamic = true;
+        self.idMesh.geometry.verticesNeedUpdate = true;
+        self.idMesh.geometry.normalsNeedUpdate = true;
     };
 
     self.updateVelocity = function (elapsedMs, isStopping) {

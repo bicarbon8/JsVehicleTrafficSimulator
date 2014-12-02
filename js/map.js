@@ -38,50 +38,36 @@
 "strict mode"
 var JSVTS = JSVTS || {};
 JSVTS.Map = {
-	_segments: {}, // use as a HashMap<JSVTS.Segment.start,Array<JSVTS.Segment>>
-	_vehicles: {}, // use as a HashMap<JSVTS.Vehicle.id,JSVTS.Vehicle>
+	_segments: [],
+	_vehicles: [],
     up: new THREE.Vector3(0, 1, 0),
 
     reset: function () {
-        JSVTS.Map._segments = {};
-        JSVTS.Map._vehicles = {};
+        JSVTS.Map._segments = [];
+        JSVTS.Map._vehicles = [];
     },
 
 	AddSegment: function(segment) {
-        var key = JSON.stringify(segment.config.start);
-		if (!JSVTS.Map._segments[key]) {
-			JSVTS.Map._segments[key] = [];
-		}
-		JSVTS.Map._segments[key].push(segment);
+        JSVTS.Map._segments.push(segment);
 	},
 
 	AddVehicle: function(vehicle) {
-		if (vehicle.SegmentId) {
-			vehicle = JSVTS.Map.GetSegmentById(vehicle.SegmentId).AttachVehicle(vehicle);
-		}
-		JSVTS.Map._vehicles[vehicle.id] = vehicle;
+		JSVTS.Map._vehicles.push(vehicle);
 	},
 
     removeVehicle: function(v) {
         // remove v from the Simulation
         JSVTS.Map._vehicles = JSVTS.Map._vehicles.splice(JSVTS.Map._vehicles.indexOf(v));
-        if (JSVTS.Controller && JSVTS.Controller.plotter) {
-            JSVTS.Controller.plotter.removeObject(v.mesh);
+        // delete JSVTS.Map._vehicles[v.id];
+        if (JSVTS.Plotter) {
+            JSVTS.Plotter.removeObject(v.mesh);
+            JSVTS.Plotter.removeObject(v.idMesh);
         }
         v = null;
     },
 
 	GetSegments: function() {
-		var segments = [];
-		for (var key in JSVTS.Map._segments) {
-			var segs = JSVTS.Map._segments[key];
-
-            segs.forEach(function (seg) {
-                segments.push(seg);
-            });
-		}
-
-		return segments;
+		return JSVTS.Map._segments;
 	},
 
 	GetSegmentById: function (id) {
@@ -90,7 +76,15 @@ JSVTS.Map = {
 		})[0];
 	},
 
-	GetAvailableSegmentsContainingPoint: function(point) {
+    getSegmentsStartingAt: function (point) {
+        return JSVTS.Map.GetSegments().filter(function (seg) {
+            return seg.config.start.x === point.x &&
+                   seg.config.start.y === point.y &&
+                   seg.config.start.z === point.z;
+        });
+    },
+
+    GetAvailableSegmentsContainingPoint: function(point) {
         var segments = [];
         var allSegments = JSVTS.Map.GetSegments();
         for (var i in allSegments) {
@@ -130,14 +124,7 @@ JSVTS.Map = {
 	},
 
 	GetVehicles: function() {
-		var vehicles = [];
-
-		for (var i in JSVTS.Map._vehicles) {
-			var vehicle = JSVTS.Map._vehicles[i];
-			vehicles.push(vehicle);
-		}
-
-		return vehicles;
+		return JSVTS.Map._vehicles;
 	},
 
 	GetVehiclesInSegment: function(id) {
@@ -152,12 +139,4 @@ JSVTS.Map = {
 			JSVTS.Map._vehicles[v.id] = v;
 		}
 	},
-
-    ContainsStartPoint: function(point){
-        if (JSVTS.Map.GetSegmentsStartingAt(point) > 0) {
-            return true;
-        }
-
-        return false;
-    },
 };

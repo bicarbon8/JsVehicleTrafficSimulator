@@ -35,9 +35,12 @@ JSVTS.Plotter = {
     controls: null,
     stats: null,
     light: null,
+    width: 0,
+    height: 0,
 
     init: function (width, height) {
-        JSVTS.Plotter.reset();
+        JSVTS.Plotter.width = width;
+        JSVTS.Plotter.height = height;
         
         JSVTS.Plotter.initRenderer(width, height);
         JSVTS.Plotter.initCamera(width, height);
@@ -132,6 +135,8 @@ JSVTS.Plotter = {
         JSVTS.Plotter.camera = null;
         JSVTS.Plotter.controls = null;
         JSVTS.Plotter.stats = null;
+
+        JSVTS.Plotter.init(JSVTS.Plotter.width, JSVTS.Plotter.height);
     },
 
     addObject: function(objectMesh) {

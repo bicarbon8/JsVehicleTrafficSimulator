@@ -45,16 +45,17 @@ JSVTS.TxtToMapParser = {
             var seg = jsonObj[i];
             var start = new THREE.Vector3(seg.start.x,seg.start.y,seg.start.z);
             var end = new THREE.Vector3(seg.end.x,seg.end.y,seg.end.z);
-            var stoplight = JSVTS.TxtToMapParser.ParseStopLightsJson(seg.stoplight);
+            var tfc = JSVTS.TxtToMapParser.parseTfcJson(seg.tfc);
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,
                 "speedLimit": jsonObj[i].speedlimit,
                 "name": jsonObj[i].roadname,
-                "isInlet": jsonObj[i].isinlet
+                "isInlet": jsonObj[i].isinlet,
+                "isMergeLane": jsonObj[i].ismergelane
             });
-            if (stoplight) {
-                segment.attachTrafficFlowControl(stoplight);
+            if (tfc) {
+                segment.attachTrafficFlowControl(tfc);
             }
             segments.push(segment);
         }
@@ -62,22 +63,26 @@ JSVTS.TxtToMapParser = {
         return segments;
     },
 
-    ParseStopLightsJson: function (jsonObj) {
-        var stoplight = null;
+    parseTfcJson: function (jsonObj) {
+        var tfc = null;
         if (jsonObj) {
-            var changeSeconds = jsonObj.changeseconds;
-            var startState = jsonObj.startstate;
-            var loc = new THREE.Vector3(jsonObj.location.x,jsonObj.location.y,0);
-            var sl = new JSVTS.StopLight({
-                "changeSeconds": changeSeconds,
-                "startState": startState
-            });
-            sl.Location = loc;
-
-            stoplight = sl;
+            var type = jsonObj.type;
+            switch (type) {
+                case "stoplight":
+                    var changeSeconds = jsonObj.changeseconds;
+                    var startState = jsonObj.startstate;
+                    tfc = new JSVTS.StopLight({
+                        "changeSeconds": changeSeconds,
+                        "startState": startState
+                    });
+                    break;
+                // TODO: add more types like stop signs, etc.
+                default:
+                    throw "unknown TrafficFlowControl type of '"+type+"' specified.";
+            }
         }
 
-        return stoplight;
+        return tfc;
     },
 
     ParseVehiclesJson: function (jsonObj) {

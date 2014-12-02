@@ -27,235 +27,233 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-{
-    "mover":{
-        "millisecondstep":2,
-        "elapsedmillisec":0
-    },
+var JSVTS = JSVTS || {};
+JSVTS.roadway = {
     "map":{
-        "scale":1,
         "segments":[
             {
                 "start":{
                     "x":200,
-                    "y":25
+                    "y":0,
+                    "z":25
                 },
                 "end":{
                     "x":200,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "speedlimit":25,
-                "roadname":"Jason Ave. N.",
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":200,
-                            "y":195
-                        },
-                        "changeseconds":60,
-                        "startstate":0
-                    }
-                ],
-                "vehicles":[],
+                "roadname":"Road 1 Southbound",
+                "tfc":{
+                    "type":"stoplight",
+                    "changeseconds":60,
+                    "startstate":0
+                },
                 "preference":0,
-                "isinlet":true
+                "isinlet":true,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":200,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "end":{
                     "x":200,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "speedlimit":25,
-                "roadname":"Jason Ave. N.",
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 1 Southbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":200,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "end":{
                     "x":200,
-                    "y":300
+                    "y":0,
+                    "z":300
                 },
                 "speedlimit":25,
-                "roadname":"Jason Ave. N.",
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 1 Southbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":206,
-                    "y":300
+                    "y":0,
+                    "z":300
                 },
                 "end":{
                     "x":206,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "speedlimit":25,
-                "roadname":"Jason Ave. N.",
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":206,
-                            "y":209
-                        },
-                        "changeseconds":60,
-                        "startstate":0
-                    }
-                ],
-                "vehicles":[],
+                "roadname":"Road 1 Northbound",
+                "tfc":{
+                    "type":"stoplight",
+                    "changeseconds":60,
+                    "startstate":0
+                },
                 "preference":0,
-                "isinlet":true
+                "isinlet":true,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":206,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "end":{
                     "x":206,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "speedlimit":25,
-                "roadname":"Jason Ave. N.",
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 1 Northbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":206,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "end":{
                     "x":206,
-                    "y":25
+                    "y":0,
+                    "z":25
                 },
                 "speedlimit":25,
-                "roadname":"Jason Ave. N.",
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 1 Northbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":25,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "end":{
                     "x":200,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "speedlimit":35,
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":195,
-                            "y":206
-                        },
-                        "changeseconds":60,
-                        "startstate":2
-                    }
-                ],
-                "vehicles":[],
+                "roadname":"Road 2 Eastbound",
+                "tfc":{
+                    "type":"stoplight",
+                    "changeseconds":60,
+                    "startstate":2
+                },
                 "preference":0,
-                "isinlet":true
+                "isinlet":true,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":200,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "end":{
                     "x":206,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "speedlimit":35,
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 2 Eastbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":206,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "end":{
                     "x":300,
-                    "y":206
+                    "y":0,
+                    "z":206
                 },
                 "speedlimit":35,
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 2 Eastbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":300,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "end":{
                     "x":206,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "speedlimit":35,
-                "stoplights":[
-                    {
-                        "location":{
-                            "x":209,
-                            "y":200
-                        },
-                        "changeseconds":60,
-                        "startstate":2
-                    }
-                ],
-                "vehicles":[],
+                "roadname":"Road 2 Westbound",
+                "tfc":{
+                    "type":"stoplight",
+                    "changeseconds":60,
+                    "startstate":2
+                },
                 "preference":0,
-                "isinlet":true
+                "isinlet":true,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":206,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "end":{
                     "x":200,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "speedlimit":35,
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 2 Westbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             },
             {
                 "start":{
                     "x":200,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "end":{
                     "x":25,
-                    "y":200
+                    "y":0,
+                    "z":200
                 },
                 "speedlimit":35,
-                "stoplights":[],
-                "vehicles":[],
+                "roadname":"Road 2 Westbound",
                 "preference":0,
-                "isinlet":false
+                "isinlet":false,
+                "ismergelane":false
             }
         ]
     }

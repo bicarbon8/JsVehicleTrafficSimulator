@@ -26,18 +26,19 @@ JSVTS = {
             "ext/threejs-69.min.js",
             "ext/OrbitControls.js",
             "ext/stats.min.js",
+            "ext/helvetiker_regular.typeface.js",
             /** main controllers **/
             "js/controller.js",
-            "js/graphmap.js",
+            "js/map.js",
             "js/mover.js",
             "js/objects/segment.js",
             "js/objects/vehicle.js",
             "js/objects/trafficFlowControl.js",
             "js/objects/stopLight.js",
             "js/plotter.js",
-            "TxtToMapParser.js",
-            // "examples/maps/sample.js"
-            "examples/maps/jsonMap.js"
+            "js/txtToMapParser.js",
+            "examples/maps/mergeloop.js"
+            // "examples/maps/intersection.js"
         ], function () {
             JSVTS.Controller.init();
         });

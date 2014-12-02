@@ -8,6 +8,8 @@ JSVTS.Controller = {
     SEG_ID_COUNT  : 0,
     TFC_ID_COUNT  : 0,
     startTime     : 0,
+    elapsed       : 0,
+    realtime      : false,
 
     init: function () {
         JSVTS.Controller.reset();
@@ -47,6 +49,9 @@ JSVTS.Controller = {
             case 'l'.charCodeAt(0):
                 JSVTS.Controller.SetFromJson();
                 break;
+            case 'r'.charCodeAt(0):
+                JSVTS.Controller.toggleRealtimeState();
+                break;
             default:
                 // do nothing
         }
@@ -62,12 +67,27 @@ JSVTS.Controller = {
             JSVTS.Controller.keepMoving=false;
         } else{
             JSVTS.Controller.keepMoving=true;
+            JSVTS.Controller.startTime = new Date().getTime();
             JSVTS.Controller.Move();
+        }
+    },
+
+    toggleRealtimeState: function () {
+        if (JSVTS.Controller.realtime) {
+            JSVTS.Controller.realtime = false;
+        } else {
+            JSVTS.Controller.realtime = true;
         }
     },
     
     Move: function () {
-        JSVTS.Mover.move(25);
+        if (JSVTS.Controller.realtime) {
+            JSVTS.Controller.elapsed = new Date().getTime() - JSVTS.Controller.startTime;
+            JSVTS.Controller.startTime = new Date().getTime();
+        } else {
+            JSVTS.Controller.elapsed = 25;
+        }
+        JSVTS.Mover.move(JSVTS.Controller.elapsed);
         JSVTS.Plotter.render();
 
         if (JSVTS.Controller.keepMoving) {
@@ -76,7 +96,7 @@ JSVTS.Controller = {
     },
     
     SetFromJson: function () {
-        var jsonObj = jsonMap;
+        var jsonObj = JSVTS.roadway;
         JSVTS.TxtToMapParser.ParseMapJson(jsonObj.map);
         var segments = JSVTS.Map.GetSegments();
         for (var i in segments) {
@@ -103,12 +123,14 @@ JSVTS.Controller = {
                     segment.attachVehicle(vehicle);
                     JSVTS.Map.AddVehicle(vehicle);
                     JSVTS.Plotter.addObject(vehicle.mesh);
+                    JSVTS.Plotter.addObject(vehicle.idMesh);
                 }
             });
         } else {
             var vehicle = new JSVTS.Vehicle();
             JSVTS.Map.AddVehicle(vehicle);
             JSVTS.Plotter.addObject(vehicle.mesh);
+            JSVTS.Plotter.addObject(vehicle.idMesh);
         }
 
         JSVTS.Plotter.render();
