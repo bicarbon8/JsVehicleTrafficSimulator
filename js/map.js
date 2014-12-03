@@ -48,17 +48,17 @@ JSVTS.Map = {
     },
 
 	AddSegment: function(segment) {
-        JSVTS.Map._segments.push(segment);
+        JSVTS.Map._segments[segment.id] = segment;
 	},
 
 	AddVehicle: function(vehicle) {
-		JSVTS.Map._vehicles.push(vehicle);
+		JSVTS.Map._vehicles[vehicle.id] = vehicle;
 	},
 
     removeVehicle: function(v) {
         // remove v from the Simulation
-        JSVTS.Map._vehicles = JSVTS.Map._vehicles.splice(JSVTS.Map._vehicles.indexOf(v));
-        // delete JSVTS.Map._vehicles[v.id];
+        // JSVTS.Map._vehicles = JSVTS.Map._vehicles.splice(JSVTS.Map._vehicles.indexOf(v));
+        delete JSVTS.Map._vehicles[v.id];
         if (JSVTS.Plotter) {
             JSVTS.Plotter.removeObject(v.mesh);
             JSVTS.Plotter.removeObject(v.idMesh);
@@ -106,25 +106,27 @@ JSVTS.Map = {
 	GetSimilarSegmentsInRoad: function(currentSegment) {
 		var results = [];
 
-		var segments = JSVTS.Map.GetSegments();
+		var segments = JSVTS.Map.GetSegments().filter(function (seg) {
+            return (seg.config.name === currentSegment.config.name && seg.id !== currentSegment.id);
+        });
 		for (var i in segments) {
 			var segment = segments[i];
 
-			if (segment.id !== currentSegment.id) {
-                var line1 = new THREE.Line3(segment.config.start, segment.config.end);
-                var line2 = new THREE.Line3(currentSegment.config.start, currentSegment.config.end);
-				if (segment.config.name === currentSegment.config.name &&
-                Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 5) {
-                    results.push(segment);
-                }
-			}
+			var line1 = new THREE.Line3(segment.config.start, segment.config.end);
+            var line2 = new THREE.Line3(currentSegment.config.start, currentSegment.config.end);
+			if (segment.config.name === currentSegment.config.name &&
+            Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 5) {
+                results.push(segment);
+            }
 		}
 
 		return results;
 	},
 
 	GetVehicles: function() {
-		return JSVTS.Map._vehicles;
+		return JSVTS.Map._vehicles.filter(function (v) {
+            return v;
+        });
 	},
 
 	GetVehiclesInSegment: function(id) {

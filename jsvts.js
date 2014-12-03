@@ -35,6 +35,7 @@ JSVTS = {
             "js/objects/vehicle.js",
             "js/objects/trafficFlowControl.js",
             "js/objects/stopLight.js",
+            "js/objects/vehicleGenerator.js",
             "js/plotter.js",
             "js/txtToMapParser.js",
             "examples/maps/mergeloop.js"

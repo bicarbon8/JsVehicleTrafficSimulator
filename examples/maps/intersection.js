@@ -49,7 +49,9 @@ JSVTS.roadway = {
                     "changeseconds":60,
                     "startstate":0
                 },
-                "preference":0,
+                "generator": {
+                    "delay":5
+                },
                 "isinlet":true,
                 "ismergelane":false
             },
@@ -66,7 +68,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":25,
                 "roadname":"Road 1 Southbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -83,7 +84,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":25,
                 "roadname":"Road 1 Southbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -105,7 +105,9 @@ JSVTS.roadway = {
                     "changeseconds":60,
                     "startstate":0
                 },
-                "preference":0,
+                "generator": {
+                    "delay":5
+                },
                 "isinlet":true,
                 "ismergelane":false
             },
@@ -122,7 +124,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":25,
                 "roadname":"Road 1 Northbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -139,7 +140,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":25,
                 "roadname":"Road 1 Northbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -161,7 +161,9 @@ JSVTS.roadway = {
                     "changeseconds":60,
                     "startstate":2
                 },
-                "preference":0,
+                "generator": {
+                    "delay":5
+                },
                 "isinlet":true,
                 "ismergelane":false
             },
@@ -178,7 +180,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":35,
                 "roadname":"Road 2 Eastbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -195,7 +196,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":35,
                 "roadname":"Road 2 Eastbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -217,7 +217,9 @@ JSVTS.roadway = {
                     "changeseconds":60,
                     "startstate":2
                 },
-                "preference":0,
+                "generator": {
+                    "delay":5
+                },
                 "isinlet":true,
                 "ismergelane":false
             },
@@ -234,7 +236,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":35,
                 "roadname":"Road 2 Westbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             },
@@ -251,7 +252,6 @@ JSVTS.roadway = {
                 },
                 "speedlimit":35,
                 "roadname":"Road 2 Westbound",
-                "preference":0,
                 "isinlet":false,
                 "ismergelane":false
             }

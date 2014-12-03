@@ -61,7 +61,7 @@ JSVTS.Vehicle = function(options){
     self.init=function(options) {
         self.id = JSVTS.VEH_ID_COUNT++;
         for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
-        self.updateLocation();
+        self.updateLocation(self.config.location);
     };
 
     self.copyFrom = function (vehicle) {
@@ -78,11 +78,11 @@ JSVTS.Vehicle = function(options){
 
     self.getLookAheadDistance = function(cof) {
         var FRICTION = cof || 0.8;
-        var VEHICLE_LENGTH = (self.config.length*2); // start from 1/2 car length ahead
+        var VEHICLE_LENGTH = self.config.length; // start from 3/2 car length ahead
         var GRAVITY = 9.81;
         var METERS_PER_SEC = self.convertKmphToMps(self.velocity);
         var REACTION_DISTANCE = METERS_PER_SEC * self.config.reactionTime;
-        var result = REACTION_DISTANCE + VEHICLE_LENGTH + (self.velocity / 3.4); //(Math.pow(METERS_PER_SEC, 2)) / (2 * (FRICTION * GRAVITY));
+        var result = REACTION_DISTANCE + (VEHICLE_LENGTH * 2) + (self.velocity / 2); //(Math.pow(METERS_PER_SEC, 2)) / (2 * (FRICTION * GRAVITY));
 
         return result;
     };
@@ -118,7 +118,7 @@ JSVTS.Vehicle = function(options){
         }
     };
 
-    self.moveBy = function(distance) {
+    self.moveBy = function (distance) {
         if (distance) {
             self.generateMesh(); // generates if doesn't already exist
             // move to self.config.location and rotate to point at heading
@@ -146,41 +146,27 @@ JSVTS.Vehicle = function(options){
 
     self.updateVelocity = function (elapsedMs, isStopping) {
         // speed up or slow down
-        if (self.velocity<self.config.desiredVelocity && !isStopping) {
+        if (self.velocity < self.config.desiredVelocity && !isStopping) {
             // speed up: avg. rate of acceleration is 3.5 m/s^2
-            if (self.config.desiredVelocity-self.velocity<0.1) {
-                // close enough so just set to value
-                self.velocity=self.config.desiredVelocity;
-                self.mesh.material.color.setHex(0xffffff);
-            } else {
-                // accelerate
-                self.accelerate(elapsedMs);
-            }
+            self.accelerate(elapsedMs);
         }
-        if (self.velocity>self.config.desiredVelocity || isStopping) {
+        if (self.velocity > self.config.desiredVelocity || isStopping) {
             // slow down: avg. rate of deceleration is 3.5 m/s^2
-            if (self.velocity-self.config.desiredVelocity<0.1 && !isStopping) {
-                // close enough so just set to value
-                self.velocity=self.config.desiredVelocity;
-                self.mesh.material.color.setHex(0xffffff);
-            } else {
-                // deccelerate
-                self.brake(elapsedMs);
-            }
+            self.brake(elapsedMs);
         }
     };
 
     self.accelerate = function (elapsedMs) {
         var elapsedSeconds = elapsedMs/1000;
-        self.velocity+=(3.5*elapsedSeconds);
+        self.velocity += (3.5*elapsedSeconds);
         self.mesh.material.color.setHex(0x66ff66);
     };
 
     self.brake = function (elapsedMs) {
         var elapsedSeconds = elapsedMs/1000;
-        self.velocity-=(self.convertMpsToKmph(3.4 * elapsedSeconds));
+        self.velocity -= (self.convertMpsToKmph(3.4 * elapsedSeconds));
         // prevent going backwards
-        if (self.velocity < 0) {
+        if (self.velocity < 0.1) {
             self.velocity = 0;
         }
         self.mesh.material.color.setHex(0xff0000);

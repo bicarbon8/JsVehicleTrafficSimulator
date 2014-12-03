@@ -46,6 +46,7 @@ JSVTS.TxtToMapParser = {
             var start = new THREE.Vector3(seg.start.x,seg.start.y,seg.start.z);
             var end = new THREE.Vector3(seg.end.x,seg.end.y,seg.end.z);
             var tfc = JSVTS.TxtToMapParser.parseTfcJson(seg.tfc);
+            var generator = JSVTS.TxtToMapParser.parseGeneratorJson(seg.generator);
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,
@@ -55,7 +56,12 @@ JSVTS.TxtToMapParser = {
                 "isMergeLane": jsonObj[i].ismergelane
             });
             if (tfc) {
-                segment.attachTrafficFlowControl(tfc);
+                segment.attachObject(tfc, segment.config.end, segment.config.start);
+                segment.tfc = tfc;
+            }
+            if (generator) {
+                segment.attachObject(generator, segment.config.start, segment.config.end);
+                segment.generator = generator;
             }
             segments.push(segment);
         }
@@ -83,6 +89,17 @@ JSVTS.TxtToMapParser = {
         }
 
         return tfc;
+    },
+
+    parseGeneratorJson: function (jsonObj) {
+        var generator = null;
+        if (jsonObj) {
+            generator = new JSVTS.VehicleGenerator({
+                delay:jsonObj.delay
+            });
+        }
+
+        return generator;
     },
 
     ParseVehiclesJson: function (jsonObj) {

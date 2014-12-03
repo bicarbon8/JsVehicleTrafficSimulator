@@ -50,6 +50,7 @@ JSVTS.Segment = function(options){
     self.axis = null;
     self.radians = null;
     self.tfc = null;
+    self.generator = null;
     self.laneChangePoints = [];
 
     self.init=function(options) {
@@ -73,11 +74,6 @@ JSVTS.Segment = function(options){
         }
     };
 
-    self.attachTrafficFlowControl=function(tfc) {
-        self.attachObject(tfc, self.config.end, self.config.start);
-        self.tfc = tfc;
-    };
-
     self.attachObject = function (obj, location, lookAt) {
         // set reference data
         obj.segmentId = self.id;
@@ -85,8 +81,10 @@ JSVTS.Segment = function(options){
         // set the obj's position to passed in location
         obj.updateLocation(new THREE.Vector3().copy(location));
         
-        // rotate to face segment end so movement will just be Z translation
-        obj.mesh.lookAt(lookAt);
+        if (obj.mesh) {
+            // rotate to face segment end so movement will just be Z translation
+            obj.mesh.lookAt(lookAt);
+        }
     };
 
     self.generateMesh = function () {
