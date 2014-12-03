@@ -39,6 +39,7 @@ JSVTS.VEH_OPTIONS = function () {
         heading: 0,
         desiredVelocity: 0,
         reactionTime: 2.5, // seconds to react
+        generateId: true
     };
     return self;
 };
@@ -59,8 +60,10 @@ JSVTS.Vehicle = function(options){
     self.idMesh = null;
 
     self.init=function(options) {
-        self.id = JSVTS.VEH_ID_COUNT++;
         for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
+        if (self.config.generateId) {
+            self.id = JSVTS.VEH_ID_COUNT++;
+        }
         self.updateLocation(self.config.location);
     };
 

@@ -43,9 +43,6 @@ JSVTS.Controller = {
             case 's'.charCodeAt(0):
                 JSVTS.Controller.ToggleSimulationState();
                 break;
-            case 'a'.charCodeAt(0):
-                JSVTS.Controller.AddVehicles();
-                break;
             case 'l'.charCodeAt(0):
                 JSVTS.Controller.SetFromJson();
                 break;
@@ -85,7 +82,7 @@ JSVTS.Controller = {
             JSVTS.Controller.elapsed = new Date().getTime() - JSVTS.Controller.startTime;
             JSVTS.Controller.startTime = new Date().getTime();
         } else {
-            JSVTS.Controller.elapsed = 25;
+            JSVTS.Controller.elapsed = 10;
         }
         JSVTS.Mover.move(JSVTS.Controller.elapsed);
         JSVTS.Plotter.render();
@@ -107,32 +104,5 @@ JSVTS.Controller = {
             }
         }
         JSVTS.Plotter.render();
-    },
-    
-    GetAsJson: function () {
-        var mapJsonStr = JSVTS.TxtToMapParser.GetMapJson(JSVTS.Map);
-        alert(mapJsonStr);
-    },
-
-    AddVehicles: function (){
-        var segments = JSVTS.Map.GetSegments();
-        if (segments && segments.length > 0) {
-            segments.forEach(function (segment) {
-                if (segment.config.isInlet) {
-                    var vehicle=new JSVTS.Vehicle();
-                    segment.attachVehicle(vehicle);
-                    JSVTS.Map.AddVehicle(vehicle);
-                    JSVTS.Plotter.addObject(vehicle.mesh);
-                    JSVTS.Plotter.addObject(vehicle.idMesh);
-                }
-            });
-        } else {
-            var vehicle = new JSVTS.Vehicle();
-            JSVTS.Map.AddVehicle(vehicle);
-            JSVTS.Plotter.addObject(vehicle.mesh);
-            JSVTS.Plotter.addObject(vehicle.idMesh);
-        }
-
-        JSVTS.Plotter.render();
-    },
+    }
 };

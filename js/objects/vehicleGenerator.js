@@ -32,10 +32,11 @@ JSVTS.VehicleGenerator = function (options) {
 
     self.generate = function () {
         if (!self.nextVehicle) {
-            self.nextVehicle = new JSVTS.Vehicle();
+            self.nextVehicle = new JSVTS.Vehicle({ generateId: false });
+            var segment = JSVTS.Map.GetSegmentById(self.segmentId);
+            segment.attachVehicle(self.nextVehicle);
         }
-        var segment = JSVTS.Map.GetSegmentById(self.segmentId);
-        segment.attachVehicle(self.nextVehicle);
+        
         var vehicles = JSVTS.Map.GetVehicles();
         var canGenerate = true;
         for (var i in vehicles) {
@@ -49,6 +50,8 @@ JSVTS.VehicleGenerator = function (options) {
         }
 
         if (canGenerate) {
+            var segment = JSVTS.Map.GetSegmentById(self.segmentId);
+            segment.attachVehicle(self.nextVehicle);
             var newV = new JSVTS.Vehicle();
             segment.attachVehicle(newV);
             JSVTS.Map.AddVehicle(newV);
