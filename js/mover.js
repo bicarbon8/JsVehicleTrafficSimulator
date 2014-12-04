@@ -321,7 +321,13 @@ JSVTS.Mover = {
 
             if (vehicles && vehicles.length > 0) {
                 var headingLine = new THREE.Line3(vehicle.config.location, vehicle.segmentEnd);
-                var closestVeh = JSVTS.Mover.getClosestObjectWithinDistanceAndView(headingLine, vehicles, distance);
+                var maxAngle = 90;
+                var decay = 1.0;
+                if (vehicle.isChangingLanes) {
+                    maxAngle = 120;
+                    decay = 0.5
+                }
+                var closestVeh = JSVTS.Mover.getClosestObjectWithinDistanceAndView(headingLine, vehicles, distance, maxAngle, decay);
 
                 if (closestVeh) {
                     if (!skipCollisionCheck) {
@@ -359,7 +365,7 @@ JSVTS.Mover = {
         var closest = { obj: null, dist: 0 };
         if ((distance > 0) && (headingLine) && (objects && objects.length > 0)) {
             if (!maxAngle) { maxAngle = 90; }
-            if (!decay) { decay = 50; } // 100% of length when at maxAngle 
+            if (!decay) { decay = 1.0; } // 100% of length when at maxAngle 
             for (var i in objects) {
                 var obj = objects[i];
                 // create segment to obj
