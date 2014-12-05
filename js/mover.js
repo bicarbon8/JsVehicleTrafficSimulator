@@ -30,7 +30,6 @@
 var JSVTS = JSVTS || {};
 JSVTS.Mover = {
     TotalElapsedTime: 0,
-    ChangeLaneDelay: 5000, // don't change lanes for 5 seconds after a change
     CRASH_CLEANUP_MAX_DELAY: 300000, // 5 min
     CRASH_CLEANUP_MIN_DELAY: 60000, // 1 min
 
@@ -134,6 +133,9 @@ JSVTS.Mover = {
             // check for vehicles in range
             var foundV = JSVTS.Mover.AreVehiclesWithinDistance(vehicle, dist, skipCollisionCheck);
             if (foundV && foundV.stop) {
+                if (skipCollisionCheck) {
+                    return foundV;
+                }
                 var changingLanes = JSVTS.Mover.changeLanesIfAvailable(vehicle, segment);
                 if (!changingLanes) {
                     // console.log("stopping due to: "+JSON.stringify(foundV));
@@ -210,9 +212,9 @@ JSVTS.Mover = {
                 });
                 var tmpV = new JSVTS.Vehicle({ generateId: false });
                 seg.attachVehicle(tmpV);
-                if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 2, true)) {
+                if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 3, true)) {
                     seg.attachVehicle(v);
-                    v.changeLaneTime = JSVTS.Mover.TotalElapsedTime + JSVTS.Mover.ChangeLaneDelay;
+                    v.changeLaneTime = JSVTS.Mover.TotalElapsedTime + (v.changeLaneDelay * 1000);
                     v.isChangingLanes = true;
                     return true;
                 }

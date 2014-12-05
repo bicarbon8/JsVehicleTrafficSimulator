@@ -32,7 +32,10 @@ JSVTS.VehicleGenerator = function (options) {
 
     self.generate = function () {
         if (!self.nextVehicle) {
-            self.nextVehicle = new JSVTS.Vehicle({ generateId: false });
+            self.nextVehicle = new JSVTS.Vehicle({
+                generateId: false,
+                length = 5
+            });
             var segment = JSVTS.Map.GetSegmentById(self.segmentId);
             segment.attachVehicle(self.nextVehicle);
         }
@@ -52,7 +55,13 @@ JSVTS.VehicleGenerator = function (options) {
         if (canGenerate) {
             var segment = JSVTS.Map.GetSegmentById(self.segmentId);
             segment.attachVehicle(self.nextVehicle);
-            var newV = new JSVTS.Vehicle();
+            var newV = new JSVTS.Vehicle({
+                acceleration: self.getRandomBetween(2.5, 4.5),
+                deceleration: self.getRandomBetween(3.8, 5),
+                reactionTime: self.getRandomBetween(2.5, 3.5),
+                changeLaneDelay: Math.floor(self.getRandomBetween(5, 15)),
+                length: self.getRandomBetween(3, 5)
+            });
             segment.attachVehicle(newV);
             JSVTS.Map.AddVehicle(newV);
             JSVTS.Plotter.addObject(newV.mesh);
@@ -61,6 +70,10 @@ JSVTS.VehicleGenerator = function (options) {
         } else {
             setTimeout(self.generate, 1000);
         }
+    };
+
+    self.getRandomBetween = function (min, max) {
+        return Math.random() * (max - min) + min;
     };
 
     self.init(options);

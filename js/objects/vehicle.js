@@ -36,10 +36,12 @@ JSVTS.VEH_OPTIONS = function () {
         length: 4,
         height: 2,
         location: new THREE.Vector3(0,0,0),
-        heading: 0,
         desiredVelocity: 0,
         reactionTime: 2.5, // seconds to react
-        generateId: true
+        generateId: true,
+        acceleration: 3.5, // meters per second
+        deceleration: 7, // meters per second
+        changeLaneDelay: 5 // don't change lanes for 5 seconds after a change
     };
     return self;
 };
@@ -80,12 +82,10 @@ JSVTS.Vehicle = function(options){
     };
 
     self.getLookAheadDistance = function(cof) {
-        var FRICTION = cof || 0.8;
         var VEHICLE_LENGTH = self.config.length; // start from 3/2 car length ahead
-        var GRAVITY = 9.81;
         var METERS_PER_SEC = self.convertKmphToMps(self.velocity);
         var REACTION_DISTANCE = METERS_PER_SEC * self.config.reactionTime;
-        var result = REACTION_DISTANCE + (VEHICLE_LENGTH * 2) + (self.velocity / 2); //(Math.pow(METERS_PER_SEC, 2)) / (2 * (FRICTION * GRAVITY));
+        var result = REACTION_DISTANCE + (VEHICLE_LENGTH * 2) + (self.velocity / 2); 
 
         return result;
     };
@@ -161,13 +161,13 @@ JSVTS.Vehicle = function(options){
 
     self.accelerate = function (elapsedMs) {
         var elapsedSeconds = elapsedMs/1000;
-        self.velocity += (3.5*elapsedSeconds);
+        self.velocity += (self.convertMpsToKmph(self.config.acceleration * elapsedSeconds));
         self.mesh.material.color.setHex(0x66ff66);
     };
 
     self.brake = function (elapsedMs) {
         var elapsedSeconds = elapsedMs/1000;
-        self.velocity -= (self.convertMpsToKmph(3.4 * elapsedSeconds));
+        self.velocity -= (self.convertMpsToKmph(self.config.deceleration * elapsedSeconds));
         // prevent going backwards
         if (self.velocity < 0.1) {
             self.velocity = 0;
