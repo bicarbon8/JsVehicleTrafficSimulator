@@ -34,7 +34,7 @@ JSVTS.VehicleGenerator = function (options) {
         if (!self.nextVehicle) {
             self.nextVehicle = new JSVTS.Vehicle({
                 generateId: false,
-                length = 5
+                length: 5
             });
             var segment = JSVTS.Map.GetSegmentById(self.segmentId);
             segment.attachVehicle(self.nextVehicle);
