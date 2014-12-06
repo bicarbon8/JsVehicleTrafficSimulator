@@ -81,13 +81,14 @@ JSVTS.Vehicle = function(options){
         }
     };
 
-    self.getLookAheadDistance = function(cof) {
-        var VEHICLE_LENGTH = self.config.length; // start from 3/2 car length ahead
-        var METERS_PER_SEC = self.convertKmphToMps(self.velocity);
-        var REACTION_DISTANCE = METERS_PER_SEC * self.config.reactionTime;
-        var result = REACTION_DISTANCE + (VEHICLE_LENGTH * 2) + (self.velocity / 2); 
+    self.getLookAheadDistance = function () {
+        var mps = self.convertKmphToMps(self.velocity);
+        var secondsToStop = self.velocity / self.config.deceleration;
+        var distanceToStop = mps * secondsToStop;
+        var distanceToReact = self.config.reactionTime * mps;
 
-        return result;
+        // TODO: use distanceToReact as a setTimeout for when to check distances again
+        return distanceToStop + (self.config.length * 2.5) + distanceToReact;
     };
 
     self.generateMesh = function() {

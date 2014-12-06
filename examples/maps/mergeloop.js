@@ -31,14 +31,14 @@ var JSVTS = JSVTS || {};
 JSVTS.roadway = {
     "map":{
         "segments":[
-            {
+            { /** inner-bottom **/
                 "start":{
-                    "x":16, // x axis is left/right
+                    "x":36, // x axis is left/right
                     "y":0, // y axis is vertically up/down
                     "z":94 // z axis is horizontally up/down
                 },
                 "end":{
-                    "x":194,
+                    "x":174, // 194
                     "y":0,
                     "z":94
                 },
@@ -49,28 +49,60 @@ JSVTS.roadway = {
             },
             {
                 "start":{
-                    "x":194,
+                    "x":174,
                     "y":0,
                     "z":94
                 },
                 "end":{
                     "x":194,
                     "y":0,
-                    "z":6
+                    "z":74
                 },
                 "speedlimit":60,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false,
                 "ismergelane": false
             },
-            {
+            { /** inner-right **/
                 "start":{
                     "x":194,
+                    "y":0,
+                    "z":74 // 94
+                },
+                "end":{
+                    "x":194,
+                    "y":0,
+                    "z":26 // 6
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": false
+            },
+            { 
+                "start":{
+                    "x":194,
+                    "y":0,
+                    "z":26
+                },
+                "end":{
+                    "x":174,
+                    "y":0,
+                    "z":6
+                },
+                "speedlimit":45,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": false
+            },
+            { /** inner-top **/
+                "start":{
+                    "x":174, // 194
                     "y":0,
                     "z":6
                 },
                 "end":{
-                    "x":16,
+                    "x":36, // 16
                     "y":0,
                     "z":6
                 },
@@ -81,14 +113,30 @@ JSVTS.roadway = {
             },
             {
                 "start":{
-                    "x":16,
+                    "x":36,
                     "y":0,
                     "z":6
                 },
                 "end":{
                     "x":16,
                     "y":0,
-                    "z":94
+                    "z":26
+                },
+                "speedlimit":45,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": false
+            },
+            { /** inner-left **/
+                "start":{
+                    "x":16,
+                    "y":0,
+                    "z":26 // 6
+                },
+                "end":{
+                    "x":16,
+                    "y":0,
+                    "z":74 // 94
                 },
                 "speedlimit":60,
                 "roadname":"Jason Ave. N.",
@@ -97,7 +145,23 @@ JSVTS.roadway = {
             },
             {
                 "start":{
-                    "x":10,
+                    "x":16,
+                    "y":0,
+                    "z":74
+                },
+                "end":{
+                    "x":36,
+                    "y":0,
+                    "z":94
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": false
+            },
+            { /** outer-bottom 01 **/
+                "start":{
+                    "x":30, // 10,
                     "y":0,
                     "z":100
                 },
@@ -111,14 +175,14 @@ JSVTS.roadway = {
                 "isinlet":false,
                 "ismergelane": false
             },
-            {
+            { /** outer-bottom 02 **/
                 "start":{
                     "x":106,
                     "y":0,
                     "z":100
                 },
                 "end":{
-                    "x":200,
+                    "x":180, // 200,
                     "y":0,
                     "z":100
                 },
@@ -127,81 +191,57 @@ JSVTS.roadway = {
                 "isinlet":false,
                 "ismergelane": false
             },
-            {
+            { /** outer-bottom-right corner **/
                 "start":{
-                    "x":200,
+                    "x":180,
                     "y":0,
                     "z":100
                 },
                 "end":{
                     "x":200,
                     "y":0,
-                    "z":0
+                    "z":80
                 },
                 "speedlimit":60,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false,
                 "ismergelane": false
             },
-            { /* begin top-most on ramp */
+            { /** outer-right **/
                 "start":{
                     "x":200,
-                    "y":-10,
-                    "z":-6
+                    "y":0,
+                    "z":80 // 100
                 },
                 "end":{
-                    "x":150,
-                    "y":-10,
-                    "z":-6
+                    "x":200,
+                    "y":0,
+                    "z":20 // 0
                 },
-                "speedlimit":35,
-                "roadname":"On Ramp",
-                "tfc": {
-                    "type":"stoplight",
-                    "changeseconds":2,
-                    "startstate":2
-                },
-                "generator": {
-                    "delay":5
-                },
-                "isinlet":true,
-                "ismergelane": false
-            },
-            {
-                "start":{
-                    "x":150,
-                    "y":-10,
-                    "z":-6
-                },
-                "end":{
-                    "x":130,
-                    "y":-5,
-                    "z":-4
-                },
-                "speedlimit":35,
+                "speedlimit":60,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false,
-                "ismergelane": true
+                "ismergelane": false
             },
-            {
+            { /* outer-top-right corner */
                 "start":{
-                    "x":130,
-                    "y":-5,
-                    "z":-4
+                    "x":200,
+                    "y":0,
+                    "z":20 // 0
                 },
                 "end":{
-                    "x":100,
+                    "x":180,
                     "y":0,
                     "z":0
                 },
-                "speedlimit":60,
+                "speedlimit":45,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false,
-                "ismergelane": true
-            }, /* end top-most on ramp */
-            { /* start top-most lane */
+                "ismergelane": false
+            },
+            { /** outer-top 01 **/
                 "start":{
-                    "x":200,
+                    "x":180, // 200,
                     "y":0,
                     "z":0
                 },
@@ -215,14 +255,14 @@ JSVTS.roadway = {
                 "isinlet":false,
                 "ismergelane": false
             },
-            {
+            { /** outer-top 02 **/
                 "start":{
                     "x":100,
                     "y":0,
                     "z":0
                 },
                 "end":{
-                    "x":10,
+                    "x":30, // 10,
                     "y":0,
                     "z":0
                 },
@@ -230,31 +270,47 @@ JSVTS.roadway = {
                 "roadname":"Jason Ave. N.",
                 "isinlet":false,
                 "ismergelane": false
-            }, /* end top-most lane */
-            {
+            },
+            { /** outer-top-left corner **/
                 "start":{
-                    "x":10,
+                    "x":30,
                     "y":0,
                     "z":0
                 },
                 "end":{
                     "x":10,
                     "y":0,
-                    "z":100
+                    "z":20
+                },
+                "speedlimit":45,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": false
+            },
+            { /** outer-left **/
+                "start":{
+                    "x":10,
+                    "y":0,
+                    "z":20, // 0
+                },
+                "end":{
+                    "x":10,
+                    "y":0,
+                    "z":80 // 100
                 },
                 "speedlimit":60,
                 "roadname":"Jason Ave. N.",
                 "isinlet":false,
                 "ismergelane": false
             },
-            {
+            { /** exit lane **/
                 "start":{
                     "x":10,
                     "y":0,
-                    "z":0
+                    "z":20
                 },
                 "end":{
-                    "x":0,
+                    "x":-20,
                     "y":-10,
                     "z":100
                 },
@@ -263,16 +319,32 @@ JSVTS.roadway = {
                 "isinlet":false,
                 "ismergelane": false
             },
-            { /* begin bottom-most on ramp */
+            { /** outer-bottom-left corner **/
                 "start":{
                     "x":10,
+                    "y":0,
+                    "z":80
+                },
+                "end":{
+                    "x":30,
+                    "y":0,
+                    "z":100
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": false
+            },
+            { /* begin bottom-most on ramp */
+                "start":{
+                    "x":20,
                     "y":-10,
-                    "z":106
+                    "z":120
                 },
                 "end":{
                     "x":50,
                     "y":-10,
-                    "z":106
+                    "z":110
                 },
                 "speedlimit":35,
                 "roadname":"On Ramp",
@@ -291,7 +363,7 @@ JSVTS.roadway = {
                 "start":{
                     "x":50,
                     "y":-10,
-                    "z":106
+                    "z":110
                 },
                 "end":{
                     "x":75,
@@ -319,6 +391,62 @@ JSVTS.roadway = {
                 "isinlet":false,
                 "ismergelane": true
             }, /* end bottom-most on ramp */
+            { /* begin top-most on ramp */
+                "start":{
+                    "x":190,
+                    "y":-10,
+                    "z":-20
+                },
+                "end":{
+                    "x":150,
+                    "y":-10,
+                    "z":-10
+                },
+                "speedlimit":35,
+                "roadname":"On Ramp",
+                "tfc": {
+                    "type":"stoplight",
+                    "changeseconds":2,
+                    "startstate":2
+                },
+                "generator": {
+                    "delay":5
+                },
+                "isinlet":true,
+                "ismergelane": false
+            },
+            {
+                "start":{
+                    "x":150,
+                    "y":-10,
+                    "z":-10
+                },
+                "end":{
+                    "x":130,
+                    "y":-5,
+                    "z":-4
+                },
+                "speedlimit":35,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": true
+            },
+            {
+                "start":{
+                    "x":130,
+                    "y":-5,
+                    "z":-4
+                },
+                "end":{
+                    "x":100,
+                    "y":0,
+                    "z":0
+                },
+                "speedlimit":60,
+                "roadname":"Jason Ave. N.",
+                "isinlet":false,
+                "ismergelane": true
+            }, /* end top-most on ramp */
         ]
     }
 }

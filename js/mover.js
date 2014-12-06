@@ -212,9 +212,10 @@ JSVTS.Mover = {
                 });
                 var tmpV = new JSVTS.Vehicle({ generateId: false });
                 seg.attachVehicle(tmpV);
+                // don't change lanes if we just have to stop on the new lane too
                 if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 3, true)) {
                     seg.attachVehicle(v);
-                    v.changeLaneTime = JSVTS.Mover.TotalElapsedTime + (v.changeLaneDelay * 1000);
+                    v.changeLaneTime = JSVTS.Mover.TotalElapsedTime + (v.config.changeLaneDelay * 1000);
                     v.isChangingLanes = true;
                     return true;
                 }
