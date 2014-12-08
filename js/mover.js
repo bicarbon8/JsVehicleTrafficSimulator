@@ -165,6 +165,7 @@ JSVTS.Mover = {
                 var line2 = new THREE.Line3(nextSeg.config.start, nextSeg.config.end);
                 if (Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 20) {
                     var tmpVehicle = new JSVTS.Vehicle({ generateId: false });
+                    tmpVehicle.id = vehicle.id;
                     nextSeg.attachVehicle(tmpVehicle);
                     var found = JSVTS.Mover.shouldStop(tmpVehicle, nextSeg, (distance - nextSeg.getLength()), skipCollisionCheck);
                     if (found && found.stop) {
@@ -211,6 +212,7 @@ JSVTS.Mover = {
                     desiredVelocity: v.desiredVelocity
                 });
                 var tmpV = new JSVTS.Vehicle({ generateId: false });
+                tmpV.id = v.id;
                 seg.attachVehicle(tmpV);
                 // don't change lanes if we just have to stop on the new lane too
                 if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 3, true)) {
@@ -324,8 +326,8 @@ JSVTS.Mover = {
                 var maxAngle = 90;
                 var decay = 1.0;
                 if (vehicle.isChangingLanes) {
-                    maxAngle = 120;
-                    decay = 0.5
+                    // maxAngle = 120;
+                    decay = 0.5;
                 }
                 var closestVeh = JSVTS.Mover.getClosestObjectWithinDistanceAndView(headingLine, vehicles, distance, maxAngle, decay);
 
