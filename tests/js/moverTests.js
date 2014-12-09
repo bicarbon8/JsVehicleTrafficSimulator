@@ -70,13 +70,13 @@ QUnit.cases([
         assert.ok(!actual);
     });
 QUnit.cases([
-        { s: [{sx:0,sy:0,sz:0,ex:2000,ey:0,ez:0}, // first lane gets test vehicle
-              {sx:0,sy:0,sz:6,ex:2000,ey:0,ez:6}] // 2nd lane gets blocking vehicle
+        { s: [{sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}, // first lane gets test vehicle
+              {sx:0,sy:0,sz:6,ex:500,ey:0,ez:6}] // 2nd lane gets blocking vehicle
         },
-        { s: [{sx:0,sy:0,sz:-6,ex:2000,ey:0,ez:-6}, // first lane gets test vehicle
-              {sx:0,sy:0,sz:0,ex:2000,ey:0,ez:0}] // 2nd lane gets blocking vehicle
+        { s: [{sx:0,sy:0,sz:-6,ex:500,ey:0,ez:-6}, // first lane gets test vehicle
+              {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
         },
-    ]).test("should not change lanes when vehicle in 3x lookahead distance", function (p, assert) {
+    ]).test("should not change lanes when vehicle in 2x lookahead distance", function (p, assert) {
         var v,
             expectedSegmentId;
         for (var i=0; i<p.s.length; i++) {
@@ -99,7 +99,7 @@ QUnit.cases([
                 segment.attachVehicle(v2);
                 v2.velocity = 100;
                 JSVTS.Map.AddVehicle(v2);
-                v2.moveBy((v2.getLookAheadDistance() * 2)); // move ahead by 1 unit less than 3x the lookahead
+                v2.moveBy(v2.getLookAheadDistance()); // move ahead by 1 unit less than 2x the lookahead
             }
         }
         var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
@@ -107,10 +107,13 @@ QUnit.cases([
         assert.equal(v.segmentId, expectedSegmentId);
     });
 QUnit.cases([
-        { s: [{sx:0,sy:0,sz:0,ex:2000,ey:0,ez:0}, // first lane gets test vehicle
-              {sx:0,sy:0,sz:6,ex:2000,ey:0,ez:6}] // 2nd lane gets blocking vehicle
+        { s: [{sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}, // first lane gets test vehicle
+              {sx:0,sy:0,sz:6,ex:500,ey:0,ez:6}] // 2nd lane gets blocking vehicle
         },
-    ]).test("should change lanes when vehicle beyond 3x lookahead distance", function (p, assert) {
+        { s: [{sx:0,sy:0,sz:-6,ex:500,ey:0,ez:-6}, // first lane gets test vehicle
+              {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
+        },
+    ]).test("should change lanes when vehicle beyond 2x lookahead distance", function (p, assert) {
         var v;
         for (var i=0; i<p.s.length; i++) {
             var segPoints = p.s[i];
@@ -131,10 +134,44 @@ QUnit.cases([
                 segment.attachVehicle(v2);
                 v2.velocity = 100;
                 JSVTS.Map.AddVehicle(v2);
-                v2.moveBy((v2.getLookAheadDistance() * 3) + 1); // move ahead by 1 unit more than 3x the lookahead
+                v2.moveBy((v2.getLookAheadDistance() * 2) + 1); // move ahead by 1 unit more than 2x the lookahead
             }
         }
         var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
         assert.ok(actual);
         assert.ok(!JSVTS.Map.GetSegmentById(v.segmentId));
+    });
+QUnit.cases([
+        { s: [{sx:0,sy:0,sz:0,ex:100,ey:0,ez:0},
+              {sx:0,sy:0,sz:6,ex:50,ey:0,ez:6},
+              {sx:50,sy:0,sz:6,ex:100,ey:0,ez:6}]
+        },
+    ]).test("should not change lanes when vehicle in 2x lookahead distance on separate segment", function (p, assert) {
+        var v,
+            expectedSegmentId;
+        for (var i=0; i<p.s.length; i++) {
+            var segPoints = p.s[i];
+            var segment = new JSVTS.Segment({
+                start: new THREE.Vector3(segPoints.sx, segPoints.sy, segPoints.sz),
+                end: new THREE.Vector3(segPoints.ex, segPoints.ey, segPoints.ez),
+                speedLimit: 100
+            });
+            JSVTS.Map.AddSegment(segment);
+            if (i === 0) {
+                v = new JSVTS.Vehicle();
+                segment.attachVehicle(v);
+                v.velocity = 100;
+                JSVTS.Map.AddVehicle(v);
+                expectedSegmentId = segment.id;
+            }
+            if (i === 2) {
+                v2 = new JSVTS.Vehicle();
+                segment.attachVehicle(v2);
+                v2.velocity = 100;
+                JSVTS.Map.AddVehicle(v2);
+            }
+        }
+        var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
+        assert.ok(!actual);
+        assert.equal(v.segmentId, expectedSegmentId);
     });

@@ -82,13 +82,20 @@ JSVTS.Vehicle = function(options){
     };
 
     self.getLookAheadDistance = function () {
+        /**
+         * distance to decelerate from current velocity to 0
+         * (2) d = -u² / 2a
+         * v = desired velocity (0 mps)
+         * u = current velocity (mps)
+         * a = acceleration (mps)
+         * d = distance (m)
+         */
         var mps = self.convertKmphToMps(self.velocity);
-        var secondsToStop = self.velocity / self.config.deceleration;
-        var distanceToStop = mps * secondsToStop;
+        var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(self.config.deceleration))) / 2;
         var distanceToReact = self.config.reactionTime * mps;
-
+        var distanceTot = distanceToStop + (self.config.length * 2.5) + distanceToReact;
         // TODO: use distanceToReact as a setTimeout for when to check distances again
-        return distanceToStop + (self.config.length * 2.5) + distanceToReact;
+        return distanceTot;
     };
 
     self.generateMesh = function() {

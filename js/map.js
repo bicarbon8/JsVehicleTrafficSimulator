@@ -89,12 +89,12 @@ JSVTS.Map = {
         var allSegments = JSVTS.Map.GetSegments();
         for (var i in allSegments) {
             var segment = allSegments[i];
-            if (JSON.stringify(segment.config.start) === JSON.stringify(point)) {
+            if (segment.config.start.x === point.x && segment.config.start.y === point.y && segment.config.start.z === point.z) {
                 segments.push(segment);
             } else {
                 for (var j in segment.laneChangePoints) {
                     var changePoint = segment.laneChangePoints[j];
-                    if (JSON.stringify(changePoint) === JSON.stringify(point)) {
+                    if (changePoint.x === point.x && changePoint.y === point.y && changePoint.z === point.z) {
                         segments.push(segment);
                     }
                 }

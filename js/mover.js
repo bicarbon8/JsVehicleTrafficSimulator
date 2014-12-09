@@ -125,11 +125,6 @@ JSVTS.Mover = {
     shouldStop: function (vehicle, segment, distance, skipCollisionCheck) {
         if (vehicle && segment) {
             var dist = distance || vehicle.getLookAheadDistance();
-            var foundCorner = JSVTS.Mover.shouldSlowForCorner(vehicle, dist);
-            if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
-                // console.log("stopping due to: "+JSON.stringify(foundCorner));
-                return foundCorner;
-            }
             // check for vehicles in range
             var foundV = JSVTS.Mover.AreVehiclesWithinDistance(vehicle, dist, skipCollisionCheck);
             if (foundV && foundV.stop) {
@@ -138,13 +133,17 @@ JSVTS.Mover = {
                 }
                 var changingLanes = JSVTS.Mover.changeLanesIfAvailable(vehicle, segment);
                 if (!changingLanes) {
-                    // console.log("stopping due to: "+JSON.stringify(foundV));
                     return foundV;
                 }
             }
+            // check for corners
+            var foundCorner = JSVTS.Mover.shouldSlowForCorner(vehicle, dist);
+            if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
+                return foundCorner;
+            }
+            // check for traffic flow controllers
             var foundTfc = JSVTS.Mover.AreTfcsWithinDistance(vehicle, segment, dist);
             if (foundTfc && foundTfc.stop) { // and then check for traffic lights in range
-                // console.log("stopping due to: "+JSON.stringify(foundTfc));
                 return foundTfc;
             }
 
@@ -215,7 +214,7 @@ JSVTS.Mover = {
                 tmpV.id = v.id;
                 seg.attachVehicle(tmpV);
                 // don't change lanes if we just have to stop on the new lane too
-                if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 3, true)) {
+                if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 2, true)) {
                     seg.attachVehicle(v);
                     v.changeLaneTime = JSVTS.Mover.TotalElapsedTime + (v.config.changeLaneDelay * 1000);
                     v.isChangingLanes = true;
