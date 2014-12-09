@@ -89,7 +89,8 @@ JSVTS.Map = {
         var allSegments = JSVTS.Map.GetSegments();
         for (var i in allSegments) {
             var segment = allSegments[i];
-            if (segment.config.start.x === point.x && segment.config.start.y === point.y && segment.config.start.z === point.z) {
+            if (segment.config.start.x === point.x && segment.config.start.y === point.y && segment.config.start.z === point.z ||
+                segment.config.end.x === point.x && segment.config.end.y === point.y && segment.config.end.z === point.z) {
                 segments.push(segment);
             } else {
                 for (var j in segment.laneChangePoints) {
@@ -129,6 +130,10 @@ JSVTS.Map = {
         });
 	},
 
+    getVehicleById: function(id) {
+        return JSVTS.Map._vehicles[id];
+    },
+
 	GetVehiclesInSegment: function(id) {
 		return JSVTS.Map.GetVehicles().filter(function (el) {
             return el.segmentId === id;
@@ -141,10 +146,20 @@ JSVTS.Map = {
         });
     },
 
+    getVehiclesInRangeOf: function (origin, distance) {
+        return JSVTS.Map.GetVehicles().filter(function (el) {
+            return JSVTS.Map.getDistanceBetweenTwoPoints(origin, el.config.location) <= distance;
+        });
+    },
+
 	UpdateVehicles: function(vehicles) {
 		for (var i in vehicles) {
 			var v = vehicles[i];
 			JSVTS.Map._vehicles[v.id] = v;
 		}
 	},
+
+    getDistanceBetweenTwoPoints: function (p1, p2) {
+        return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
+    },
 };

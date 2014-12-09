@@ -133,12 +133,21 @@ JSVTS.StopLight = function (options) {
     };
 
     self.shouldStop = function(vehicle) {
-        if (self.currentState === JSVTS.StopLightState.YELLOW || self.currentState === JSVTS.StopLightState.RED) {
-            return true;
-        }
+        var distanceToV = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, self.config.location);
+        if (distanceToV < vehicle.getLookAheadDistance()) {
+            if (self.currentState === JSVTS.StopLightState.RED) {
+                return true;
+            }
 
-        return false;
-    }
+            return false;
+        } else {
+            if (self.currentState === JSVTS.StopLightState.YELLOW || self.currentState === JSVTS.StopLightState.RED) {
+                return true;
+            }
+
+            return false;
+        }
+    };
 
     self.init(options);
-}
+};

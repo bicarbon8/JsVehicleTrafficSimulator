@@ -40,7 +40,7 @@ JSVTS.roadway = {
                 "end":{
                     "x":200,
                     "y":0,
-                    "z":200
+                    "z":197
                 },
                 "speedlimit":25,
                 "roadname":"Road 1 Southbound",
@@ -59,23 +59,7 @@ JSVTS.roadway = {
                 "start":{
                     "x":200,
                     "y":0,
-                    "z":200
-                },
-                "end":{
-                    "x":200,
-                    "y":0,
-                    "z":206
-                },
-                "speedlimit":25,
-                "roadname":"Road 1 Southbound",
-                "isinlet":false,
-                "ismergelane":false
-            },
-            {
-                "start":{
-                    "x":200,
-                    "y":0,
-                    "z":206
+                    "z":197
                 },
                 "end":{
                     "x":200,
@@ -89,12 +73,12 @@ JSVTS.roadway = {
             },
             {
                 "start":{
-                    "x":206,
+                    "x":203,
                     "y":0,
                     "z":300
                 },
                 "end":{
-                    "x":206,
+                    "x":203,
                     "y":0,
                     "z":206
                 },
@@ -113,28 +97,12 @@ JSVTS.roadway = {
             },
             {
                 "start":{
-                    "x":206,
+                    "x":203,
                     "y":0,
                     "z":206
                 },
                 "end":{
-                    "x":206,
-                    "y":0,
-                    "z":200
-                },
-                "speedlimit":25,
-                "roadname":"Road 1 Northbound",
-                "isinlet":false,
-                "ismergelane":false
-            },
-            {
-                "start":{
-                    "x":206,
-                    "y":0,
-                    "z":200
-                },
-                "end":{
-                    "x":206,
+                    "x":203,
                     "y":0,
                     "z":25
                 },
@@ -147,12 +115,12 @@ JSVTS.roadway = {
                 "start":{
                     "x":25,
                     "y":0,
-                    "z":206
+                    "z":203
                 },
                 "end":{
-                    "x":200,
+                    "x":197,
                     "y":0,
-                    "z":206
+                    "z":203
                 },
                 "speedlimit":35,
                 "roadname":"Road 2 Eastbound",
@@ -169,30 +137,14 @@ JSVTS.roadway = {
             },
             {
                 "start":{
-                    "x":200,
+                    "x":197,
                     "y":0,
-                    "z":206
-                },
-                "end":{
-                    "x":206,
-                    "y":0,
-                    "z":206
-                },
-                "speedlimit":35,
-                "roadname":"Road 2 Eastbound",
-                "isinlet":false,
-                "ismergelane":false
-            },
-            {
-                "start":{
-                    "x":206,
-                    "y":0,
-                    "z":206
+                    "z":203
                 },
                 "end":{
                     "x":300,
                     "y":0,
-                    "z":206
+                    "z":203
                 },
                 "speedlimit":35,
                 "roadname":"Road 2 Eastbound",
@@ -226,22 +178,6 @@ JSVTS.roadway = {
             {
                 "start":{
                     "x":206,
-                    "y":0,
-                    "z":200
-                },
-                "end":{
-                    "x":200,
-                    "y":0,
-                    "z":200
-                },
-                "speedlimit":35,
-                "roadname":"Road 2 Westbound",
-                "isinlet":false,
-                "ismergelane":false
-            },
-            {
-                "start":{
-                    "x":200,
                     "y":0,
                     "z":200
                 },
@@ -254,7 +190,7 @@ JSVTS.roadway = {
                 "roadname":"Road 2 Westbound",
                 "isinlet":false,
                 "ismergelane":false
-            }
+            },
         ]
     }
 }

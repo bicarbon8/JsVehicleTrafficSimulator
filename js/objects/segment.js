@@ -60,6 +60,15 @@ JSVTS.Segment = function(options){
 
         self.generateLaneChangePoints();
     };
+
+    self.copy=function(segment) {
+        self.id = segment.id;
+        self.config.start = new THREE.Vector3().copy(segment.config.start);
+        self.config.end = new THREE.Vector3().copy(segment.config.end);
+        self.generateMesh();
+
+        self.generateLaneChangePoints();
+    };
     
     self.attachVehicle=function(vehicle, atPoint) {
         if (!atPoint) {

@@ -99,7 +99,7 @@ QUnit.cases([
                 segment.attachVehicle(v2);
                 v2.velocity = 100;
                 JSVTS.Map.AddVehicle(v2);
-                v2.moveBy(v2.getLookAheadDistance() - 30); // move ahead by 30 units less than the lookahead
+                v2.moveBy(v2.getLookAheadDistance()); // move ahead by 30 units less than the lookahead
             }
         }
         var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
@@ -134,7 +134,7 @@ QUnit.cases([
                 segment.attachVehicle(v2);
                 v2.velocity = 100;
                 JSVTS.Map.AddVehicle(v2);
-                v2.moveBy(v2.getLookAheadDistance() + 1); // move ahead by 1 unit more than the lookahead
+                v2.moveBy(v2.getLookAheadDistance() * 2 + 1); // move ahead by 1 unit more than the lookahead
             }
         }
         var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
