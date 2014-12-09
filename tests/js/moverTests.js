@@ -76,7 +76,7 @@ QUnit.cases([
         { s: [{sx:0,sy:0,sz:-6,ex:500,ey:0,ez:-6}, // first lane gets test vehicle
               {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
         },
-    ]).test("should not change lanes when vehicle in 2x lookahead distance", function (p, assert) {
+    ]).test("should not change lanes when vehicle in lookahead distance", function (p, assert) {
         var v,
             expectedSegmentId;
         for (var i=0; i<p.s.length; i++) {
@@ -99,7 +99,7 @@ QUnit.cases([
                 segment.attachVehicle(v2);
                 v2.velocity = 100;
                 JSVTS.Map.AddVehicle(v2);
-                v2.moveBy(v2.getLookAheadDistance()); // move ahead by 1 unit less than 2x the lookahead
+                v2.moveBy(v2.getLookAheadDistance() - 30); // move ahead by 30 units less than the lookahead
             }
         }
         var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
@@ -113,7 +113,7 @@ QUnit.cases([
         { s: [{sx:0,sy:0,sz:-6,ex:500,ey:0,ez:-6}, // first lane gets test vehicle
               {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
         },
-    ]).test("should change lanes when vehicle beyond 2x lookahead distance", function (p, assert) {
+    ]).test("should change lanes when vehicle beyond lookahead distance", function (p, assert) {
         var v;
         for (var i=0; i<p.s.length; i++) {
             var segPoints = p.s[i];
@@ -134,7 +134,7 @@ QUnit.cases([
                 segment.attachVehicle(v2);
                 v2.velocity = 100;
                 JSVTS.Map.AddVehicle(v2);
-                v2.moveBy((v2.getLookAheadDistance() * 2) + 1); // move ahead by 1 unit more than 2x the lookahead
+                v2.moveBy(v2.getLookAheadDistance() + 1); // move ahead by 1 unit more than the lookahead
             }
         }
         var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
@@ -146,7 +146,7 @@ QUnit.cases([
               {sx:0,sy:0,sz:6,ex:50,ey:0,ez:6},
               {sx:50,sy:0,sz:6,ex:100,ey:0,ez:6}]
         },
-    ]).test("should not change lanes when vehicle in 2x lookahead distance on separate segment", function (p, assert) {
+    ]).test("should not change lanes when vehicle in lookahead distance on separate segment", function (p, assert) {
         var v,
             expectedSegmentId;
         for (var i=0; i<p.s.length; i++) {

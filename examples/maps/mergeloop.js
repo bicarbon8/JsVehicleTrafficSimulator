@@ -79,7 +79,7 @@ JSVTS.roadway = {
                 "isinlet":false,
                 "ismergelane": false
             },
-            { 
+            {
                 "start":{
                     "x":194,
                     "y":0,
@@ -350,7 +350,7 @@ JSVTS.roadway = {
                 "roadname":"On Ramp",
                 "tfc": {
                     "type":"stoplight",
-                    "changeseconds":2,
+                    "changeseconds":1,
                     "startstate":0
                 },
                 "generator": {
@@ -406,7 +406,7 @@ JSVTS.roadway = {
                 "roadname":"On Ramp",
                 "tfc": {
                     "type":"stoplight",
-                    "changeseconds":2,
+                    "changeseconds":1,
                     "startstate":2
                 },
                 "generator": {

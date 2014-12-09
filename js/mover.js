@@ -165,7 +165,7 @@ JSVTS.Mover = {
                 if (Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 20) {
                     var tmpVehicle = new JSVTS.Vehicle({ generateId: false });
                     tmpVehicle.id = vehicle.id;
-                    nextSeg.attachVehicle(tmpVehicle);
+                    nextSeg.attachVehicle(tmpVehicle, vehicle.segmentEnd);
                     var found = JSVTS.Mover.shouldStop(tmpVehicle, nextSeg, (distance - nextSeg.getLength()), skipCollisionCheck);
                     if (found && found.stop) {
                         return found;
@@ -214,7 +214,7 @@ JSVTS.Mover = {
                 tmpV.id = v.id;
                 seg.attachVehicle(tmpV);
                 // don't change lanes if we just have to stop on the new lane too
-                if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance() * 2, true)) {
+                if (!JSVTS.Mover.shouldStop(tmpV, seg, v.getLookAheadDistance(), true)) {
                     seg.attachVehicle(v);
                     v.changeLaneTime = JSVTS.Mover.TotalElapsedTime + (v.config.changeLaneDelay * 1000);
                     v.isChangingLanes = true;
