@@ -135,6 +135,12 @@ JSVTS.Map = {
         });
 	},
 
+    getVehiclesNotInSegment: function(id) {
+        return JSVTS.Map.GetVehicles().filter(function (el) {
+            return el.segmentId !== id;
+        });
+    },
+
 	UpdateVehicles: function(vehicles) {
 		for (var i in vehicles) {
 			var v = vehicles[i];

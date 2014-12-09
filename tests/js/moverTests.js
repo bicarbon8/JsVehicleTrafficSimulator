@@ -76,7 +76,7 @@ QUnit.cases([
         { s: [{sx:0,sy:0,sz:-6,ex:500,ey:0,ez:-6}, // first lane gets test vehicle
               {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
         },
-    ]).test("should not change lanes when vehicle in lookahead distance", function (p, assert) {
+    ]).test("should not change lanes when vehicle in lookahead distance of new lane", function (p, assert) {
         var v,
             expectedSegmentId;
         for (var i=0; i<p.s.length; i++) {
@@ -113,7 +113,7 @@ QUnit.cases([
         { s: [{sx:0,sy:0,sz:-6,ex:500,ey:0,ez:-6}, // first lane gets test vehicle
               {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
         },
-    ]).test("should change lanes when vehicle beyond lookahead distance", function (p, assert) {
+    ]).test("should change lanes when vehicle beyond lookahead distance of new lane", function (p, assert) {
         var v;
         for (var i=0; i<p.s.length; i++) {
             var segPoints = p.s[i];
@@ -146,7 +146,7 @@ QUnit.cases([
               {sx:0,sy:0,sz:6,ex:50,ey:0,ez:6},
               {sx:50,sy:0,sz:6,ex:100,ey:0,ez:6}]
         },
-    ]).test("should not change lanes when vehicle in lookahead distance on separate segment", function (p, assert) {
+    ]).test("should not change lanes when vehicle in lookahead distance of new lane on separate segment", function (p, assert) {
         var v,
             expectedSegmentId;
         for (var i=0; i<p.s.length; i++) {

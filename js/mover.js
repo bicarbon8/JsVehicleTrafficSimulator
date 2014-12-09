@@ -126,15 +126,16 @@ JSVTS.Mover = {
         if (vehicle && segment) {
             var dist = distance || vehicle.getLookAheadDistance();
             // check for vehicles in range
-            var foundV = JSVTS.Mover.AreVehiclesWithinDistance(vehicle, dist, skipCollisionCheck);
-            if (foundV && foundV.stop) {
-                if (skipCollisionCheck) {
-                    return foundV;
-                }
+            var foundInLane = JSVTS.Mover.shouldStopForVehiclesInSegment(vehicle, dist, skipCollisionCheck);
+            if (foundInLane && foundInLane.stop) {
                 var changingLanes = JSVTS.Mover.changeLanesIfAvailable(vehicle, segment);
                 if (!changingLanes) {
-                    return foundV;
+                    return foundInLane;
                 }
+            }
+            var foundV = JSVTS.Mover.AreVehiclesWithinDistance(vehicle, dist, skipCollisionCheck);
+            if (foundV && foundV.stop) {
+                return foundV;
             }
             // check for corners
             var foundCorner = JSVTS.Mover.shouldSlowForCorner(vehicle, dist);
@@ -147,7 +148,7 @@ JSVTS.Mover = {
                 return foundTfc;
             }
 
-            return JSVTS.Mover.checkSubsequentSegments(vehicle, dist - JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, vehicle.segmentEnd));
+            return JSVTS.Mover.checkSubsequentSegments(vehicle, dist);
         }
 
         return false;
@@ -159,17 +160,14 @@ JSVTS.Mover = {
             var nextSegments = JSVTS.Map.getSegmentsStartingAt(vehicle.segmentEnd);
             for (var i in nextSegments) {
                 var nextSeg = nextSegments[i];
-                // if angle to next segment less than 20 degrees
-                var line1 = new THREE.Line3(vehicle.segmentStart, vehicle.segmentEnd);
-                var line2 = new THREE.Line3(nextSeg.config.start, nextSeg.config.end);
-                if (Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 20) {
-                    var tmpVehicle = new JSVTS.Vehicle({ generateId: false });
-                    tmpVehicle.id = vehicle.id;
-                    nextSeg.attachVehicle(tmpVehicle, vehicle.segmentEnd);
-                    var found = JSVTS.Mover.shouldStop(tmpVehicle, nextSeg, (distance - nextSeg.getLength()), skipCollisionCheck);
-                    if (found && found.stop) {
-                        return found;
-                    }
+                
+                var tmpVehicle = new JSVTS.Vehicle({ generateId: false });
+                tmpVehicle.id = vehicle.id;
+                nextSeg.attachVehicle(tmpVehicle, vehicle.segmentEnd);
+                var remainingDistOnSegment = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, vehicle.segmentEnd);
+                var found = JSVTS.Mover.shouldStop(tmpVehicle, nextSeg, (distance - remainingDistOnSegment), skipCollisionCheck);
+                if (found && found.stop) {
+                    return found;
                 }
             }
         }
@@ -315,7 +313,7 @@ JSVTS.Mover = {
      */
     AreVehiclesWithinDistance: function(vehicle, distance, skipCollisionCheck) {
         if ((distance > 0) && (vehicle && vehicle.segmentId !== null)) {
-            var vehicles = JSVTS.Map.GetVehicles().filter(function (v) {
+            var vehicles = JSVTS.Map.getVehiclesNotInSegment(vehicle.segmentId).filter(function (v) {
                 // return all vehicles which aren't this vehicle
                 return (v.id !== vehicle.id);
             });
@@ -341,6 +339,40 @@ JSVTS.Mover = {
                         }
                     }
                     return { stop: true, type: "vehicle", id: closestVeh.id };
+                }
+            }
+        }
+
+        return false;
+    },
+
+    shouldStopForVehiclesInSegment: function (vehicle, distance, skipCollisionCheck) {
+        if ((distance > 0) && (vehicle && vehicle.segmentId !== null)) {
+            var vehicles = JSVTS.Map.GetVehiclesInSegment(vehicle.segmentId).filter(function (v) {
+                // return all vehicles which aren't this vehicle
+                return (v.id !== vehicle.id);
+            });
+
+            for (var i in vehicles) {
+                var v = vehicles[i];
+                var distanceToVehicle = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, v.config.location);
+
+                if (distanceToVehicle <= distance) {
+                    var headingLine = new THREE.Line3(vehicle.config.location, vehicle.segmentEnd);
+                    var lineToV = new THREE.Line3(vehicle.config.location, v.config.location);
+                    var angleToV = Math.abs(JSVTS.Mover.angleFormedBy(headingLine, lineToV));
+                    if (!skipCollisionCheck) {
+                        // perform collision check
+                        var box1 = new THREE.Box3().setFromObject(vehicle.mesh);
+                        var box2 = new THREE.Box3().setFromObject(v.mesh);
+                        if (JSVTS.Mover.isCollidingWith(box1, box2)) {
+                            vehicle.crashed = true;
+                            v.crashed = true;
+                        }
+                    }
+                    if (angleToV < 5) {
+                        return { stop: true, type: "vehicle", id: v.id };
+                    }
                 }
             }
         }
