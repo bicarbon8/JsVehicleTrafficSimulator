@@ -25,7 +25,7 @@ QUnit.cases([
         { s: [{sx:0,sy:0,sz:0,ex:10,ey:0,ez:0},{sx:10,sy:0,sz:0,ex:20,ey:0,ez:10},{sx:20,sy:0,sz:10,ex:30,ey:0,ez:10}], expected:45 },
         { s: [{sx:0,sy:0,sz:0,ex:5,ey:0,ez:0},{sx:5,sy:0,sz:0,ex:10,ey:0,ez:5},{sx:10,sy:0,sz:5,ex:5,ey:0,ez:10},{sx:5,sy:0,sz:10,ex:0,ey:0,ez:10}], expected:45 },
         { s: [{sx:0,sy:0,sz:0,ex:5,ey:0,ez:0},{sx:5,sy:0,sz:0,ex:10,ey:0,ez:5},{sx:10,sy:0,sz:5,ex:15,ey:0,ez:0},{sx:15,sy:0,sz:0,ex:20,ey:0,ez:0}], expected:45 },
-    ]).test("heading difference should be the maximum of segments in range", function (p, assert) {
+    ]).test("heading difference should be difference between this and next segment", function (p, assert) {
         var v;
         for (var i=0; i<p.s.length; i++) {
             var segPoints = p.s[i];

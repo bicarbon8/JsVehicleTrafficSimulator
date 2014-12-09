@@ -61,7 +61,7 @@ QUnit.cases([
         var xLoc = VT.testVehicles[0].config.location.x - distance + 1;
         veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // behind VT.testVehicles[0] and in range
         JSVTS.Map.AddVehicle(veh);
-        assert.ok(JSVTS.Mover.shouldStopForVehiclesInSegment(veh, veh.getLookAheadDistance()),
+        assert.ok(JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(VT.testVehicles[0].config.location)+"; Back Vehicle: "+JSON.stringify(veh.config.location)+"; In Range Distance: "+distance);
     });
 QUnit.cases([
@@ -76,7 +76,7 @@ QUnit.cases([
         var xLoc = VT.testVehicles[0].config.location.x-veh.getLookAheadDistance()-veh.config.length;
         veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // behind VT.testVehicles[0] and in range
         JSVTS.Map.AddVehicle(veh);
-        assert.ok(!JSVTS.Mover.shouldStopForVehiclesInSegment(veh, veh.getLookAheadDistance()),
+        assert.ok(!JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle detected when it should not have been. Front Vehicle: "+JSON.stringify(VT.testVehicles[0].config.location)+"; Back Vehicle: "+JSON.stringify(veh.config.location));
     });
 QUnit.cases([
@@ -90,7 +90,7 @@ QUnit.cases([
         var xLoc = VT.testVehicles[0].config.location.x+veh.getLookAheadDistance()-(veh.config.length/2);
         veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.testVehicles[0] and in range, but should not match
         JSVTS.Map.AddVehicle(veh);
-        assert.ok(!JSVTS.Mover.shouldStopForVehiclesInSegment(veh, veh.getLookAheadDistance()),
+        assert.ok(!JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle detected when it should not have been. Back Vehicle: "+JSON.stringify(VT.testVehicles[0].config.location)+"; Front Vehicle: "+JSON.stringify(veh.config.location));
     });
 QUnit.cases([
@@ -105,7 +105,7 @@ QUnit.cases([
         var xLoc = VT.testVehicles[0].config.location.x+veh.getLookAheadDistance()+(veh.config.length/2)+0.1;
         veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.testVehicles[0] and in range, but should not match
         JSVTS.Map.AddVehicle(veh);
-        assert.ok(!JSVTS.Mover.shouldStopForVehiclesInSegment(veh, veh.getLookAheadDistance()),
+        assert.ok(!JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle detected when it should not have been. Back Vehicle: "+JSON.stringify(VT.testVehicles[0].config.location)+"; Front Vehicle: "+JSON.stringify(veh.config.location));
     });
 QUnit.test("vehicle should detect other vehicle in range ahead of itself on different segment, same heading", function (assert) {
