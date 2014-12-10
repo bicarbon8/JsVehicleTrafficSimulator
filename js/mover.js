@@ -35,16 +35,9 @@ JSVTS.Mover = {
 
     move: function(elapsedMilliseconds, vehicleIds){
         // if a subset of ids passed in then filter to those vehicles only
-        var segments = JSVTS.Map.GetSegments();
-        for (var i in segments) {
-            var segment = segments[i];
-            if (segment.tfc) {
-                segment.tfc.update(JSVTS.Mover.TotalElapsedTime);
-            }
-            if (segment.generator) {
-                segment.generator.update(JSVTS.Mover.TotalElapsedTime);
-            }
-        }
+        JSVTS.Map.GetSegments().forEach(function (seg) {
+            seg.update(elapsedMilliseconds);
+        });
         var vehicles = JSVTS.Map.GetVehicles();
         if (vehicleIds) {
             // only move the vehicles we're interested in
@@ -60,12 +53,11 @@ JSVTS.Mover = {
         }
         for (var m in vehicles) {
             var v = vehicles[m];
-            
             var speed = v.velocity;
             var IsStopping = false;
             var elapsedSeconds = (elapsedMilliseconds / 1000);
             var distTraveled = (speed * elapsedSeconds);
-            if(distTraveled > 0){
+            if(distTraveled > 0) {
                 var remainingDistOnSegment = JSVTS.Mover.GetDistanceBetweenTwoPoints(v.config.location, v.segmentEnd);
                 if (distTraveled >= remainingDistOnSegment) {
                     // if there is a next Segment
@@ -79,7 +71,8 @@ JSVTS.Mover = {
                     
                     if(nextSegments && nextSegments.length > 0){
                         // move to segment (pick randomly)
-                        var randIndex = Math.floor((Math.random()*nextSegments.length));
+                        // TODO: lookup values from vehicle's choosen path
+                        var randIndex = Math.floor((Math.random() * nextSegments.length));
                         var nextSeg = nextSegments[randIndex];
                         nextSeg.attachVehicle(v, v.segmentEnd);
 
@@ -91,7 +84,6 @@ JSVTS.Mover = {
                 }
                 if (v) {
                     v.moveBy(distTraveled);
-
                     var segment = JSVTS.Map.GetSegmentById(v.segmentId);
                     if (JSVTS.Mover.shouldStop(v, segment)) {
                         IsStopping = true;
@@ -210,6 +202,7 @@ JSVTS.Mover = {
             }
 
             if (closestPoint) {
+                // create tmp segment to new lane
                 var seg = new JSVTS.Segment({
                     start: v.config.location,
                     end: closestPoint,
@@ -249,7 +242,7 @@ JSVTS.Mover = {
                 }
             }
 
-            var corneringSpeed = JSVTS.Mover.CorneringSpeedCalculator(headingDiff);
+            var corneringSpeed = JSVTS.Mover.CorneringSpeedCalculator(headingDiff, vehicle.velocity);
             // begin slowing down 
             if (vehicle.velocity > corneringSpeed) {
                 return { stop: true, type: "cornering", heading: headingDiff };
@@ -259,10 +252,10 @@ JSVTS.Mover = {
         return false;
     },
 
-    CorneringSpeedCalculator: function(headingDifference) {
+    CorneringSpeedCalculator: function(headingDifference, velocity) {
         if (headingDifference < 12) {
             // no real difference
-            return 1000; // fast as you like
+            return velocity; // fast as you like
         }
         if (headingDifference < 25) {
             // mild / gentle curve
@@ -283,10 +276,9 @@ JSVTS.Mover = {
     },
 
     /**
-     * this function will return all the stoplights on this segment
-     * and any subsegments recursively down to the terminating 
-     * nodes
-     * @return true if tfc's are within distance
+     * this function will determine if we need to stop for any TFC
+     * on the current segment
+     * @return true if tfc's are within distance and require stop
      */
     AreTfcsWithinDistance: function(vehicle, segment, distance) {
         if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {

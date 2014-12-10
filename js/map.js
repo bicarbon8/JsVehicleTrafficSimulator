@@ -71,9 +71,7 @@ JSVTS.Map = {
 	},
 
 	GetSegmentById: function (id) {
-		return JSVTS.Map.GetSegments().filter(function (el) {
-			return el.id === id;
-		})[0];
+		return JSVTS.Map._segments[id];
 	},
 
     getSegmentsStartingAt: function (point) {

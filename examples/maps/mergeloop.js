@@ -351,6 +351,7 @@ JSVTS.roadway = {
                 "tfc": {
                     "type":"stoplight",
                     "changeseconds":1,
+                    "yellowduration":0,
                     "startstate":0
                 },
                 "generator": {
@@ -407,6 +408,7 @@ JSVTS.roadway = {
                 "tfc": {
                     "type":"stoplight",
                     "changeseconds":1,
+                    "yellowduration":0,
                     "startstate":2
                 },
                 "generator": {

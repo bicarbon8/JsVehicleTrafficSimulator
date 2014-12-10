@@ -12,6 +12,7 @@ JSVTS.VehicleGenerator = function (options) {
     self.generating = false;
     self.nextVehicle = null;
     self.position = null;
+    self.elapsedMs = 0;
 
     self.init = function (options) {
         for (var property in options) { self.config[property] = options[property]; }
@@ -23,10 +24,13 @@ JSVTS.VehicleGenerator = function (options) {
         }
     };
 
-    self.update = function (totalElapsedMs) {
-        if (!self.generating && (Math.floor(totalElapsedMs / 1000) % self.config.delay) === 0) {
-            self.generating = true;
-            self.generate();
+    self.update = function (elapsedMs) {
+        for (var i = 0; i < elapsedMs; i++) {
+            self.elapsedMs++;
+            if (self.elapsedMs === self.config.delay) {
+                self.elapsedMs = 0;
+                self.generate();
+            }
         }
     };
 
@@ -66,7 +70,6 @@ JSVTS.VehicleGenerator = function (options) {
             JSVTS.Map.AddVehicle(newV);
             JSVTS.Plotter.addObject(newV.mesh);
             JSVTS.Plotter.addObject(newV.idMesh);
-            self.generating = false;
         } else {
             setTimeout(self.generate, 1000);
         }

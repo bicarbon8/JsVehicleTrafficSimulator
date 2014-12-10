@@ -153,5 +153,14 @@ JSVTS.Segment = function(options){
         return self.spline.getLength(0);
     };
 
+    self.update = function (elapsedMs) {
+        if (self.tfc) {
+            self.tfc.update(elapsedMs);
+        }
+        if (self.generator) {
+            self.generator.update(elapsedMs);
+        }
+    };
+
     self.init(options);
 };

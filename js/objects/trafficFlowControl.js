@@ -48,6 +48,11 @@ JSVTS.TrafficFlowControl = function (options) {
         for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
     };
 
+    self.update = function (elapsedMs) {
+        // abstract base method
+        throw "update method cannot be called on abstract base class.";
+    };
+
     self.updateLocation = function(newLocation) {
         if (newLocation) {
             self.config.location.copy(newLocation);
@@ -64,4 +69,4 @@ JSVTS.TrafficFlowControl = function (options) {
     };
 
     self.init(options);
-}
+};

@@ -50,10 +50,10 @@ JSVTS.TxtToMapParser = {
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,
-                "speedLimit": jsonObj[i].speedlimit,
-                "name": jsonObj[i].roadname,
-                "isInlet": jsonObj[i].isinlet,
-                "isMergeLane": jsonObj[i].ismergelane
+                "speedLimit": seg.speedlimit === undefined ? 60 : seg.speedlimit,
+                "name": seg.roadname,
+                "isInlet": seg.isinlet || false,
+                "isMergeLane": seg.ismergelane || false
             });
             if (tfc) {
                 segment.attachObject(tfc, segment.config.end, segment.config.start);
@@ -75,10 +75,12 @@ JSVTS.TxtToMapParser = {
             var type = jsonObj.type;
             switch (type) {
                 case "stoplight":
-                    var changeSeconds = jsonObj.changeseconds;
-                    var startState = jsonObj.startstate;
+                    var changeSeconds = jsonObj.changeseconds === undefined ? 60 : jsonObj.changeseconds;
+                    var startState = jsonObj.startstate === undefined ? 0 : jsonObj.startstate;
+                    var yellowDuration = jsonObj.yellowduration === undefined ? 4 : jsonObj.yellowduration;
                     tfc = new JSVTS.StopLight({
                         "changeSeconds": changeSeconds,
+                        "yellowDuration": yellowDuration,
                         "startState": startState
                     });
                     break;
@@ -95,15 +97,10 @@ JSVTS.TxtToMapParser = {
         var generator = null;
         if (jsonObj) {
             generator = new JSVTS.VehicleGenerator({
-                delay:jsonObj.delay
+                delay: jsonObj.delay === undefined ? 1 : jsonObj.delay
             });
         }
 
         return generator;
-    },
-
-    ParseVehiclesJson: function (jsonObj) {
-        // TODO: implement
-        return [];
     }
 };
