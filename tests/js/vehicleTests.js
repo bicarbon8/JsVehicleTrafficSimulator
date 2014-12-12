@@ -6,6 +6,9 @@ var VT = {
         QUnit.stop();
         JSVTS.load([
             "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js",
+            "../js/helpers/utils.js",
+            "../js/objects/movable.js",
+            "../js/objects/renderable.js",
             "../js/objects/vehicle.js",
             "../js/objects/segment.js",
             "../js/mover.js",
@@ -31,7 +34,7 @@ var VT = {
             var veh1 = new JSVTS.Vehicle();
             VT.segments[0].attachVehicle(veh1);
             var pt = VT.segments[0].spline.getPoint(0.5); // middle of segment
-            veh1.updateLocation(pt);
+            veh1.moveTo(pt);
             veh1.velocity = 100;
             VT.vehicles.push(veh1);
             
@@ -55,6 +58,12 @@ QUnit.module("vehicle", {
     setup: VT.setup,
     teardown: VT.teardown
 });
+QUnit.test("is an instance of Renderable", function (assert) {
+    var v = new JSVTS.Vehicle();
+    assert.ok(v instanceof JSVTS.Vehicle);
+    assert.ok(v instanceof JSVTS.Renderable);
+    assert.ok(v instanceof JSVTS.Movable);
+});
 QUnit.cases([
         { velocity: 100 },
         { velocity: 0 },
@@ -66,7 +75,7 @@ QUnit.cases([
         veh.velocity = params.velocity;
         var distance = veh.getLookAheadDistance();
         var xLoc = VT.vehicles[0].config.location.x - distance + 1;
-        veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // behind VT.vehicles[0] and in range
+        veh.moveTo(new THREE.Vector3(xLoc, 0, 0)); // behind VT.vehicles[0] and in range
         JSVTS.Map.AddVehicle(veh);
         assert.ok(JSVTS.Mover.AreVehiclesWithinDistance(veh, distance),
             "vehicle not detected when it should have been. Front Vehicle: "+JSON.stringify(VT.vehicles[0].config.location)+"; Back Vehicle: "+JSON.stringify(veh.config.location)+"; In Range Distance: "+distance);
@@ -81,7 +90,7 @@ QUnit.cases([
         VT.segments[0].attachVehicle(veh);
         veh.velocity = params.velocity;
         var xLoc = VT.vehicles[0].config.location.x-veh.getLookAheadDistance()-veh.config.length;
-        veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // behind VT.vehicles[0] and in range
+        veh.moveTo(new THREE.Vector3(xLoc, 0, 0)); // behind VT.vehicles[0] and in range
         JSVTS.Map.AddVehicle(veh);
         assert.ok(!JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle detected when it should not have been. Front Vehicle: "+JSON.stringify(VT.vehicles[0].config.location)+"; Back Vehicle: "+JSON.stringify(veh.config.location));
@@ -121,7 +130,7 @@ QUnit.cases([
         VT.segments[0].attachVehicle(veh);
         veh.velocity = params.velocity;
         var xLoc = VT.vehicles[0].config.location.x+veh.getLookAheadDistance()-(veh.config.length/2);
-        veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.vehicles[0] and in range, but should not match
+        veh.moveTo(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.vehicles[0] and in range, but should not match
         JSVTS.Map.AddVehicle(veh);
         assert.ok(!JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle detected when it should not have been. Back Vehicle: "+JSON.stringify(VT.vehicles[0].config.location)+"; Front Vehicle: "+JSON.stringify(veh.config.location));
@@ -136,7 +145,7 @@ QUnit.cases([
         VT.segments[0].attachVehicle(veh);
         veh.velocity = params.velocity;
         var xLoc = VT.vehicles[0].config.location.x+veh.getLookAheadDistance()+(veh.config.length/2)+0.1;
-        veh.updateLocation(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.vehicles[0] and in range, but should not match
+        veh.moveTo(new THREE.Vector3(xLoc, 0, 0)); // in front of VT.vehicles[0] and in range, but should not match
         JSVTS.Map.AddVehicle(veh);
         assert.ok(!JSVTS.Mover.AreVehiclesWithinDistance(veh, veh.getLookAheadDistance()),
             "vehicle detected when it should not have been. Back Vehicle: "+JSON.stringify(VT.vehicles[0].config.location)+"; Front Vehicle: "+JSON.stringify(veh.config.location));
@@ -160,12 +169,12 @@ QUnit.test("vehicle should detect other vehicle in range ahead of itself on diff
         var veh1 = new JSVTS.Vehicle();
         seg2.attachVehicle(veh1);
         var pt = seg2.spline.getPoint(0.5); // middle of segment
-        veh1.updateLocation(pt);
+        veh1.moveTo(pt);
         veh1.velocity = 100;
         var veh2 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh2);
-        var pt = seg1.spline.getPoint(0.5); // middle of segment
-        veh2.updateLocation(pt);
+        pt = seg1.spline.getPoint(0.5); // middle of segment
+        veh2.moveTo(pt);
         veh2.velocity = 100;
 
         JSVTS.Map.AddSegment(seg1);
@@ -198,12 +207,12 @@ QUnit.test("vehicle should detect other vehicle in range ahead of itself on diff
         var veh1 = new JSVTS.Vehicle();
         seg2.attachVehicle(veh1);
         var pt = seg2.spline.getPoint(0.5); // middle of segment
-        veh1.updateLocation(pt);
+        veh1.moveTo(pt);
         veh1.velocity = 100;
         var veh2 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh2);
-        var pt = seg1.spline.getPoint(0.5); // middle of segment
-        veh2.updateLocation(pt);
+        pt = seg1.spline.getPoint(0.5); // middle of segment
+        veh2.moveTo(pt);
         veh2.velocity = 100;
 
         JSVTS.Map.AddSegment(seg1);
@@ -232,12 +241,12 @@ QUnit.cases([
         var veh1 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh1);
         var pt = seg1.spline.getPoint(0.5); // middle of segment
-        veh1.updateLocation(pt);
+        veh1.moveTo(pt);
         veh1.velocity = p.v;
         var veh2 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh2);
-        var pt = seg1.spline.getPoint(0.25); // 1st quarter of segment
-        veh1.updateLocation(pt);
+        pt = seg1.spline.getPoint(0.25); // 1st quarter of segment
+        veh1.moveTo(pt);
         veh2.velocity = p.v;
 
         JSVTS.Map.AddSegment(seg1);
@@ -265,12 +274,12 @@ QUnit.cases([
         var veh1 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh1);
         var pt = seg1.spline.getPoint(0.5); // middle of segment
-        veh1.updateLocation(pt);
+        veh1.moveTo(pt);
         veh1.velocity = p.v;
         var veh2 = new JSVTS.Vehicle();
         seg1.attachVehicle(veh2);
-        var pt = seg1.spline.getPoint(0.75); // 3rd quarter of segment
-        veh1.updateLocation(pt);
+        pt = seg1.spline.getPoint(0.75); // 3rd quarter of segment
+        veh1.moveTo(pt);
         veh2.velocity = p.v;
 
         JSVTS.Map.AddSegment(seg1);

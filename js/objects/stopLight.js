@@ -44,93 +44,83 @@ JSVTS.STOPLIGHT_OPTIONS = function () {
 };
 JSVTS.StopLight = function (options) {
     JSVTS.TrafficFlowControl.call(this, options);
-    var self = this;
-    self.mesh = null;
-    self.startState = null;
-    self.currentState = null;
-    self.stateElapsed = null;
+    
+    var defaults = JSVTS.STOPLIGHT_OPTIONS();
+    for (var key in defaults) { this.config[key] = defaults[key]; }
+    for (var key in options) { this.config[key] = options[key]; }
+    
+    if (this.config.changeSeconds <= 0) { throw "invalid value specified for 'changeSeconds'. values must be greater than 0."; }
+    this.startState = this.config.startState;
+    this.currentState = this.startState;
+    this.stateElapsed = null;
+};
+JSVTS.StopLight.prototype = Object.create(JSVTS.TrafficFlowControl.prototype);
+JSVTS.StopLight.prototype.constructor = JSVTS.StopLight;
 
-    self.init = function (options) {
-        var defaults = JSVTS.STOPLIGHT_OPTIONS();
-        for (var key in defaults) { self.config[key] = defaults[key]; }
-        for (var key in options) { self.config[key] = options[key]; }
-        
-        if (self.config.changeSeconds <= 0) { throw "invalid value specified for 'changeSeconds'. values must be greater than 0."; }
-        self.startState = self.config.startState;
-        self.currentState = self.startState;
+JSVTS.StopLight.prototype.generateMesh = function () {
+    if (!this.mesh) {
+        // z coordinate used for vertical height
+        var geometry = new THREE.SphereGeometry(this.config.radius);
+        var material = new THREE.MeshBasicMaterial({
+            color: 0xffffff
+        });
+        mesh = new THREE.Mesh(geometry, material);
+        this.mesh = mesh;
+    }
+    this.update(0);
+};
 
-        self.generateMesh();
-    };
-
-    self.generateMesh = function () {
-        if (!self.mesh) {
-            // z coordinate used for vertical height
-            var geometry = new THREE.SphereGeometry(self.config.radius);
-            var material = new THREE.MeshBasicMaterial({
-                color: 0xffffff
-            });
-            mesh = new THREE.Mesh(geometry, material);
-            self.mesh = mesh;
-        }
-        self.update(0);
-    };
-
-    self.update = function (elapsedMs) {
-        for (var i = 0; i < elapsedMs; i++) {
-            self.stateElapsed++;
-            switch (self.currentState) {
-                case JSVTS.StopLightState.GREEN:
-                    if (self.stateElapsed >= self.config.changeSeconds * 1000) {
-                        self.currentState = JSVTS.StopLightState.YELLOW;
-                        self.stateElapsed = 0;
-                    }
-                    break;
-                case JSVTS.StopLightState.YELLOW:
-                    if (self.stateElapsed >= self.config.yellowDuration * 1000) {
-                        self.currentState = JSVTS.StopLightState.RED;
-                        self.stateElapsed = 0;
-                    }
-                    break;
-                case JSVTS.StopLightState.RED:
-                    if (self.stateElapsed >= self.config.changeSeconds * 1000) {
-                        self.currentState = JSVTS.StopLightState.GREEN;
-                        self.stateElapsed = 0;
-                    }
-                    break;
-            }
-        }
-
-        switch (self.currentState) {
+JSVTS.StopLight.prototype.update = function (elapsedMs) {
+    for (var i = 0; i < elapsedMs; i++) {
+        this.stateElapsed++;
+        switch (this.currentState) {
             case JSVTS.StopLightState.GREEN:
-                self.mesh.material.color.setHex(0x00ff00);
+                if (this.stateElapsed >= this.config.changeSeconds * 1000) {
+                    this.currentState = JSVTS.StopLightState.YELLOW;
+                    this.stateElapsed = 0;
+                }
                 break;
             case JSVTS.StopLightState.YELLOW:
-                self.mesh.material.color.setHex(0xffff00);
+                if (this.stateElapsed >= this.config.yellowDuration * 1000) {
+                    this.currentState = JSVTS.StopLightState.RED;
+                    this.stateElapsed = 0;
+                }
                 break;
             case JSVTS.StopLightState.RED:
-                self.mesh.material.color.setHex(0xff0000);
+                if (this.stateElapsed >= this.config.changeSeconds * 1000) {
+                    this.currentState = JSVTS.StopLightState.GREEN;
+                    this.stateElapsed = 0;
+                }
                 break;
         }
-    };
+    }
 
-    self.shouldStop = function(vehicle) {
-        var distanceToV = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, self.config.location);
-        if (distanceToV < vehicle.getLookAheadDistance() - (vehicle.config.length * 2)) {
-            if (self.currentState === JSVTS.StopLightState.RED) {
-                return true;
-            }
-
-            return false;
-        } else {
-            if (self.currentState === JSVTS.StopLightState.YELLOW || self.currentState === JSVTS.StopLightState.RED) {
-                return true;
-            }
-
-            return false;
-        }
-    };
-
-    self.init(options);
+    switch (this.currentState) {
+        case JSVTS.StopLightState.GREEN:
+            this.mesh.material.color.setHex(0x00ff00);
+            break;
+        case JSVTS.StopLightState.YELLOW:
+            this.mesh.material.color.setHex(0xffff00);
+            break;
+        case JSVTS.StopLightState.RED:
+            this.mesh.material.color.setHex(0xff0000);
+            break;
+    }
 };
-JSVTS.StopLight.prototype = JSVTS.TrafficFlowControl.prototype;
-JSVTS.StopLight.constructor = JSVTS.StopLight;
+
+JSVTS.StopLight.prototype.shouldStop = function(vehicle) {
+    var distanceToV = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, this.config.location);
+    if (distanceToV < vehicle.getLookAheadDistance() - (vehicle.config.length * 2)) {
+        if (this.currentState === JSVTS.StopLightState.RED) {
+            return true;
+        }
+
+        return false;
+    } else {
+        if (this.currentState === JSVTS.StopLightState.YELLOW || this.currentState === JSVTS.StopLightState.RED) {
+            return true;
+        }
+
+        return false;
+    }
+};

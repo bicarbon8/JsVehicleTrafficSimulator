@@ -1,14 +1,9 @@
 var JSVTS = {
-    plotter       : null,
-    canvas        : null,
-    map           : null,
-    keepMoving    : false,
-    LANE_ID_COUNT : 0,
-    SEG_ID_COUNT  : 0,
-    TFC_ID_COUNT  : 0,
+    ID_COUNT      : 0,
     startTime     : 0,
     elapsed       : 0,
     realtime      : false,
+    keepMoving    : false,
 
 	injectJs: function (script, callback) {
 		var s = document.createElement('script');
@@ -39,12 +34,16 @@ var JSVTS = {
             "ext/OrbitControls.js",
             "ext/stats.min.js",
             "ext/helvetiker_regular.typeface.js",
+            /** helpers **/
+            "js/helpers/utils.js",
             /** main controllers **/
             "js/map.js",
             "js/mover.js",
             "js/plotter.js",
             "js/txtToMapParser.js",
             /** renderable objects **/
+            "js/objects/movable.js",
+            "js/objects/renderable.js",
             "js/objects/segment.js",
             "js/objects/vehicle.js",
             "js/objects/trafficFlowControl.js",
@@ -154,4 +153,3 @@ var JSVTS = {
         JSVTS.Plotter.render();
     }
 };
-JSVTS.setup();

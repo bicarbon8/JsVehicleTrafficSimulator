@@ -28,14 +28,41 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.TFC_ID_COUNT = 0;
-// abstract base class
-JSVTS.TrafficFlowControl = function (options) {
-    JSVTS.Renderable.call(this, options);
-
-    this.segmentId = null;
-
-    for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
+JSVTS.MOVABLE_OPTIONS = function () {
+    var self = {
+        name: '',
+        location: new THREE.Vector3(0,0,0),
+        generateId: true,
+    };
+    return self;
 };
-JSVTS.TrafficFlowControl.prototype = Object.create(JSVTS.Renderable.prototype);
-JSVTS.TrafficFlowControl.prototype.constructor = JSVTS.TrafficFlowControl;
+/**
+ * abstract base object for objects that change over time
+ * either in location, colour, or function
+ */
+JSVTS.Movable = function (options) {
+    this.id = null;
+    this.config = JSVTS.MOVABLE_OPTIONS();
+    
+    for (var property in options) { this.config[property] = options[property]; }
+    if (this.config.generateId) {
+        this.id = JSVTS.ID_COUNT++;
+    }
+};
+
+/**
+ * abstract base method that will be
+ * called for each animation frame
+ */
+JSVTS.Movable.prototype.update = function (elapsedMs) {
+    throw "abstract base method must be overridden to be called.";
+};
+
+/**
+ * base method to handle positioning object
+ */
+JSVTS.Movable.prototype.moveTo = function (location) {
+    if (location) {
+        this.config.location.copy(location);
+    }
+};

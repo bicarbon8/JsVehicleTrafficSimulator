@@ -3,6 +3,9 @@ var MT = {
         QUnit.stop();
         JSVTS.load([
             "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js",
+            "../js/helpers/utils.js",
+            "../js/objects/movable.js",
+            "../js/objects/renderable.js",
             "../js/objects/segment.js",
             "../js/objects/vehicle.js",
             "../js/map.js",
@@ -114,7 +117,7 @@ QUnit.cases([
               {sx:0,sy:0,sz:0,ex:500,ey:0,ez:0}] // 2nd lane gets blocking vehicle
         },
     ]).test("should change lanes when vehicle beyond lookahead distance of new lane", function (p, assert) {
-        var v;
+        var v, v2;
         for (var i=0; i<p.s.length; i++) {
             var segPoints = p.s[i];
             var segment = new JSVTS.Segment({

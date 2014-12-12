@@ -114,7 +114,7 @@ JSVTS.Map = {
 			var line1 = new THREE.Line3(segment.config.start, segment.config.end);
             var line2 = new THREE.Line3(currentSegment.config.start, currentSegment.config.end);
 			if (segment.config.name === currentSegment.config.name &&
-            Math.abs(JSVTS.Mover.angleFormedBy(line1, line2)) < 5) {
+            Math.abs(JSVTS.Utils.angleFormedBy(line1, line2)) < 5) {
                 results.push(segment);
             }
 		}

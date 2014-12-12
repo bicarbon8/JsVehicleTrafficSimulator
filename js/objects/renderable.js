@@ -28,14 +28,48 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.TFC_ID_COUNT = 0;
-// abstract base class
-JSVTS.TrafficFlowControl = function (options) {
-    JSVTS.Renderable.call(this, options);
+/**
+ * base class for any objects that can be moved
+ */
+JSVTS.Renderable = function (options) {
+    JSVTS.Movable.call(this, options);
 
-    this.segmentId = null;
-
-    for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
+    this.mesh = null;
+    
+    this.generateMesh();
 };
-JSVTS.TrafficFlowControl.prototype = Object.create(JSVTS.Renderable.prototype);
-JSVTS.TrafficFlowControl.prototype.constructor = JSVTS.TrafficFlowControl;
+JSVTS.Renderable.prototype = Object.create(JSVTS.Movable.prototype);
+JSVTS.Renderable.prototype.constructor = JSVTS.Renderable;
+
+JSVTS.Renderable.prototype.updated = function () {
+    // indicate that we've updated
+    this.mesh.geometry.dynamic = true;
+    this.mesh.geometry.verticesNeedUpdate = true;
+    this.mesh.geometry.normalsNeedUpdate = true;
+};
+
+/**
+ * abstract base method that must be implemented
+ * in the subclass
+ */
+JSVTS.Renderable.prototype.generateMesh = function () {
+    throw "abstract method cannot be called directly";
+};
+
+JSVTS.Renderable.prototype.moveTo = function (location, lookAt) {
+    JSVTS.Movable.prototype.moveTo.call(this, location);
+    if (location && lookAt) {
+        this.mesh.position.set(location.x, location.y, location.z);
+        this.mesh.lookAt(lookAt);
+    }
+};
+
+JSVTS.Renderable.prototype.moveBy = function (distance) {
+    if (distance && !isNaN(distance)) {
+        // move to this.config.location and rotate to point at heading
+        this.mesh.translateZ(distance);
+        this.moveTo(this.mesh.position);
+
+        this.updated();
+    }
+};

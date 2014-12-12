@@ -3,7 +3,10 @@ var SL = {
         QUnit.stop();
         JSVTS.load([
             "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js",
+            "../js/helpers/utils.js",
             "../js/map.js",
+            "../js/objects/movable.js",
+            "../js/objects/renderable.js",
             "../js/objects/trafficFlowControl.js",
             "../js/objects/stopLight.js"
         ], function () {
@@ -22,6 +25,8 @@ QUnit.test("is an instance of TrafficFlowControl", function (assert) {
     var sl = new JSVTS.StopLight();
     assert.ok(sl instanceof JSVTS.StopLight);
     assert.ok(sl instanceof JSVTS.TrafficFlowControl);
+    assert.ok(sl instanceof JSVTS.Renderable);
+    assert.ok(sl instanceof JSVTS.Movable);
 });
 QUnit
 .cases([

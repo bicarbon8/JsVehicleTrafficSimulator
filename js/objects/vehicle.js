@@ -28,182 +28,174 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.VEH_ID_COUNT = 0;
 JSVTS.VEH_OPTIONS = function () {
     var self = {
-        name: '',
         width: 2,
         length: 4,
         height: 2,
-        location: new THREE.Vector3(0,0,0),
         desiredVelocity: 0,
         reactionTime: 2.5, // seconds to react
-        generateId: true,
         acceleration: 3.5, // meters per second
         deceleration: 7, // meters per second
         changeLaneDelay: 5 // don't change lanes for 5 seconds after a change
     };
     return self;
 };
-JSVTS.Vehicle = function(options){
-    var self = this;
-    self.id = null;
-    self.config = JSVTS.VEH_OPTIONS();
-    self.isChangingLanes = false;
-    self.changeLaneTime = null;
-    self.segmentId = null;
-    self.segmentStart = null;
-    self.segmentEnd = null;
-    self.mesh = null;
-    self.velocity = 0; // Km/h
-    self.previousLocation = null;
-    self.crashed = false;
-    self.crashCleanupTime = null;
-    self.idMesh = null;
+JSVTS.Vehicle = function(options) {
+    JSVTS.Renderable.call(this, options);
+    
+    var defaults = JSVTS.VEH_OPTIONS();
+    for (var property in defaults) { this.config[property] = defaults[property]; }
+    for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
 
-    self.init=function(options) {
-        for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
-        if (self.config.generateId) {
-            self.id = JSVTS.VEH_ID_COUNT++;
-        }
-        self.updateLocation(self.config.location);
-    };
+    this.isChangingLanes = false;
+    this.changeLaneTime = null;
+    this.segmentId = null;
+    this.segmentStart = null;
+    this.segmentEnd = null;
+    this.velocity = 0; // Km/h
+    this.crashed = false;
+    this.crashCleanupTime = null;
+    this.idMesh = null;
+};
+JSVTS.Vehicle.prototype = Object.create(JSVTS.Renderable.prototype);
+JSVTS.Vehicle.prototype.constructor = JSVTS.Vehicle;
 
-    self.copyFrom = function (vehicle) {
-        if (vehicle) {
-            self.init(vehicle.config);
-            for (var property in vehicle) {
-                if (typeof vehicle[property] !== "function" && typeof vehicle[property] !== "object") {
-                    self[property] = vehicle[property];
-                }
+JSVTS.Vehicle.prototype.copyFrom = function (vehicle) {
+    if (vehicle) {
+        this.init(vehicle.config);
+        for (var property in vehicle) {
+            if (typeof vehicle[property] !== "function" && typeof vehicle[property] !== "object") {
+                self[property] = vehicle[property];
             }
-            return self;
         }
-    };
+        return this;
+    }
+};
 
-    self.getLookAheadDistance = function () {
-        /**
-         * distance to decelerate from current velocity to 0
-         * (2) d = -u² / 2a
-         * v = desired velocity (0 mps)
-         * u = current velocity (mps)
-         * a = acceleration (mps)
-         * d = distance (m)
-         */
-        var mps = self.convertKmphToMps(self.velocity);
-        var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(self.config.deceleration))) / 2;
-        var distanceToReact = self.config.reactionTime * mps;
-        var distanceTot = distanceToStop + (self.config.length * 2.5) + distanceToReact;
-        // TODO: use distanceToReact as a setTimeout for when to check distances again
-        return distanceTot;
-    };
+JSVTS.Vehicle.prototype.getLookAheadDistance = function () {
+    /**
+     * distance to decelerate from current velocity to 0
+     * (2) d = -u² / 2a
+     * v = desired velocity (0 mps)
+     * u = current velocity (mps)
+     * a = acceleration (mps)
+     * d = distance (m)
+     */
+    var mps = JSVTS.Utils.convertKmphToMps(this.velocity);
+    var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.config.deceleration))) / 2;
+    var distanceToReact = this.config.reactionTime * mps;
+    var distanceTot = distanceToStop + (this.config.length * 2.5) + distanceToReact;
+    // TODO: use distanceToReact as a setTimeout for when to check distances again
+    return distanceTot;
+};
 
-    self.generateMesh = function() {
-        if (!self.mesh) {
-            // z coordinate used for vertical height
-            var geometry = new THREE.BoxGeometry(self.config.width, self.config.height, self.config.length);
-            var material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                wireframe: true
-            });
-            var mesh = new THREE.Mesh(geometry, material);
-            self.mesh = mesh;
+JSVTS.Vehicle.prototype.generateMesh = function() {
+    if (!this.mesh) {
+        // z coordinate used for vertical height
+        var geometry = new THREE.BoxGeometry(this.config.width, this.config.height, this.config.length);
+        var material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            wireframe: true
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        this.mesh = mesh;
+    }
+};
 
-            // TODO: add debug switch
-            var text = new THREE.TextGeometry(self.id, { size: 2, height: 0.05 });
-            var tMesh = new THREE.Mesh(text, material);
-            tMesh.translateY(self.config.height + 5);
-            self.idMesh = tMesh;
+JSVTS.Vehicle.prototype.update = function (elapsedMs) {
+    var IsStopping = false;
+    var elapsedSeconds = (elapsedMs / 1000);
+    var distTraveled = (this.velocity * elapsedSeconds);
+    var removed = false;
+    if(distTraveled > 0) {
+        var remainingDistOnSegment = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segmentEnd);
+        if (distTraveled >= remainingDistOnSegment) {
+            // if there is a next Segment
+            var nextSegments = null;
+            if (this.isChangingLanes) {
+                this.isChangingLanes = false;
+                nextSegments = JSVTS.Map.GetAvailableSegmentsContainingPoint(this.segmentEnd);
+            } else {
+                nextSegments = JSVTS.Map.getSegmentsStartingAt(this.segmentEnd);
+            }
+            
+            if(nextSegments && nextSegments.length > 0){
+                // move to segment (pick randomly)
+                // TODO: lookup values from vehicle's choosen path
+                var randIndex = Math.floor((Math.random() * nextSegments.length));
+                var nextSeg = nextSegments[randIndex];
+                nextSeg.attachVehicle(v, this.segmentEnd);
+
+                distTraveled -= remainingDistOnSegment;
+            } else{
+                // remove v from the Simulation
+                JSVTS.Map.removeVehicle(v);
+                removed = true;
+            }
         }
-    };
-
-    self.updateLocation = function (newPosition) {
-        if (newPosition) {
-            self.generateMesh(); // generates if doesn't already exist
-            // move to self.config.location and rotate to point at heading
-            self.config.location = newPosition;
-            self.mesh.position.set(self.config.location.x, self.config.location.y, self.config.location.z);
-            self.idMesh.position.set(self.config.location.x, self.config.location.y + 5, self.config.location.z);
-
-            self.updated();
+        if (!removed) {
+            this.moveBy(distTraveled);
+            var segment = JSVTS.Map.GetSegmentById(this.segmentId);
+            if (JSVTS.Mover.shouldStop(v, segment)) {
+                IsStopping = true;
+            }
         }
-    };
+    }
 
-    self.moveBy = function (distance) {
-        if (distance) {
-            self.generateMesh(); // generates if doesn't already exist
-            // move to self.config.location and rotate to point at heading
-            self.mesh.translateZ(distance);
-            self.idMesh.position.set(self.mesh.position.x, self.mesh.position.y + 5, self.mesh.position.z);
-            self.config.location = self.mesh.position;
-
-            self.updated();
+    if (!removed) {
+        if (this.crashed) {
+            this.velocity = 0;
+            if (this.crashCleanupTime) {
+                // remove vehicle after
+                if (this.crashCleanupTime <= JSVTS.Mover.TotalElapsedTime) {
+                    // remove v from the Simulation
+                    console.log("Vehicle removed: "+this.id);
+                    JSVTS.Map.removeVehicle(v);
+                }
+            } else {
+                console.log("Vehicle crashed: "+this.id);
+                var rand = Math.random();
+                if (rand <= 0.8) {
+                    this.crashCleanupTime = Math.random() * JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
+                }
+                this.crashCleanupTime = Math.random() * (JSVTS.Mover.CRASH_CLEANUP_MAX_DELAY - JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY) + JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
+            }
+        } else {
+            this.updateVelocity(elapsedMs, IsStopping);
         }
-    };
+    }
+};
 
-    self.updated = function () {
-        // indicate that we've updated
-        self.mesh.geometry.dynamic = true;
-        self.mesh.geometry.verticesNeedUpdate = true;
-        self.mesh.geometry.normalsNeedUpdate = true;
+JSVTS.Vehicle.prototype.updateVelocity = function (elapsedMs, isStopping) {
+    // speed up or slow down
+    if (this.velocity < this.config.desiredVelocity && !isStopping) {
+        // speed up: avg. rate of acceleration is 3.5 m/s^2
+        this.accelerate(elapsedMs);
+    }
+    if (this.velocity > this.config.desiredVelocity || isStopping) {
+        // slow down: avg. rate of deceleration is 3.5 m/s^2
+        this.brake(elapsedMs);
+    }
+};
 
-        if (JSVTS.Plotter && JSVTS.Plotter.camera) {
-            self.idMesh.lookAt(JSVTS.Plotter.camera.position);
-        }
-        self.idMesh.geometry.dynamic = true;
-        self.idMesh.geometry.verticesNeedUpdate = true;
-        self.idMesh.geometry.normalsNeedUpdate = true;
-    };
+JSVTS.Vehicle.prototype.accelerate = function (elapsedMs) {
+    var elapsedSeconds = elapsedMs/1000;
+    this.velocity += (JSVTS.Utils.convertMpsToKmph(this.config.acceleration * elapsedSeconds));
+    this.mesh.material.color.setHex(0x66ff66);
+};
 
-    self.updateVelocity = function (elapsedMs, isStopping) {
-        // speed up or slow down
-        if (self.velocity < self.config.desiredVelocity && !isStopping) {
-            // speed up: avg. rate of acceleration is 3.5 m/s^2
-            self.accelerate(elapsedMs);
-        }
-        if (self.velocity > self.config.desiredVelocity || isStopping) {
-            // slow down: avg. rate of deceleration is 3.5 m/s^2
-            self.brake(elapsedMs);
-        }
-    };
+JSVTS.Vehicle.prototype.brake = function (elapsedMs) {
+    var elapsedSeconds = elapsedMs/1000;
+    this.velocity -= (this.convertMpsToKmph(this.config.deceleration * elapsedSeconds));
+    // prevent going backwards
+    if (this.velocity < 0.1) {
+        this.velocity = 0;
+    }
+    this.mesh.material.color.setHex(0xff0000);
+};
 
-    self.accelerate = function (elapsedMs) {
-        var elapsedSeconds = elapsedMs/1000;
-        self.velocity += (self.convertMpsToKmph(self.config.acceleration * elapsedSeconds));
-        self.mesh.material.color.setHex(0x66ff66);
-    };
-
-    self.brake = function (elapsedMs) {
-        var elapsedSeconds = elapsedMs/1000;
-        self.velocity -= (self.convertMpsToKmph(self.config.deceleration * elapsedSeconds));
-        // prevent going backwards
-        if (self.velocity < 0.1) {
-            self.velocity = 0;
-        }
-        self.mesh.material.color.setHex(0xff0000);
-    };
-
-    self.getBoundingBox = function () {
-        self.mesh.geometry.computeBoundingBox();
-        return self.mesh.geometry.boundingBox;
-    };
-
-    self.convertKmphToMps = function(kilometersPerHour) {
-        var result = 0;
-        var SECONDS_PER_HOUR=3600;
-        var METERS_PER_KILOMETER = 1000;
-        result = (kilometersPerHour/(SECONDS_PER_HOUR))*METERS_PER_KILOMETER;
-        return result;
-    };
-
-    self.convertMpsToKmph = function(metersPerSecond) {
-        var result = 0;
-        var SECONDS_PER_HOUR=3600;
-        var METERS_PER_KILOMETER = 1000;
-        result = (metersPerSecond * SECONDS_PER_HOUR) / METERS_PER_KILOMETER;
-        return result;
-    };
-
-    // configure this object if data was passed in
-    self.init(options);
-}
+JSVTS.Vehicle.prototype.getBoundingBox = function () {
+    this.mesh.geometry.computeBoundingBox();
+    return this.mesh.geometry.boundingBox;
+};

@@ -88,11 +88,8 @@ JSVTS.Segment = function(options){
         obj.segmentId = self.id;
 
         // set the obj's position to passed in location
-        obj.updateLocation(new THREE.Vector3().copy(location));
-        
-        if (obj.mesh) {
-            // rotate to face segment end so movement will just be Z translation
-            obj.mesh.lookAt(lookAt);
+        if (obj instanceof JSVTS.Renderable) {
+            obj.moveTo(location, lookAt);
         }
     };
 
