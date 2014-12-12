@@ -35,26 +35,26 @@ JSVTS.VehicleGenerator.prototype.update = function (elapsedMs) {
 };
 
 JSVTS.VehicleGenerator.prototype.generate = function (newVehicle) {
-    if (!newVehicle) {
-        newVehicle = this.prepareNewVehicle();
+    var newV = newVehicle;
+    if (!newV) {
+        newV = this.prepareNewVehicle();
     }
     
-    if (this.canGenerate(newVehicle)) {
-        JSVTS.Map.AddVehicle(newVehicle);
-        JSVTS.Plotter.addObject(newVehicle.mesh);
-        JSVTS.Plotter.addObject(newVehicle.idMesh);
+    if (this.canGenerate(newV)) {
+        JSVTS.Map.AddVehicle(newV);
+        JSVTS.Plotter.addObject(newV.mesh);
     } else {
-        setTimeout(function () { this.generate(newVehicle); }, 500);
+        setTimeout(function (self) { self.generate(newV); }, 500, this);
     }
 };
 
 JSVTS.VehicleGenerator.prototype.canGenerate = function (newVehicle) {
-    var vehicles = getVehiclesInRangeOf(newVehicle.config.location, newVehicle.config.length * 3);
+    var vehicles = JSVTS.Map.getVehiclesInRangeOf(newVehicle.config.location, newVehicle.config.length * 3);
     for (var i in vehicles) {
         var v = vehicles[i];
         var box1 = new THREE.Box3().setFromObject(v.mesh);
-        var box2 = new THREE.Box3().setFromObject(this.nextVehicle.mesh);
-        if (JSVTS.Mover.isCollidingWith(box1, box2)) {
+        var box2 = new THREE.Box3().setFromObject(newVehicle.mesh);
+        if (JSVTS.Utils.isCollidingWith(box1, box2)) {
             return false;
         }
     }

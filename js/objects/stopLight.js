@@ -43,11 +43,9 @@ JSVTS.STOPLIGHT_OPTIONS = function () {
     return self;
 };
 JSVTS.StopLight = function (options) {
-    JSVTS.TrafficFlowControl.call(this, options);
-    
     var defaults = JSVTS.STOPLIGHT_OPTIONS();
-    for (var key in defaults) { this.config[key] = defaults[key]; }
-    for (var key in options) { this.config[key] = options[key]; }
+    for (var key in options) { defaults[key] = options[key]; }
+    JSVTS.TrafficFlowControl.call(this, defaults);
     
     if (this.config.changeSeconds <= 0) { throw "invalid value specified for 'changeSeconds'. values must be greater than 0."; }
     this.startState = this.config.startState;
@@ -57,10 +55,10 @@ JSVTS.StopLight = function (options) {
 JSVTS.StopLight.prototype = Object.create(JSVTS.TrafficFlowControl.prototype);
 JSVTS.StopLight.prototype.constructor = JSVTS.StopLight;
 
-JSVTS.StopLight.prototype.generateMesh = function () {
+JSVTS.StopLight.prototype.generateMesh = function (options) {
     if (!this.mesh) {
         // z coordinate used for vertical height
-        var geometry = new THREE.SphereGeometry(this.config.radius);
+        var geometry = new THREE.SphereGeometry(options.radius);
         var material = new THREE.MeshBasicMaterial({
             color: 0xffffff
         });
@@ -109,7 +107,7 @@ JSVTS.StopLight.prototype.update = function (elapsedMs) {
 };
 
 JSVTS.StopLight.prototype.shouldStop = function(vehicle) {
-    var distanceToV = JSVTS.Mover.GetDistanceBetweenTwoPoints(vehicle.config.location, this.config.location);
+    var distanceToV = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, this.config.location);
     if (distanceToV < vehicle.getLookAheadDistance() - (vehicle.config.length * 2)) {
         if (this.currentState === JSVTS.StopLightState.RED) {
             return true;

@@ -34,8 +34,6 @@ JSVTS.TrafficFlowControl = function (options) {
     JSVTS.Renderable.call(this, options);
 
     this.segmentId = null;
-
-    for (var optionKey in options) { this.config[optionKey] = options[optionKey]; }
 };
 JSVTS.TrafficFlowControl.prototype = Object.create(JSVTS.Renderable.prototype);
 JSVTS.TrafficFlowControl.prototype.constructor = JSVTS.TrafficFlowControl;

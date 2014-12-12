@@ -36,7 +36,7 @@ JSVTS.Renderable = function (options) {
 
     this.mesh = null;
     
-    this.generateMesh();
+    this.generateMesh(options);
 };
 JSVTS.Renderable.prototype = Object.create(JSVTS.Movable.prototype);
 JSVTS.Renderable.prototype.constructor = JSVTS.Renderable;
@@ -52,7 +52,7 @@ JSVTS.Renderable.prototype.updated = function () {
  * abstract base method that must be implemented
  * in the subclass
  */
-JSVTS.Renderable.prototype.generateMesh = function () {
+JSVTS.Renderable.prototype.generateMesh = function (options) {
     throw "abstract method cannot be called directly";
 };
 
