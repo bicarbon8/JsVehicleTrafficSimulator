@@ -1,7 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<!--
 /**********************************************************************
- * This file is part of a Vehicle Traffic Simulator written 
+ * This javascript is part of a Vehicle Traffic Simulator written 
  * entirely in Javascript, HTML and CSS.  The application allows for 
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
@@ -29,19 +27,49 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
--->
-<html lang="en">
-<head>
-<title>Traffic Simulator</title>
-<style type="text/css">
-body {
-    margin: 0px;
-    padding: 0px;
-}
-</style>
-<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
-</head>
-    <body onload="JSVTS.setup();">
-    </body>
-</html>
+var JSVTS = JSVTS || {};
+/**
+ * base class for any objects that can be moved
+ */
+JSVTS.Renderable = function (options) {
+    JSVTS.Movable.call(this, options);
+
+    this.mesh = null;
+    
+    this.generateMesh(options);
+};
+JSVTS.Renderable.prototype = Object.create(JSVTS.Movable.prototype);
+JSVTS.Renderable.prototype.constructor = JSVTS.Renderable;
+
+JSVTS.Renderable.prototype.updated = function () {
+    // indicate that we've updated
+    this.mesh.geometry.dynamic = true;
+    this.mesh.geometry.verticesNeedUpdate = true;
+    this.mesh.geometry.normalsNeedUpdate = true;
+};
+
+/**
+ * abstract base method that must be implemented
+ * in the subclass
+ */
+JSVTS.Renderable.prototype.generateMesh = function (options) {
+    throw "abstract method cannot be called directly";
+};
+
+JSVTS.Renderable.prototype.moveTo = function (location, lookAt) {
+    JSVTS.Movable.prototype.moveTo.call(this, location);
+    if (location && lookAt) {
+        this.mesh.position.set(location.x, location.y, location.z);
+        this.mesh.lookAt(lookAt);
+    }
+};
+
+JSVTS.Renderable.prototype.moveBy = function (distance) {
+    if (distance && !isNaN(distance)) {
+        // move to this.config.location and rotate to point at heading
+        this.mesh.translateZ(distance);
+        this.moveTo(this.mesh.position);
+
+        this.updated();
+    }
+};

@@ -1,7 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<!--
 /**********************************************************************
- * This file is part of a Vehicle Traffic Simulator written 
+ * This javascript is part of a Vehicle Traffic Simulator written 
  * entirely in Javascript, HTML and CSS.  The application allows for 
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
@@ -29,19 +27,13 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
--->
-<html lang="en">
-<head>
-<title>Traffic Simulator</title>
-<style type="text/css">
-body {
-    margin: 0px;
-    padding: 0px;
-}
-</style>
-<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
-</head>
-    <body onload="JSVTS.setup();">
-    </body>
-</html>
+var JSVTS = JSVTS || {};
+JSVTS.TFC_ID_COUNT = 0;
+// abstract base class
+JSVTS.TrafficFlowControl = function (options) {
+    JSVTS.Renderable.call(this, options);
+
+    this.segmentId = null;
+};
+JSVTS.TrafficFlowControl.prototype = Object.create(JSVTS.Renderable.prototype);
+JSVTS.TrafficFlowControl.prototype.constructor = JSVTS.TrafficFlowControl;

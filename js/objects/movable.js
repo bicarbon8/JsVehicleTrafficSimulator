@@ -1,7 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<!--
 /**********************************************************************
- * This file is part of a Vehicle Traffic Simulator written 
+ * This javascript is part of a Vehicle Traffic Simulator written 
  * entirely in Javascript, HTML and CSS.  The application allows for 
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
@@ -29,19 +27,42 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
--->
-<html lang="en">
-<head>
-<title>Traffic Simulator</title>
-<style type="text/css">
-body {
-    margin: 0px;
-    padding: 0px;
-}
-</style>
-<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
-</head>
-    <body onload="JSVTS.setup();">
-    </body>
-</html>
+var JSVTS = JSVTS || {};
+JSVTS.MOVABLE_OPTIONS = function () {
+    var self = {
+        name: '',
+        location: new THREE.Vector3(0,0,0),
+        generateId: true,
+    };
+    return self;
+};
+/**
+ * abstract base object for objects that change over time
+ * either in location, colour, or function
+ */
+JSVTS.Movable = function (options) {
+    this.id = null;
+    this.config = JSVTS.MOVABLE_OPTIONS();
+    
+    for (var property in options) { this.config[property] = options[property]; }
+    if (this.config.generateId) {
+        this.id = JSVTS.ID_COUNT++;
+    }
+};
+
+/**
+ * abstract base method that will be
+ * called for each animation frame
+ */
+JSVTS.Movable.prototype.update = function (elapsedMs) {
+    throw "abstract base method must be overridden to be called.";
+};
+
+/**
+ * base method to handle positioning object
+ */
+JSVTS.Movable.prototype.moveTo = function (location) {
+    if (location) {
+        this.config.location.copy(location);
+    }
+};

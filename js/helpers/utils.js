@@ -1,7 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<!--
 /**********************************************************************
- * This file is part of a Vehicle Traffic Simulator written 
+ * This javascript is part of a Vehicle Traffic Simulator written 
  * entirely in Javascript, HTML and CSS.  The application allows for 
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
@@ -29,19 +27,42 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
--->
-<html lang="en">
-<head>
-<title>Traffic Simulator</title>
-<style type="text/css">
-body {
-    margin: 0px;
-    padding: 0px;
-}
-</style>
-<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
-</head>
-    <body onload="JSVTS.setup();">
-    </body>
-</html>
+var JSVTS = JSVTS || {};
+JSVTS.Utils = {
+	getRandomBetween: function (min, max) {
+		return Math.random() * (max - min) + min;
+	},
+
+	getDistanceBetweenTwoPoints: function (p1, p2) {
+        return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
+    },
+
+    angleFormedBy: function (line1, line2) {
+        var a = new THREE.Vector3().copy(line1.end).sub(line1.start).normalize();
+        var b = new THREE.Vector3().copy(line2.end).sub(line2.start).normalize();
+        return (Math.acos(a.dot(b))*(180/Math.PI));
+    },
+
+    isCollidingWith: function (box1, box2) {
+        if (box1.isIntersectionBox(box2)) {
+            return true;
+        }
+        return false;
+    },
+
+    convertKmphToMps: function(kilometersPerHour) {
+		var result = 0;
+		var SECONDS_PER_HOUR=3600;
+		var METERS_PER_KILOMETER = 1000;
+		result = (kilometersPerHour/(SECONDS_PER_HOUR))*METERS_PER_KILOMETER;
+		return result;
+	},
+
+	convertMpsToKmph: function(metersPerSecond) {
+		var result = 0;
+		var SECONDS_PER_HOUR=3600;
+		var METERS_PER_KILOMETER = 1000;
+		result = (metersPerSecond * SECONDS_PER_HOUR) / METERS_PER_KILOMETER;
+		return result;
+	},
+};

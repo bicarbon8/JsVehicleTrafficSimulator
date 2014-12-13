@@ -1,7 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<!--
 /**********************************************************************
- * This file is part of a Vehicle Traffic Simulator written 
+ * This javascript is part of a Vehicle Traffic Simulator written 
  * entirely in Javascript, HTML and CSS.  The application allows for 
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
@@ -29,19 +27,30 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
--->
-<html lang="en">
-<head>
-<title>Traffic Simulator</title>
-<style type="text/css">
-body {
-    margin: 0px;
-    padding: 0px;
-}
-</style>
-<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
-</head>
-    <body onload="JSVTS.setup();">
-    </body>
-</html>
+importScripts(
+    "ext/threejs-69.min.js",
+	"js/objects/vehicle.js",
+	"js/objects/segment.js",
+	"js/graphmap.js",
+    "js/mover.js"
+);
+onmessage = function(event) {
+	var data = JSON.parse(event.data);
+	var map = new JSVTS.Map(data.map.Scale);
+	for (var i in data.map._segments) {
+		var segArray = data.map._segments[i];
+		segArray.forEach(function (segment) {
+			var newSeg = new Segment(segment.config.start, segment.config.end);
+			newSeg.id = segment.id;
+			newSeg.config.speedLimit = segment.config.speedLimit;
+			map.AddSegment(newSeg);
+		});
+	}
+    for (var j in data.map._vehicles) {
+		var v = data.map._vehicles[j];
+		var newVeh = new Vehicle().copyFrom(v);
+		map._vehicles[newVeh.id] = newVeh;
+	}
+    elapsed = data.elapsed;
+	JSVTS.Mover.Move(elapsed, map, data.vehicleIds);
+};

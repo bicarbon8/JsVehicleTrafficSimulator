@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <!--
 /**********************************************************************
- * This file is part of a Vehicle Traffic Simulator written 
+ * This javascript is part of a Vehicle Traffic Simulator written 
  * entirely in Javascript, HTML and CSS.  The application allows for 
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
@@ -30,18 +30,22 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 -->
-<html lang="en">
+<html>
 <head>
-<title>Traffic Simulator</title>
-<style type="text/css">
-body {
-    margin: 0px;
-    padding: 0px;
-}
-</style>
+<meta charset="utf-8">
+<title>QUnit Example</title>
+<link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.15.0.css">
 <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
 </head>
-    <body onload="JSVTS.setup();">
-    </body>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+<script src="http://code.jquery.com/qunit/qunit-1.15.0.js"></script>
+<script src="../ext/qunit-parameterize-0.4.js"></script>
+<script src="../jsvts.js"></script>
+<script src="js/stopLightTests.js"></script>
+<script src="js/moverTests.js"></script>
+<script src="js/segmentTests.js"></script>
+<script src="js/vehicleTests.js"></script>
+</body>
 </html>
