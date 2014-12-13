@@ -146,7 +146,7 @@ JSVTS.Map = {
 
     getVehiclesInRangeOf: function (origin, distance) {
         return JSVTS.Map.GetVehicles().filter(function (el) {
-            return JSVTS.Map.getDistanceBetweenTwoPoints(origin, el.config.location) <= distance;
+            return JSVTS.Utils.getDistanceBetweenTwoPoints(origin, el.config.location) <= distance;
         });
     },
 
@@ -157,7 +157,124 @@ JSVTS.Map = {
 		}
 	},
 
-    getDistanceBetweenTwoPoints: function (p1, p2) {
-        return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
+    /**
+     * this function will determine if we need to stop for any TFC
+     * on the current segment
+     * @return true if tfc's are within distance and require stop
+     */
+    areTfcsWithinDistance: function(vehicle, segment, distance) {
+        if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {
+            if (segment.tfc) {
+                var tfc = segment.tfc;
+                var distToTfc = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, tfc.config.location);
+
+                if (distToTfc < distance) {
+                    if (tfc.shouldStop(vehicle)) {
+                        // don't stop if touching tfc
+                        return { stop: true, type: "tfc", segmentId: segment.id, id: tfc.id };
+                    }
+                }
+            }
+        }
+
+        return false;
+    },
+
+    /**
+     * this function will return true if any vehicles on this segment
+     * and any subsegments recursively down to the terminating 
+     * nodes are within the passed in distance to the passed in
+     * currentLoc
+     * @return {object} obj.stop = true if at least one vehicle found within range
+     * otherwise false is returned instead of an object
+     */
+    areVehiclesWithinDistance: function(vehicle, distance, skipCollisionCheck) {
+        if ((distance > 0) && (vehicle && vehicle.segmentId !== null)) {
+            var dist = distance;
+            // lookahead within current segment distance
+            var distToSegEnd = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, vehicle.segmentEnd);
+            if (distance > distToSegEnd) {
+                dist = distToSegEnd;
+            }
+            var vehicles = JSVTS.Map.getVehiclesInRangeOf(vehicle.config.location, dist).filter(function (v) {
+                // return all vehicles which aren't this vehicle
+                return (v.id !== vehicle.id);
+            });
+
+            if (vehicles && vehicles.length > 0) {
+                var headingLine = new THREE.Line3(vehicle.config.location, vehicle.segmentEnd);
+                var maxAngle = 1;
+                var decay = 1.0;
+                if (vehicle.isChangingLanes) {
+                    maxAngle = 90;
+                    // decay = 0.5;
+                }
+                var closestVeh = JSVTS.Map.getClosestObjectWithinDistanceAndView(headingLine, vehicles, dist, maxAngle, decay);
+
+                if (closestVeh) {
+                    if (!skipCollisionCheck) {
+                        // perform collision check
+                        var box1 = new THREE.Box3().setFromObject(vehicle.mesh);
+                        var box2 = new THREE.Box3().setFromObject(closestVeh.mesh);
+                        if (JSVTS.Utils.isCollidingWith(box1, box2)) {
+                            vehicle.crashed = true;
+                            closestVeh.crashed = true;
+                        }
+                    }
+                    return { stop: true, type: "vehicle", id: closestVeh.id };
+                }
+            }
+        }
+
+        return false;
+    },
+
+    /**
+     * return the closest object within a maximum distance that falls within the 
+     * specified viewing angle
+     * 
+     * @param headingLine {THREE.Line3} - the line against which to measure the angle
+     * @param objects {Array of JSVTS.objects} - an array of JSVTS.Vehicle or 
+     *                                           JSVTS.TrafficFlowControl objects
+     * @param distance {number} - the maximum distance to look within
+     * @param maxAngle {number} - the maximum positive and negative degree offset
+     *                            from current headingLine heading to check within
+     * @param decay {number} - percentage to shorten distance when at maxAngle
+     *                         Ex: distance=100, maxAngle=90, decay=0.50
+     *                             at 90 degrees the distance will be 50
+     */
+    getClosestObjectWithinDistanceAndView: function (headingLine, objects, distance, maxAngle, decay) {
+        var closest = { obj: null, dist: 0 };
+        if ((distance > 0) && (headingLine) && (objects && objects.length > 0)) {
+            if (!maxAngle) { maxAngle = 90; }
+            if (!decay) { decay = 1.0; } // 100% of length decay when at maxAngle 
+            for (var i in objects) {
+                var obj = objects[i];
+                // create segment to obj
+                var segToObj = new THREE.Line3(headingLine.start, obj.config.location);
+
+                // create segment to current segment end
+                var segToEnd = headingLine;
+
+                // get angle formed by both lines
+                var angleToObj = Math.abs(JSVTS.Utils.angleFormedBy(segToObj, segToEnd));
+
+                if (angleToObj <= maxAngle) {
+                    var distanceToObj = JSVTS.Utils.getDistanceBetweenTwoPoints(headingLine.start, obj.config.location);
+                    // compare distance and angle
+                    var dist = distance;
+                    dist = distance - (distance * ((angleToObj / maxAngle) * decay));
+                    if (dist < 0) { dist = 0; }
+                    if (distanceToObj <= dist) {
+                        if (closest.obj === null || closest.dist > distanceToObj) {
+                            closest.obj = obj;
+                            closest.dist = distanceToObj;
+                        }
+                    }
+                }
+            }
+        }
+
+        return closest.obj;
     },
 };

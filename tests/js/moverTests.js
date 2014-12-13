@@ -9,7 +9,6 @@ var MT = {
             "../js/objects/segment.js",
             "../js/objects/vehicle.js",
             "../js/map.js",
-            "../js/mover.js",
             "../ext/helvetiker_regular.typeface.js"
         ], function () {
             QUnit.start();
@@ -45,7 +44,7 @@ QUnit.cases([
                 JSVTS.Map.AddVehicle(v);
             }
         }
-        var actual = JSVTS.Mover.shouldSlowForCorner(v, v.getLookAheadDistance());
+        var actual = v.shouldSlowForCorner(v.getLookAheadDistance());
         assert.ok(actual);
         assert.equal(actual.type, "cornering");
         assert.equal(Math.floor(actual.heading), p.expected);
@@ -69,7 +68,7 @@ QUnit.cases([
                 JSVTS.Map.AddVehicle(v);
             }
         }
-        var actual = JSVTS.Mover.shouldSlowForCorner(v, v.getLookAheadDistance());
+        var actual = v.shouldSlowForCorner(v.getLookAheadDistance());
         assert.ok(!actual);
     });
 QUnit.cases([
@@ -105,7 +104,7 @@ QUnit.cases([
                 v2.moveBy(v2.getLookAheadDistance()); // move ahead by 30 units less than the lookahead
             }
         }
-        var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
+        var actual = v.shouldSlowForCorner(v.getLookAheadDistance());
         assert.ok(!actual);
         assert.equal(v.segmentId, expectedSegmentId);
     });
@@ -140,7 +139,7 @@ QUnit.cases([
                 v2.moveBy(v2.getLookAheadDistance() * 2 + 1); // move ahead by 1 unit more than the lookahead
             }
         }
-        var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
+        var actual = v.changeLanesIfAvailable(JSVTS.Map.GetSegmentById(v.segmentId));
         assert.ok(actual);
         assert.ok(!JSVTS.Map.GetSegmentById(v.segmentId));
     });
@@ -174,7 +173,7 @@ QUnit.cases([
                 JSVTS.Map.AddVehicle(v2);
             }
         }
-        var actual = JSVTS.Mover.changeLanesIfAvailable(v, JSVTS.Map.GetSegmentById(v.segmentId));
+        var actual = v.changeLanesIfAvailable(JSVTS.Map.GetSegmentById(v.segmentId));
         assert.ok(!actual);
         assert.equal(v.segmentId, expectedSegmentId);
     });

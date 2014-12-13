@@ -135,7 +135,7 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
         if (!removed) {
             this.moveBy(distTraveled);
             var segment = JSVTS.Map.GetSegmentById(this.segmentId);
-            if (JSVTS.Mover.shouldStop(this, segment)) {
+            if (this.shouldStop(segment)) {
                 IsStopping = true;
             }
         }
@@ -146,7 +146,7 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
             this.velocity = 0;
             if (this.crashCleanupTime) {
                 // remove vehicle after
-                if (this.crashCleanupTime <= JSVTS.Mover.TotalElapsedTime) {
+                if (this.crashCleanupTime <= JSVTS.totalElapsedTime) {
                     // remove self from the Simulation
                     console.log("Vehicle removed: "+this.id);
                     JSVTS.Map.removeVehicle(this);
@@ -155,9 +155,9 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
                 console.log("Vehicle crashed: "+this.id);
                 var rand = Math.random();
                 if (rand <= 0.8) {
-                    this.crashCleanupTime = Math.random() * JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
+                    this.crashCleanupTime = Math.random() * JSVTS.CRASH_CLEANUP_MIN_DELAY;
                 }
-                this.crashCleanupTime = Math.random() * (JSVTS.Mover.CRASH_CLEANUP_MAX_DELAY - JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY) + JSVTS.Mover.CRASH_CLEANUP_MIN_DELAY;
+                this.crashCleanupTime = Math.random() * (JSVTS.CRASH_CLEANUP_MAX_DELAY - JSVTS.CRASH_CLEANUP_MIN_DELAY) + JSVTS.CRASH_CLEANUP_MIN_DELAY;
             }
         } else {
             this.updateVelocity(elapsedMs, IsStopping);
@@ -196,4 +196,161 @@ JSVTS.Vehicle.prototype.brake = function (elapsedMs) {
 JSVTS.Vehicle.prototype.getBoundingBox = function () {
     this.mesh.geometry.computeBoundingBox();
     return this.mesh.geometry.boundingBox;
+};
+
+JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionCheck) {
+    if (segment) {
+        var dist = distance || this.getLookAheadDistance();
+        // check for vehicles in range
+        var foundV = JSVTS.Map.areVehiclesWithinDistance(this, dist, skipCollisionCheck);
+        if (foundV && foundV.stop) {
+            if (skipCollisionCheck) {
+                return foundV;
+            }
+            var changingLanes = this.changeLanesIfAvailable(segment);
+            if (!changingLanes) {
+                return foundV;
+            }
+        }
+        // check for corners
+        var foundCorner = this.shouldSlowForCorner(dist);
+        if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
+            return foundCorner;
+        }
+        // check for traffic flow controllers
+        var foundTfc = JSVTS.Map.areTfcsWithinDistance(this, segment, dist);
+        if (foundTfc && foundTfc.stop) { // and then check for traffic lights in range
+            return foundTfc;
+        }
+
+        return this.checkSubsequentSegments(dist);
+    }
+
+    return false;
+};
+
+JSVTS.Vehicle.prototype.checkSubsequentSegments = function (distance) {
+    if ((distance > 0) && (this.segmentId !== null)) {
+        var skipCollisionCheck = true;
+        var nextSegments = JSVTS.Map.GetAvailableSegmentsContainingPoint(this.segmentEnd).filter(function (seg) {
+            return seg.id !== this.segmentId;
+        });
+        for (var i in nextSegments) {
+            var nextSeg = nextSegments[i];
+            
+            var tmpVehicle = new JSVTS.Vehicle({ generateId: false });
+            tmpVehicle.id = this.id;
+            nextSeg.attachVehicle(tmpVehicle, this.segmentEnd);
+            var remainingDistOnSegment = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segmentEnd);
+            if (remainingDistOnSegment > 0) {
+                var found = tmpVehicle.shouldStop(nextSeg, (distance - remainingDistOnSegment), skipCollisionCheck);
+                if (found && found.stop) {
+                    return found;
+                }
+            }
+        }
+    }
+
+    return false;
+};
+
+JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
+    if (!this.changeLaneTime || this.changeLaneTime < JSVTS.TotalElapsedTime) {
+        var closestPoint = null;
+        if (currentSegment) {
+            var possibleLanes = JSVTS.Map.GetSimilarSegmentsInRoad(currentSegment);
+            for (var i in possibleLanes) {
+                var possibleLane = possibleLanes[i];
+                // check angle to all change points on possible lane
+                for (var j in possibleLane.laneChangePoints) {
+                    var point = possibleLane.laneChangePoints[j];
+                    var line1 = new THREE.Line3(this.config.location, point);
+                    var line2 = new THREE.Line3(currentSegment.config.start, currentSegment.config.end);
+                    var angle = Math.abs(JSVTS.Utils.angleFormedBy(line1, line2));
+                    if (angle <= 25 && angle > 5) {
+                        if (!closestPoint) {
+                            closestPoint = point;
+                        } else {
+                            if (line1.distance() <
+                                JSVTS.Utils.getDistanceBetweenTwoPoints(closestPoint, this.config.location)) {
+                                closestPoint = point;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (closestPoint) {
+            // create tmp segment to new lane
+            var seg = new JSVTS.Segment({
+                start: this.config.location,
+                end: closestPoint,
+                desiredVelocity: this.desiredVelocity
+            });
+            var tmpV = new JSVTS.Vehicle({ generateId: false });
+            tmpV.id = this.id;
+            seg.attachVehicle(tmpV);
+            // don't change lanes if we just have to stop on the new lane too
+            var distance = this.getLookAheadDistance() * 2;
+            if (!tmpV.shouldStop(seg, distance, true)) {
+                seg.attachVehicle(this);
+                this.changeLaneTime = JSVTS.TotalElapsedTime + (this.config.changeLaneDelay * 1000);
+                this.isChangingLanes = true;
+                return true;
+            }
+        }
+    }
+
+    return false;
+},
+
+JSVTS.Vehicle.prototype.shouldSlowForCorner = function(distance){
+    // slow down when the next segment is in range and has a different heading
+    var distanceToSegEnd = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segmentEnd);
+    if (distanceToSegEnd < distance) {
+        // base the amount on how different the heading is
+        var headingDiff = 0;
+        var line1 = new THREE.Line3(this.segmentStart, this.segmentEnd);
+        var nextSegments = JSVTS.Map.getSegmentsStartingAt(this.segmentEnd);
+        for (var i in nextSegments) {
+            var nextSegment = nextSegments[i];
+            var line2 = new THREE.Line3(nextSegment.config.start, nextSegment.config.end);
+            var tmp = Math.abs(JSVTS.Utils.angleFormedBy(line1, line2));
+            if (tmp > headingDiff) {
+                headingDiff = tmp;
+            }
+        }
+
+        var corneringSpeed = this.corneringSpeedCalculator(headingDiff, this.velocity);
+        // begin slowing down 
+        if (this.velocity > corneringSpeed) {
+            return { stop: true, type: "cornering", heading: headingDiff };
+        }
+    }
+
+    return false;
+};
+
+JSVTS.Vehicle.prototype.corneringSpeedCalculator = function(headingDifference) {
+    if (headingDifference < 12) {
+        // no real difference
+        return this.velocity; // fast as you like
+    }
+    if (headingDifference < 25) {
+        // mild / gentle curve
+        return 100; // don't exceed 100 Km/h
+    }
+    if (headingDifference < 45) {
+        return 30;
+    }
+    if (headingDifference < 90) {
+        return 10;
+    }
+    if (headingDifference < 135) {
+        return 5;
+    }
+    if (headingDifference >= 135) {
+        return 1;
+    }
 };

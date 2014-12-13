@@ -1,9 +1,12 @@
 var JSVTS = {
-    ID_COUNT      : 0,
-    startTime     : 0,
-    elapsed       : 0,
-    realtime      : false,
-    keepMoving    : false,
+    ID_COUNT: 0,
+    CRASH_CLEANUP_MAX_DELAY: 300000, // 5 min
+    CRASH_CLEANUP_MIN_DELAY: 60000, // 1 min
+    startTime: 0,
+    elapsed: 0,
+    realtime: false,
+    keepMoving: false,
+    totalElapsedTime: 0,
 
 	injectJs: function (script, callback) {
 		var s = document.createElement('script');
@@ -38,7 +41,6 @@ var JSVTS = {
             "js/helpers/utils.js",
             /** main controllers **/
             "js/map.js",
-            "js/mover.js",
             "js/plotter.js",
             "js/txtToMapParser.js",
             /** renderable objects **/
@@ -130,8 +132,20 @@ var JSVTS = {
         } else {
             JSVTS.elapsed = 10;
         }
-        JSVTS.Mover.move(JSVTS.elapsed);
+        
+        // update segments
+        JSVTS.Map.GetSegments().forEach(function (seg) {
+            seg.update(JSVTS.elapsed);
+        });
+        // update vehicles
+        var vehicles = JSVTS.Map.GetVehicles();
+        for (var m in vehicles) {
+            var v = vehicles[m];
+            v.update(JSVTS.elapsed);
+        }
+            
         JSVTS.Plotter.render();
+        JSVTS.totalElapsedTime += JSVTS.elapsed;
 
         if (JSVTS.keepMoving) {
             requestAnimationFrame(JSVTS.move);

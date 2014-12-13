@@ -28,7 +28,6 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.SEG_ID_COUNT = 0;
 JSVTS.SEG_OPTIONS = function () {
     var self = {
         start: THREE.Vector3(-10,0,0),
@@ -41,123 +40,117 @@ JSVTS.SEG_OPTIONS = function () {
     return self;
 };
 JSVTS.Segment = function(options){
-    var self = this;
-    self.id=null;
-    self.config = JSVTS.SEG_OPTIONS();
-    self.mesh = null;
-    self.spline = null; // used for directionality
-    self.tangent = null;
-    self.axis = null;
-    self.radians = null;
-    self.tfc = null;
-    self.generator = null;
-    self.laneChangePoints = [];
+    var defaults = JSVTS.SEG_OPTIONS();
+    for (var key in options) { defaults[key] = options[key]; }
+    JSVTS.Renderable.call(this, defaults);
 
-    self.init=function(options) {
-        self.id = JSVTS.SEG_ID_COUNT++;
-        for (var optionKey in options) { self.config[optionKey] = options[optionKey]; }
-        self.generateMesh();
+    this.tangent = null;
+    this.axis = null;
+    this.radians = null;
+    this.tfc = null;
+    this.generator = null;
+    this.laneChangePoints = [];
 
-        self.generateLaneChangePoints();
-    };
+    this.generateLaneChangePoints();
+};
+JSVTS.Segment.prototype = Object.create(JSVTS.Renderable.prototype);
+JSVTS.Segment.prototype.constructor = JSVTS.Segment;
 
-    self.copy=function(segment) {
-        self.id = segment.id;
-        self.config.start = new THREE.Vector3().copy(segment.config.start);
-        self.config.end = new THREE.Vector3().copy(segment.config.end);
-        self.generateMesh();
+JSVTS.Segment.prototype.copy=function(segment) {
+    this.id = segment.id;
+    this.config.start = new THREE.Vector3().copy(segment.config.start);
+    this.config.end = new THREE.Vector3().copy(segment.config.end);
+    this.generateMesh();
 
-        self.generateLaneChangePoints();
-    };
+    this.generateLaneChangePoints();
+};
+
+JSVTS.Segment.prototype.attachVehicle=function(vehicle, atPoint) {
+    if (!atPoint) {
+        atPoint = this.config.start;
+    }
+    vehicle.config.desiredVelocity = this.config.speedLimit;
+    this.attachObject(vehicle, atPoint, this.config.end);
+    vehicle.segmentStart = this.config.start;
+    vehicle.segmentEnd = this.config.end;
+    if (this.config.isMergeLane) {
+        vehicle.isChangingLanes = true;
+    }
+};
+
+JSVTS.Segment.prototype.attachObject = function (obj, location, lookAt) {
+    // set reference data
+    obj.segmentId = this.id;
+
+    // set the obj's position to passed in location
+    if (obj instanceof JSVTS.Renderable) {
+        obj.moveTo(location, lookAt);
+    }
+};
+
+JSVTS.Segment.prototype.generateMesh = function (options) {
+    this.spline = new THREE.SplineCurve3([
+        options.start,
+        options.end
+    ]);
+
+    var material = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+    });
+
+    var geometry = new THREE.Geometry();
+    geometry.vertices = this.spline.getPoints(2);
+    var line = new THREE.Line(geometry, material);
+    this.mesh = line;
+
+    // get the tangent to the curve
+    if (!this.tangent) {
+        this.tangent = this.spline.getTangent(0).normalize();
+        this.axis = new THREE.Vector3();
+        this.axis.crossVectors(JSVTS.Map.up, this.tangent).normalize();
+        // calcluate the angle between the up vector and the tangent
+        this.radians = Math.acos(JSVTS.Map.up.dot(this.tangent));
+    }
+
+    var identity = this.id;
+    if (this.config.name && this.config.name !== "") {
+        identity = this.config.name;
+    }
+    var text = new THREE.TextGeometry(identity, { size: 2, height: 0.05 });
+    var tMesh = new THREE.Mesh(text, material);
+    var pt = this.spline.getPoint(0.5);
+    tMesh.position.set(pt.x, pt.y, pt.z);
+    tMesh.lookAt(this.config.end);
+    tMesh.rotateY(90*(Math.PI/180));
+    tMesh.translateY(this.mesh.position.y + 5);
+    this.mesh.add(tMesh);
+};
+
+JSVTS.Segment.prototype.generateLaneChangePoints = function() {
+    var point = new THREE.SphereGeometry(1);
+    var pointMat = new THREE.MeshBasicMaterial();
+    var sphere = new THREE.Mesh(point, pointMat);
     
-    self.attachVehicle=function(vehicle, atPoint) {
-        if (!atPoint) {
-            atPoint = self.config.start;
-        }
-        vehicle.config.desiredVelocity = self.config.speedLimit;
-        self.attachObject(vehicle, atPoint, self.config.end);
-        vehicle.segmentStart = self.config.start;
-        vehicle.segmentEnd = self.config.end;
-        if (self.config.isMergeLane) {
-            vehicle.isChangingLanes = true;
-        }
-    };
+    // place point every [spacing] units (metres)
+    var spacing = 1;
+    for (var i=spacing; i<this.getLength(); i+=spacing) {
+        sphere.position.set(this.config.start.x, this.config.start.y, this.config.start.z);
+        sphere.lookAt(this.config.end);
+        sphere.translateZ(i);
+        this.laneChangePoints.push(new THREE.Vector3().copy(sphere.position));
+    }
+    sphere.geometry.dispose();
+};
 
-    self.attachObject = function (obj, location, lookAt) {
-        // set reference data
-        obj.segmentId = self.id;
+JSVTS.Segment.prototype.getLength = function () {
+    return this.spline.getLength(0);
+};
 
-        // set the obj's position to passed in location
-        if (obj instanceof JSVTS.Renderable) {
-            obj.moveTo(location, lookAt);
-        }
-    };
-
-    self.generateMesh = function () {
-        self.spline = new THREE.SplineCurve3([
-            self.config.start,
-            self.config.end
-        ]);
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0xffffff,
-        });
-
-        var geometry = new THREE.Geometry();
-        geometry.vertices = self.spline.getPoints(2);
-        var line = new THREE.Line(geometry, material);
-        self.mesh = line;
-
-        // get the tangent to the curve
-        if (!self.tangent) {
-            self.tangent = self.spline.getTangent(0).normalize();
-            self.axis = new THREE.Vector3();
-            self.axis.crossVectors(JSVTS.Map.up, self.tangent).normalize();
-            // calcluate the angle between the up vector and the tangent
-            self.radians = Math.acos(JSVTS.Map.up.dot(self.tangent));
-        }
-
-        var identity = self.id;
-        if (self.config.name && self.config.name !== "") {
-            identity = self.config.name;
-        }
-        var text = new THREE.TextGeometry(identity, { size: 2, height: 0.05 });
-        var tMesh = new THREE.Mesh(text, material);
-        var pt = self.spline.getPoint(0.5);
-        tMesh.position.set(pt.x, pt.y, pt.z);
-        tMesh.lookAt(self.config.end);
-        tMesh.rotateY(90*(Math.PI/180));
-        tMesh.translateY(self.mesh.position.y + 5);
-        self.mesh.add(tMesh);
-    };
-
-    self.generateLaneChangePoints = function() {
-        // place point every [spacing] units (metres)
-        var spacing = 1;
-        for (var i=spacing; i<self.getLength(); i+=spacing) {
-            var point = new THREE.SphereGeometry(1);
-            var pointMat = new THREE.MeshBasicMaterial();
-            var sphere = new THREE.Mesh(point, pointMat);
-            sphere.position.set(self.config.start.x, self.config.start.y, self.config.start.z);
-            sphere.lookAt(self.config.end);
-            sphere.translateZ(i);
-            self.laneChangePoints.push(sphere.position);
-            sphere.geometry.dispose();
-        }
-    };
-
-    self.getLength = function () {
-        return self.spline.getLength(0);
-    };
-
-    self.update = function (elapsedMs) {
-        if (self.tfc) {
-            self.tfc.update(elapsedMs);
-        }
-        if (self.generator) {
-            self.generator.update(elapsedMs);
-        }
-    };
-
-    self.init(options);
+JSVTS.Segment.prototype.update = function (elapsedMs) {
+    if (this.tfc) {
+        this.tfc.update(elapsedMs);
+    }
+    if (this.generator) {
+        this.generator.update(elapsedMs);
+    }
 };
