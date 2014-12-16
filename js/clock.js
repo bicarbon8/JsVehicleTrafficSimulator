@@ -30,6 +30,7 @@
 var JSVTS = JSVTS || {};
 JSVTS.Clock = function (options) {
     this.domElement = null;
+    this.startTime = new Date().getTime();
 
     this.init(options);
 };
@@ -38,14 +39,19 @@ JSVTS.Clock.prototype.init = function (options) {
     this.domElement = document.createElement('div');
     this.domElement.id = 'jsvtsClock';
     this.domElement.style.cssText = "padding: 0px 0px 3px 3px; text-align: left; background-color: rgb(0, 0, 34);";
-    var txtElement = document.createElement('div');
-    txtElement.id = 'jsvtsClockText';
-    txtElement.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
-    this.domElement.appendChild(txtElement);
+    var simulationTimeDiv = document.createElement('div');
+    simulationTimeDiv.id = 'jsvtsClockSimulation';
+    simulationTimeDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
+    this.domElement.appendChild(simulationTimeDiv);
+    var realTimeDiv = document.createElement('div');
+    realTimeDiv.id = 'jsvtsClockReal';
+    realTimeDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
+    this.domElement.appendChild(realTimeDiv);
 };
 
 JSVTS.Clock.prototype.update = function () {
-    this.domElement.querySelector('#jsvtsClockText').innerHTML = this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
+    this.domElement.querySelector('#jsvtsClockSimulation').innerHTML = this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
+    this.domElement.querySelector('#jsvtsClockReal').innerHTML = this.convertMsToHumanReadable(new Date().getTime() - this.startTime);
 };
 
 JSVTS.Clock.prototype.convertMsToHumanReadable = function (elapsedMs) {

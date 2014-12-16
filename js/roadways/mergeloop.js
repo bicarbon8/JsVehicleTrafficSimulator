@@ -28,7 +28,8 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.roadway = {
+JSVTS.roadways = JSVTS.roadways || [];
+JSVTS.roadways.push({
     "map":{
         "segments":[
             { /** inner-bottom **/
@@ -350,7 +351,8 @@ JSVTS.roadway = {
                 "roadname":"On Ramp",
                 "tfc": {
                     "type":"stoplight",
-                    "changeseconds":1,
+                    "greenduration":1,
+                    "redduration":10,
                     "yellowduration":0,
                     "startstate":0
                 },
@@ -407,7 +409,8 @@ JSVTS.roadway = {
                 "roadname":"On Ramp",
                 "tfc": {
                     "type":"stoplight",
-                    "changeseconds":1,
+                    "greenduration":1,
+                    "redduration":10,
                     "yellowduration":0,
                     "startstate":2
                 },
@@ -451,4 +454,4 @@ JSVTS.roadway = {
             }, /* end top-most on ramp */
         ]
     }
-}
+});

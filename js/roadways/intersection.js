@@ -28,7 +28,8 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.roadway = {
+JSVTS.roadways = JSVTS.roadways || [];
+JSVTS.roadways.push({
     "map":{
         "segments":[
             {
@@ -46,7 +47,6 @@ JSVTS.roadway = {
                 "roadname":"Road 1 Southbound",
                 "tfc":{
                     "type":"stoplight",
-                    "changeseconds":60,
                     "startstate":0
                 },
                 "generator": {
@@ -86,7 +86,6 @@ JSVTS.roadway = {
                 "roadname":"Road 1 Northbound",
                 "tfc":{
                     "type":"stoplight",
-                    "changeseconds":60,
                     "startstate":0
                 },
                 "generator": {
@@ -126,7 +125,6 @@ JSVTS.roadway = {
                 "roadname":"Road 2 Eastbound",
                 "tfc":{
                     "type":"stoplight",
-                    "changeseconds":60,
                     "startstate":2
                 },
                 "generator": {
@@ -166,7 +164,6 @@ JSVTS.roadway = {
                 "roadname":"Road 2 Westbound",
                 "tfc":{
                     "type":"stoplight",
-                    "changeseconds":60,
                     "startstate":2
                 },
                 "generator": {
@@ -193,4 +190,4 @@ JSVTS.roadway = {
             },
         ]
     }
-}
+});

@@ -37,6 +37,8 @@ var JSVTS = {
     realtime: false,
     keepMoving: false,
     totalElapsedTime: 0,
+    roadways: [],
+    defaultRoadway: 0,
 
 	injectJs: function (script, callback) {
 		var s = document.createElement('script');
@@ -83,8 +85,8 @@ var JSVTS = {
             "js/objects/stopLight.js",
             "js/objects/vehicleGenerator.js",
             /** maps **/
-            "examples/maps/mergeloop.js"
-            // "examples/maps/intersection.js"
+            "js/roadways/mergeloop.js",
+            "js/roadways/intersection.js"
         ], function () {
             JSVTS.init();
         });
@@ -93,6 +95,8 @@ var JSVTS = {
     init: function () {
         JSVTS.initPageElements();
         JSVTS.initObjects();
+        JSVTS.keepMoving = true;
+        JSVTS.move();
     },
 
     reset: function () {
@@ -117,6 +121,7 @@ var JSVTS = {
     initObjects: function () {
         JSVTS.Plotter.init(JSVTS.docWidth, JSVTS.docHeight);
         JSVTS.Plotter.render();
+        JSVTS.loadRoadway(JSVTS.defaultRoadway);
     },
 
     getWidthHeight: function () {
@@ -136,26 +141,23 @@ var JSVTS = {
                 JSVTS.reset();
                 break;
             case 's'.charCodeAt(0):
-                JSVTS.toggleSimulationState();
+                JSVTS.toggleAnimationState();
                 break;
-            case 'l'.charCodeAt(0):
-                JSVTS.setFromJson();
-                break;
-            case 'r'.charCodeAt(0):
-                JSVTS.toggleRealtimeState();
+            case '0'.charCodeAt(0):
+            case '1'.charCodeAt(0):
+            case '2'.charCodeAt(0):
+            case '3'.charCodeAt(0):
+            case '4'.charCodeAt(0):
+            case '5'.charCodeAt(0):
+            case '6'.charCodeAt(0):
+            case '7'.charCodeAt(0):
+            case '8'.charCodeAt(0):
+            case '9'.charCodeAt(0):
+                JSVTS.defaultRoadway = Number(String.fromCharCode(ev.charCode));
+                JSVTS.reset();
                 break;
             default:
                 // do nothing
-        }
-    },
-
-    toggleSimulationState: function (){
-        if(JSVTS.keepMoving){
-            JSVTS.keepMoving=false;
-        } else{
-            JSVTS.keepMoving=true;
-            JSVTS.startTime = new Date().getTime();
-            JSVTS.move();
         }
     },
 
@@ -165,6 +167,15 @@ var JSVTS = {
         } else {
             JSVTS.startTime = new Date().getTime();
             JSVTS.realtime = true;
+        }
+    },
+
+    toggleAnimationState: function () {
+        if (JSVTS.keepMoving) {
+            JSVTS.keepMoving = false;
+        } else {
+            JSVTS.keepMoving = true;
+            JSVTS.move();
         }
     },
     
@@ -194,10 +205,9 @@ var JSVTS = {
             requestAnimationFrame(JSVTS.move);
         }
     },
-    
-    setFromJson: function () {
-        // TODO: load from .json file
-        var jsonObj = JSVTS.roadway;
+
+    loadRoadway: function (index) {
+        var jsonObj = JSVTS.roadways[index];
         JSVTS.TxtToMapParser.ParseMapJson(jsonObj.map);
         var segments = JSVTS.Map.GetSegments();
         for (var i in segments) {

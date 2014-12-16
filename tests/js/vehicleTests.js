@@ -291,3 +291,25 @@ QUnit.cases([
             "vehicle not detected when it should have been. Back Vehicle: "+JSON.stringify(veh1.config.location)+"; Front Vehicle: "+JSON.stringify(veh2.config.location)+"; In Range Distance: "+distance);
         assert.equal(actual.type, "vehicle");
     });
+QUnit.cases([
+        { v: 0 },
+        { v: 0.00001 },
+        { v: 10 },
+        { v: 100 }
+    ]).test("vehicle should correctly calculate lookahead distance based on velocity", function (p, assert) {
+        var v = new JSVTS.Vehicle();
+        v.velocity = p.v;
+
+        var distance = v.getLookAheadDistance();
+        assert.ok(distance > v.config.length * 2);
+        var mps = JSVTS.Utils.convertKmphToMps(v.velocity);
+        var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(v.config.deceleration))) / 2;
+        assert.ok(distance > distanceToStop);
+    });
+QUnit.test("vehicle should not receive negative velocity when decelerate is called", function (assert) {
+        var v = new JSVTS.Vehicle();
+        v.velocity = JSVTS.Utils.convertMpsToKmph(v.config.deceleration - 1);
+
+        v.brake(1000);
+        assert.ok(v.velocity >= 0, "expected velocity greater than or equal to 0, but was: " + v.velocity);
+    });

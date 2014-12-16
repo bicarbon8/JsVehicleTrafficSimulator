@@ -35,7 +35,7 @@ QUnit
     { changeSeconds: 1, yellowDuration: 4, startState: 2 }, // RED
 ])
 .test("changes state when expected", function (p, assert) {
-    var sl = new JSVTS.StopLight({ changeSeconds: p.changeSeconds, yellowDuration: p.yellowDuration, startState: p.startState });
+    var sl = new JSVTS.StopLight({ greenDuration: p.changeSeconds, yellowDuration: p.yellowDuration, redDuration: p.changeSeconds, startState: p.startState });
     for (var i = 0; i < p.changeSeconds - 1; i++) {
         sl.update(1000);
         assert.strictEqual(sl.currentState, p.startState);

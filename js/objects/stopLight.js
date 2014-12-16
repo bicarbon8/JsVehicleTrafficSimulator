@@ -35,8 +35,9 @@ JSVTS.StopLightState = {
 };
 JSVTS.STOPLIGHT_OPTIONS = function () {
     var self = {
-        changeSeconds: 60,
-        yellowDuration: 4,
+        greenDuration: 56, // seconds
+        yellowDuration: 4, // seconds
+        redDuration: 60,   // seconds
         startState: JSVTS.StopLightState.GREEN,
         radius: 1
     };
@@ -47,7 +48,6 @@ JSVTS.StopLight = function (options) {
     for (var key in options) { defaults[key] = options[key]; }
     JSVTS.TrafficFlowControl.call(this, defaults);
     
-    if (this.config.changeSeconds <= 0) { throw "invalid value specified for 'changeSeconds'. values must be greater than 0."; }
     this.startState = this.config.startState;
     this.currentState = this.startState;
     this.stateElapsed = null;
@@ -73,7 +73,7 @@ JSVTS.StopLight.prototype.update = function (elapsedMs) {
         this.stateElapsed++;
         switch (this.currentState) {
             case JSVTS.StopLightState.GREEN:
-                if (this.stateElapsed >= this.config.changeSeconds * 1000) {
+                if (this.stateElapsed >= this.config.greenDuration * 1000) {
                     this.currentState = JSVTS.StopLightState.YELLOW;
                     this.stateElapsed = 0;
                 }
@@ -85,7 +85,7 @@ JSVTS.StopLight.prototype.update = function (elapsedMs) {
                 }
                 break;
             case JSVTS.StopLightState.RED:
-                if (this.stateElapsed >= this.config.changeSeconds * 1000) {
+                if (this.stateElapsed >= this.config.redDuration * 1000) {
                     this.currentState = JSVTS.StopLightState.GREEN;
                     this.stateElapsed = 0;
                 }

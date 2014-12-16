@@ -186,7 +186,7 @@ JSVTS.Vehicle.prototype.brake = function (elapsedMs) {
     var elapsedSeconds = elapsedMs/1000;
     this.velocity -= (JSVTS.Utils.convertMpsToKmph(this.config.deceleration * elapsedSeconds));
     // prevent going backwards
-    if (this.velocity < 0.1) {
+    if (this.velocity < 0) {
         this.velocity = 0;
     }
     this.mesh.material.color.setHex(0xff0000);

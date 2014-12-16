@@ -75,12 +75,14 @@ JSVTS.TxtToMapParser = {
             var type = jsonObj.type;
             switch (type) {
                 case "stoplight":
-                    var changeSeconds = jsonObj.changeseconds === undefined ? 60 : jsonObj.changeseconds;
+                    var greenDuration = jsonObj.greenduration === undefined ? 56 : jsonObj.greenduration;
+                    var redDuration = jsonObj.redduration === undefined ? 60 : jsonObj.redduration;
                     var startState = jsonObj.startstate === undefined ? 0 : jsonObj.startstate;
                     var yellowDuration = jsonObj.yellowduration === undefined ? 4 : jsonObj.yellowduration;
                     tfc = new JSVTS.StopLight({
-                        "changeSeconds": changeSeconds,
+                        "greenDuration": greenDuration,
                         "yellowDuration": yellowDuration,
+                        "redDuration": redDuration,
                         "startState": startState
                     });
                     break;
