@@ -27,30 +27,36 @@
  * along with JsVehicleTrafficSimulator.  If not, see 
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
-importScripts(
-    "ext/threejs-69.min.js",
-	"js/objects/vehicle.js",
-	"js/objects/segment.js",
-	"js/graphmap.js",
-    "js/mover.js"
-);
-onmessage = function(event) {
-	var data = JSON.parse(event.data);
-	var map = new JSVTS.Map(data.map.Scale);
-	for (var i in data.map._segments) {
-		var segArray = data.map._segments[i];
-		segArray.forEach(function (segment) {
-			var newSeg = new Segment(segment.config.start, segment.config.end);
-			newSeg.id = segment.id;
-			newSeg.config.speedLimit = segment.config.speedLimit;
-			map.AddSegment(newSeg);
-		});
-	}
-    for (var j in data.map._vehicles) {
-		var v = data.map._vehicles[j];
-		var newVeh = new Vehicle().copyFrom(v);
-		map._vehicles[newVeh.id] = newVeh;
-	}
-    elapsed = data.elapsed;
-	JSVTS.Mover.Move(elapsed, map, data.vehicleIds);
+var JSVTS = JSVTS || {};
+JSVTS.Clock = function (options) {
+    this.domElement = null;
+
+    this.init(options);
+};
+
+JSVTS.Clock.prototype.init = function (options) {
+    this.domElement = document.createElement('div');
+    this.domElement.id = 'jsvtsClock';
+    this.domElement.style.cssText = "padding: 0px 0px 3px 3px; text-align: left; background-color: rgb(0, 0, 34);";
+    var txtElement = document.createElement('div');
+    txtElement.id = 'jsvtsClockText';
+    txtElement.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
+    this.domElement.appendChild(txtElement);
+};
+
+JSVTS.Clock.prototype.update = function () {
+    this.domElement.querySelector('#jsvtsClockText').innerHTML = this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
+};
+
+JSVTS.Clock.prototype.convertMsToHumanReadable = function (elapsedMs) {
+    var x = elapsedMs / 1000;
+    var seconds = parseFloat(Math.round((x % 60) * 100) / 100).toFixed(2);
+    x /= 60;
+    var minutes = Math.floor(x % 60);
+    x /= 60;
+    var hours = Math.floor(x % 24);
+
+    var elapsedReadable = hours + ":" + minutes + ":" + seconds;
+
+    return elapsedReadable;
 };

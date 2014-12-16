@@ -6,45 +6,36 @@ JSVTS.VG_OPTIONS = function () {
     return self;
 };
 JSVTS.VehicleGenerator = function (options) {
-    JSVTS.Movable.call(this, options);
+    var defaults = JSVTS.VG_OPTIONS();
+    for (var key in options) { defaults[key] = options[key]; }
+    JSVTS.Movable.call(this, defaults);
+
+    this.segmentId = null;
+    this.nextVehicle = null;
+    this.elapsedMs = 0;
 };
 JSVTS.VehicleGenerator.prototype = Object.create(JSVTS.Movable);
 JSVTS.VehicleGenerator.prototype.constructor = JSVTS.VehicleGenerator;
 
-JSVTS.VehicleGenerator.prototype.segmentId = null;
-JSVTS.VehicleGenerator.prototype.generating = false;
-JSVTS.VehicleGenerator.prototype.nextVehicle = null;
-JSVTS.VehicleGenerator.prototype.position = null;
-JSVTS.VehicleGenerator.prototype.elapsedMs = 0;
-
-JSVTS.VehicleGenerator.prototype.init = function (options) {
-    JSVTS.Movable.prototype.init.call(this, options);
-    var defaults = JSVTS.VG_OPTIONS();
-    for (var property in defaults) { this.config[property] = defaults[property]; }
-    for (var property in options) { this.config[property] = options[property]; }
-};
-
 JSVTS.VehicleGenerator.prototype.update = function (elapsedMs) {
     for (var i = 0; i < elapsedMs; i++) {
         this.elapsedMs++;
-        if (this.elapsedMs === this.config.delay) {
-            this.elapsedMs = 0;
+        if (this.elapsedMs >= this.config.delay) {
             this.generate();
         }
     }
 };
 
-JSVTS.VehicleGenerator.prototype.generate = function (newVehicle) {
-    var newV = newVehicle;
-    if (!newV) {
-        newV = this.prepareNewVehicle();
+JSVTS.VehicleGenerator.prototype.generate = function () {
+    if (!this.nextVehicle) {
+        this.nextVehicle = this.prepareNewVehicle();
     }
     
-    if (this.canGenerate(newV)) {
-        JSVTS.Map.AddVehicle(newV);
-        JSVTS.Plotter.addObject(newV.mesh);
-    } else {
-        setTimeout(function (self) { self.generate(newV); }, 500, this);
+    if (this.canGenerate(this.nextVehicle)) {
+        JSVTS.Map.AddVehicle(this.nextVehicle);
+        JSVTS.Plotter.addObject(this.nextVehicle.mesh);
+        this.elapsedMs = 0;
+        this.nextVehicle = null;
     }
 };
 

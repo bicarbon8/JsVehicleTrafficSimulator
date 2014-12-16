@@ -54,7 +54,6 @@ JSVTS.Vehicle = function(options) {
     this.velocity = 0; // Km/h
     this.crashed = false;
     this.crashCleanupTime = null;
-    this.idMesh = null;
 };
 JSVTS.Vehicle.prototype = Object.create(JSVTS.Renderable.prototype);
 JSVTS.Vehicle.prototype.constructor = JSVTS.Vehicle;

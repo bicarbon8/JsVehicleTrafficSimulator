@@ -1,3 +1,33 @@
+/**********************************************************************
+ * This javascript is part of a Vehicle Traffic Simulator written 
+ * entirely in Javascript, HTML and CSS.  The application allows for 
+ * the creation of roadways upon which vehicles will travel and
+ * attempt to avoid collisions with other vehicles while obeying the
+ * rules of the road including traffic lights and speed limits
+ * 
+ * @Created: 04/09/2013
+ * @Author: Jason Holt Smith (bicarbon8@gmail.com)
+ * @Version: 0.2.0
+ * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is 
+ * distributed under the terms of the GNU General Public License.
+ * 
+ * This file is part of JsVehicleTrafficSimulator.
+ * 
+ * JsVehicleTrafficSimulator is free software: you can redistribute it 
+ * and/or modify it under the terms of the GNU General Public License 
+ * as published by the Free Software Foundation, either version 3 of 
+ * the License, or (at your option) any later version.
+ * 
+ * JsVehicleTrafficSimulator is distributed in the hope that it will 
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied 
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with JsVehicleTrafficSimulator.  If not, see 
+ * <http://www.gnu.org/licenses/>.
+ **********************************************************************/
+"strict mode";
 var JSVTS = {
     ID_COUNT: 0,
     CRASH_CLEANUP_MAX_DELAY: 300000, // 5 min
@@ -40,6 +70,7 @@ var JSVTS = {
             /** helpers **/
             "js/helpers/utils.js",
             /** main controllers **/
+            "js/clock.js",
             "js/map.js",
             "js/plotter.js",
             "js/txtToMapParser.js",
@@ -67,24 +98,35 @@ var JSVTS = {
     reset: function () {
         JSVTS.Plotter.reset();
         JSVTS.Map.reset();
+        JSVTS.totalElapsedTime = 0;
         JSVTS.init();
+    },
+
+    resize: function () {
+        var dims = JSVTS.getWidthHeight();
+        JSVTS.Plotter.resize(dims.width, dims.height);
     },
     
     initPageElements: function () {
+        var dims = JSVTS.getWidthHeight();
+        JSVTS.docWidth = dims.width; // window.innerWidth;
+        JSVTS.docHeight = dims.height; // window.innerHeight;
+        window.addEventListener("keypress", JSVTS.handleKeypress, false);
+    },
+    
+    initObjects: function () {
+        JSVTS.Plotter.init(JSVTS.docWidth, JSVTS.docHeight);
+        JSVTS.Plotter.render();
+    },
+
+    getWidthHeight: function () {
         var w = window,
             d = document,
             e = d.documentElement,
             b = d.querySelector('body'),
             x = w.innerWidth || e.clientWidth || b.clientWidth,
             y = w.innerHeight|| e.clientHeight|| b.clientHeight;
-        JSVTS.docWidth = x; // window.innerWidth;
-        JSVTS.docHeight = y; // window.innerHeight;
-        w.addEventListener("keypress", JSVTS.handleKeypress, false);
-    },
-    
-    initObjects: function () {
-        JSVTS.Plotter.init(JSVTS.docWidth, JSVTS.docHeight);
-        JSVTS.Plotter.render();
+        return { width: x, height: y };
     },
 
     handleKeypress: function(ev) {
@@ -121,6 +163,7 @@ var JSVTS = {
         if (JSVTS.realtime) {
             JSVTS.realtime = false;
         } else {
+            JSVTS.startTime = new Date().getTime();
             JSVTS.realtime = true;
         }
     },

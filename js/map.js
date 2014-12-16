@@ -35,7 +35,6 @@
  * of the same lane group which allows vehicles to move from lane
  * to lane
  */
-"strict mode"
 var JSVTS = JSVTS || {};
 JSVTS.Map = {
 	_segments: [],
