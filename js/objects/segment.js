@@ -99,7 +99,7 @@ JSVTS.Segment.prototype.generateMesh = function (options) {
     });
 
     var geometry = new THREE.Geometry();
-    geometry.vertices = this.spline.getPoints(2);
+    geometry.vertices = this.spline.getPoints(1);
     var line = new THREE.Line(geometry, material);
     this.mesh = line;
 

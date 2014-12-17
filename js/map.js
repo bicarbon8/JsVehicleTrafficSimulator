@@ -201,79 +201,40 @@ JSVTS.Map = {
             });
 
             if (vehicles && vehicles.length > 0) {
-                var headingLine = new THREE.Line3(vehicle.config.location, vehicle.segmentEnd);
-                var maxAngle = 1;
-                var decay = 1.0;
-                if (vehicle.isChangingLanes) {
-                    maxAngle = 90;
-                    // decay = 0.5;
-                }
-                var closestVeh = JSVTS.Map.getClosestObjectWithinDistanceAndView(headingLine, vehicles, dist, maxAngle, decay);
-
-                if (closestVeh) {
-                    if (!skipCollisionCheck) {
-                        // perform collision check
-                        var box1 = new THREE.Box3().setFromObject(vehicle.mesh);
-                        var box2 = new THREE.Box3().setFromObject(closestVeh.mesh);
-                        if (JSVTS.Utils.isCollidingWith(box1, box2)) {
-                            vehicle.crashed = true;
-                            closestVeh.crashed = true;
+                var found = null;
+                for (var key in vehicles) {
+                    var v = vehicles[key];
+                    if (vehicle.hasInView(v.config.location)) {
+                        // check if v is in current segment
+                        if (v.segmentId === vehicle.segmentId) {
+                            found = v.id;
+                            break;
+                        } else {
+                            // check heading of both vehicles' segments and if intersecting then return true
+                            var r = new THREE.Ray(vehicle.config.location.clone(), vehicle.segmentEnd.clone().sub(vehicle.config.location).normalize());
+                            var distToIntersect = r.distanceSqToSegment(v.config.location.clone(), v.segmentEnd.clone());
+                            if (distToIntersect === 0) {
+                                // intersection found
+                                found = v.id;
+                                break;
+                            } else if (Number.isNaN(distToIntersect)) {
+                                // parallel lines so check for overlaps
+                                var distToPoint = r.distanceToPoint(v.config.location);
+                                if (distToPoint === 0) {
+                                    // intersection found
+                                    found = v.id;
+                                    break;
+                                }
+                            }
                         }
                     }
-                    return { stop: true, type: "vehicle", id: closestVeh.id };
+                }
+                if (found) {
+                    return { stop: true, type: "vehicle", id: found };
                 }
             }
         }
 
         return false;
-    },
-
-    /**
-     * return the closest object within a maximum distance that falls within the 
-     * specified viewing angle
-     * 
-     * @param headingLine {THREE.Line3} - the line against which to measure the angle
-     * @param objects {Array of JSVTS.objects} - an array of JSVTS.Vehicle or 
-     *                                           JSVTS.TrafficFlowControl objects
-     * @param distance {number} - the maximum distance to look within
-     * @param maxAngle {number} - the maximum positive and negative degree offset
-     *                            from current headingLine heading to check within
-     * @param decay {number} - percentage to shorten distance when at maxAngle
-     *                         Ex: distance=100, maxAngle=90, decay=0.50
-     *                             at 90 degrees the distance will be 50
-     */
-    getClosestObjectWithinDistanceAndView: function (headingLine, objects, distance, maxAngle, decay) {
-        var closest = { obj: null, dist: 0 };
-        if ((distance > 0) && (headingLine) && (objects && objects.length > 0)) {
-            if (!maxAngle) { maxAngle = 90; }
-            if (!decay) { decay = 1.0; } // 100% of length decay when at maxAngle 
-            for (var i in objects) {
-                var obj = objects[i];
-                // create segment to obj
-                var segToObj = new THREE.Line3(headingLine.start, obj.config.location);
-
-                // create segment to current segment end
-                var segToEnd = headingLine;
-
-                // get angle formed by both lines
-                var angleToObj = Math.abs(JSVTS.Utils.angleFormedBy(segToObj, segToEnd));
-
-                if (angleToObj <= maxAngle) {
-                    var distanceToObj = JSVTS.Utils.getDistanceBetweenTwoPoints(headingLine.start, obj.config.location);
-                    // compare distance and angle
-                    var dist = distance;
-                    dist = distance - (distance * ((angleToObj / maxAngle) * decay));
-                    if (dist < 0) { dist = 0; }
-                    if (distanceToObj <= dist) {
-                        if (closest.obj === null || closest.dist > distanceToObj) {
-                            closest.obj = obj;
-                            closest.dist = distanceToObj;
-                        }
-                    }
-                }
-            }
-        }
-
-        return closest.obj;
     },
 };

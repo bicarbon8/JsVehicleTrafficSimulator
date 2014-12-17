@@ -205,6 +205,15 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
         if (foundV && foundV.stop) {
             if (skipCollisionCheck) {
                 return foundV;
+            } else {
+                // perform collision check
+                var box1 = new THREE.Box3().setFromObject(this.mesh);
+                var vehicle = JSVTS.Map.getVehicleById(foundV.id);
+                var box2 = new THREE.Box3().setFromObject(vehicle.mesh);
+                if (JSVTS.Utils.isCollidingWith(box1, box2)) {
+                    this.crashed = true;
+                    vehicle.crashed = true;
+                }
             }
             var changingLanes = this.changeLanesIfAvailable(segment);
             if (!changingLanes) {
@@ -302,7 +311,7 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
     }
 
     return false;
-},
+};
 
 JSVTS.Vehicle.prototype.shouldSlowForCorner = function(distance){
     // slow down when the next segment is in range and has a different heading
@@ -352,4 +361,19 @@ JSVTS.Vehicle.prototype.corneringSpeedCalculator = function(headingDifference) {
     if (headingDifference >= 135) {
         return 1;
     }
+};
+
+JSVTS.Vehicle.prototype.hasInView = function(location) {
+    var headingLine = new THREE.Line3(this.config.location, this.segmentEnd);
+    var headingToLocation = new THREE.Line3(this.config.location, location);
+    var maxAngle = 45;
+    if (this.isChangingLanes) {
+        maxAngle = 90;
+    }
+
+    if (Math.abs(JSVTS.Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
+        return true;
+    }
+
+    return false;
 };
