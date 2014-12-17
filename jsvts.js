@@ -39,6 +39,7 @@ var JSVTS = {
     totalElapsedTime: 0,
     roadways: [],
     defaultRoadway: 0,
+    timeOffset: 10,
 
 	injectJs: function (script, callback) {
 		var s = document.createElement('script');
@@ -143,6 +144,13 @@ var JSVTS = {
             case 's'.charCodeAt(0):
                 JSVTS.toggleAnimationState();
                 break;
+            case '+'.charCodeAt(0):
+                JSVTS.timeOffset += 10;
+                break;
+            case '-'.charCodeAt(0):
+                JSVTS.timeOffset -= 10;
+                if (JSVTS.timeOffset < 0) { JSVTS.timeOffset = 0; }
+                break;
             case '0'.charCodeAt(0):
             case '1'.charCodeAt(0):
             case '2'.charCodeAt(0):
@@ -184,7 +192,7 @@ var JSVTS = {
             JSVTS.elapsed = new Date().getTime() - JSVTS.startTime;
             JSVTS.startTime = new Date().getTime();
         } else {
-            JSVTS.elapsed = 10;
+            JSVTS.elapsed = JSVTS.timeOffset;
         }
         
         // update segments
