@@ -78,6 +78,11 @@ JSVTS.Segment.prototype.attachVehicle=function(vehicle, atPoint) {
     }
 };
 
+JSVTS.Segment.prototype.setTfc = function (tfc) {
+    this.attachObject(tfc, this.config.end, this.config.start);
+    this.tfc = tfc;
+};
+
 JSVTS.Segment.prototype.attachObject = function (obj, location, lookAt) {
     // set reference data
     obj.segmentId = this.id;

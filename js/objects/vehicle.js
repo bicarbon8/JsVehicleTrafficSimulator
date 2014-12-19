@@ -82,7 +82,7 @@ JSVTS.Vehicle.prototype.getLookAheadDistance = function () {
     var mps = JSVTS.Utils.convertKmphToMps(this.velocity);
     var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.config.deceleration))) / 2;
     var distanceToReact = this.config.reactionTime * mps;
-    var distanceTot = distanceToStop + (this.config.length * 2.5) + distanceToReact;
+    var distanceTot = distanceToStop + (this.config.length * 2) + distanceToReact;
     // TODO: use distanceToReact as a setTimeout for when to check distances again
     return distanceTot;
 };
@@ -103,8 +103,15 @@ JSVTS.Vehicle.prototype.generateMesh = function(options) {
 JSVTS.Vehicle.prototype.update = function (elapsedMs) {
     var IsStopping = false;
     var elapsedSeconds = (elapsedMs / 1000);
-    var distTraveled = (this.velocity * elapsedSeconds);
     var removed = false;
+
+    var segment = JSVTS.Map.GetSegmentById(this.segmentId);
+    if (this.shouldStop(segment)) {
+        IsStopping = true;
+    }
+    this.updateVelocity(elapsedMs, IsStopping);
+
+    var distTraveled = (this.velocity * elapsedSeconds);
     if(distTraveled > 0) {
         var remainingDistOnSegment = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segmentEnd);
         if (distTraveled >= remainingDistOnSegment) {
@@ -131,13 +138,6 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
                 removed = true;
             }
         }
-        if (!removed) {
-            this.moveBy(distTraveled);
-            var segment = JSVTS.Map.GetSegmentById(this.segmentId);
-            if (this.shouldStop(segment)) {
-                IsStopping = true;
-            }
-        }
     }
 
     if (!removed) {
@@ -159,7 +159,7 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
                 this.crashCleanupTime = Math.random() * (JSVTS.CRASH_CLEANUP_MAX_DELAY - JSVTS.CRASH_CLEANUP_MIN_DELAY) + JSVTS.CRASH_CLEANUP_MIN_DELAY;
             }
         } else {
-            this.updateVelocity(elapsedMs, IsStopping);
+            this.moveBy(distTraveled);
         }
     }
 };

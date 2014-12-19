@@ -39,10 +39,26 @@ body {
     padding: 0px;
     overflow: hidden;
 }
+div#controls {
+    position: absolute;
+    margin: 0px;
+    padding: 0px;
+    top: 0px;
+    left: 100px;
+    z-index: 1000;
+    color: rgb(255, 255, 255);
+}
 </style>
 <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="jsvts.js"></script>
 </head>
     <body onload="JSVTS.setup();" onresize="JSVTS.resize();">
+        <div id="controls">
+            <!-- <label for="roadways">Roadways</label>
+            <ul id="roadways" onmouseover="">
+                <li data-value="0">Merge Loop</li>
+                <li data-value="1">Intersection</li>
+            </ul> -->
+        </div>
     </body>
 </html>

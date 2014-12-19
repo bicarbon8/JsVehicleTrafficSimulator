@@ -31,6 +31,7 @@ var JSVTS = JSVTS || {};
 JSVTS.Clock = function (options) {
     this.domElement = null;
     this.startTime = new Date().getTime();
+    this.elapsedMs = 0;
 
     this.init(options);
 };
@@ -39,6 +40,10 @@ JSVTS.Clock.prototype.init = function (options) {
     this.domElement = document.createElement('div');
     this.domElement.id = 'jsvtsClock';
     this.domElement.style.cssText = "padding: 0px 0px 3px 3px; text-align: left; background-color: rgb(0, 0, 34);";
+    var elapsedDiv = document.createElement('div');
+    elapsedDiv.id = 'jsvtsClockElapsed';
+    elapsedDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
+    this.domElement.appendChild(elapsedDiv);
     var simulationTimeDiv = document.createElement('div');
     simulationTimeDiv.id = 'jsvtsClockSimulation';
     simulationTimeDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
@@ -50,12 +55,15 @@ JSVTS.Clock.prototype.init = function (options) {
 };
 
 JSVTS.Clock.prototype.update = function () {
-    this.domElement.querySelector('#jsvtsClockSimulation').innerHTML = this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
-    this.domElement.querySelector('#jsvtsClockReal').innerHTML = this.convertMsToHumanReadable(new Date().getTime() - this.startTime);
+    var step = JSVTS.totalElapsedTime - this.elapsedMs;
+    this.elapsedMs += step;
+    this.domElement.querySelector('#jsvtsClockElapsed').innerHTML = "step: " + step;
+    this.domElement.querySelector('#jsvtsClockSimulation').innerHTML = "sim: " + this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
+    this.domElement.querySelector('#jsvtsClockReal').innerHTML = "real: " + this.convertMsToHumanReadable(new Date().getTime() - this.startTime);
 };
 
-JSVTS.Clock.prototype.convertMsToHumanReadable = function (elapsedMs) {
-    var x = elapsedMs / 1000;
+JSVTS.Clock.prototype.convertMsToHumanReadable = function (milliseconds) {
+    var x = milliseconds / 1000;
     var seconds = parseFloat(Math.round((x % 60) * 100) / 100).toFixed(2);
     x /= 60;
     var minutes = Math.floor(x % 60);
