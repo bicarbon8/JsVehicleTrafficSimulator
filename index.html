@@ -51,14 +51,49 @@ div#controls {
 </style>
 <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="jsvts.js"></script>
+<script type="text/javascript">
+function toggleStart () {
+    JSVTS.toggleAnimationState();
+    var button = document.querySelector('#start');
+    if (JSVTS.keepMoving) {
+        button.innerHTML = "||";
+    } else {
+        button.innerHTML = "&#10152;";
+        button.class = "";
+    }
+}
+
+function updateStep(increase) {
+    if (increase) {
+        JSVTS.timeStep += 2;
+    } else {
+        JSVTS.timeStep -= 2;
+        if (JSVTS.timeStep < 2) { JSVTS.timeStep = 2; }
+    }
+}
+
+function toggleScenarioDisplay() {
+    var scenarios = document.querySelector('#scenarios');
+    var control = document.querySelector('#scenarioDropdown');
+    var bounds = control.getBoundingClientRect();
+    if (scenarios.style.display === "none") {
+        scenarios.style.cssText = "position: absolute; top: " + bounds.bottom + "px; left: " + bounds.left + "px; display: block;";
+    } else {
+        scenarios.style.display = "none";
+    }
+}
+</script>
 </head>
     <body onload="JSVTS.setup();" onresize="JSVTS.resize();">
         <div id="controls">
-            <!-- <label for="roadways">Roadways</label>
-            <ul id="roadways" onmouseover="">
-                <li data-value="0">Merge Loop</li>
-                <li data-value="1">Intersection</li>
-            </ul> -->
+            <button id="start" onclick="toggleStart();">&#10152;</button>
+            <button id="scenarioDropdown" onclick="toggleScenarioDisplay();">Scenario</button>
+            <button id="stepPlus" onclick="updateStep(true);">&#43;</button>
+            <button id="stepMinus" onclick="updateStep(false);">&#8722;</button>
+        </div>
+        <div id="scenarios" style="display: none;">
+            <button onclick="toggleScenarioDisplay(); JSVTS.defaultRoadway = 0; JSVTS.reset();">Merge Loop</button><br />
+            <button onclick="toggleScenarioDisplay(); JSVTS.defaultRoadway = 1; JSVTS.reset();">Intersection</button>
         </div>
     </body>
 </html>
