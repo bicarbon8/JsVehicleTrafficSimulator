@@ -82,7 +82,7 @@ JSVTS.Vehicle.prototype.getLookAheadDistance = function () {
     var mps = JSVTS.Utils.convertKmphToMps(this.velocity);
     var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.config.deceleration))) / 2;
     var distanceToReact = this.config.reactionTime * mps;
-    var distanceTot = distanceToStop + (this.config.length * 2.5) + distanceToReact;
+    var distanceTot = distanceToStop + (this.config.length * 2) + distanceToReact;
     // TODO: use distanceToReact as a setTimeout for when to check distances again
     return distanceTot;
 };
@@ -103,8 +103,15 @@ JSVTS.Vehicle.prototype.generateMesh = function(options) {
 JSVTS.Vehicle.prototype.update = function (elapsedMs) {
     var IsStopping = false;
     var elapsedSeconds = (elapsedMs / 1000);
-    var distTraveled = (this.velocity * elapsedSeconds);
     var removed = false;
+
+    var segment = JSVTS.Map.GetSegmentById(this.segmentId);
+    if (this.shouldStop(segment)) {
+        IsStopping = true;
+    }
+    this.updateVelocity(elapsedMs, IsStopping);
+
+    var distTraveled = (this.velocity * elapsedSeconds);
     if(distTraveled > 0) {
         var remainingDistOnSegment = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segmentEnd);
         if (distTraveled >= remainingDistOnSegment) {
@@ -131,13 +138,6 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
                 removed = true;
             }
         }
-        if (!removed) {
-            this.moveBy(distTraveled);
-            var segment = JSVTS.Map.GetSegmentById(this.segmentId);
-            if (this.shouldStop(segment)) {
-                IsStopping = true;
-            }
-        }
     }
 
     if (!removed) {
@@ -159,7 +159,7 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
                 this.crashCleanupTime = Math.random() * (JSVTS.CRASH_CLEANUP_MAX_DELAY - JSVTS.CRASH_CLEANUP_MIN_DELAY) + JSVTS.CRASH_CLEANUP_MIN_DELAY;
             }
         } else {
-            this.updateVelocity(elapsedMs, IsStopping);
+            this.moveBy(distTraveled);
         }
     }
 };
@@ -205,6 +205,15 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
         if (foundV && foundV.stop) {
             if (skipCollisionCheck) {
                 return foundV;
+            } else {
+                // perform collision check
+                var box1 = new THREE.Box3().setFromObject(this.mesh);
+                var vehicle = JSVTS.Map.getVehicleById(foundV.id);
+                var box2 = new THREE.Box3().setFromObject(vehicle.mesh);
+                if (JSVTS.Utils.isCollidingWith(box1, box2)) {
+                    this.crashed = true;
+                    vehicle.crashed = true;
+                }
             }
             var changingLanes = this.changeLanesIfAvailable(segment);
             if (!changingLanes) {
@@ -302,7 +311,7 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
     }
 
     return false;
-},
+};
 
 JSVTS.Vehicle.prototype.shouldSlowForCorner = function(distance){
     // slow down when the next segment is in range and has a different heading
@@ -352,4 +361,19 @@ JSVTS.Vehicle.prototype.corneringSpeedCalculator = function(headingDifference) {
     if (headingDifference >= 135) {
         return 1;
     }
+};
+
+JSVTS.Vehicle.prototype.hasInView = function(location) {
+    var headingLine = new THREE.Line3(this.config.location, this.segmentEnd);
+    var headingToLocation = new THREE.Line3(this.config.location, location);
+    var maxAngle = 45;
+    if (this.isChangingLanes) {
+        maxAngle = 90;
+    }
+
+    if (Math.abs(JSVTS.Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
+        return true;
+    }
+
+    return false;
 };

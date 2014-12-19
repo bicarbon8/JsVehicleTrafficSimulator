@@ -56,8 +56,7 @@ JSVTS.TxtToMapParser = {
                 "isMergeLane": seg.ismergelane || false
             });
             if (tfc) {
-                segment.attachObject(tfc, segment.config.end, segment.config.start);
-                segment.tfc = tfc;
+                segment.setTfc(tfc);
             }
             if (generator) {
                 segment.attachObject(generator, segment.config.start, segment.config.end);

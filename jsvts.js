@@ -39,6 +39,7 @@ var JSVTS = {
     totalElapsedTime: 0,
     roadways: [],
     defaultRoadway: 0,
+    timeStep: 10, // lower values are more accurate, but slower
 
 	injectJs: function (script, callback) {
 		var s = document.createElement('script');
@@ -95,8 +96,6 @@ var JSVTS = {
     init: function () {
         JSVTS.initPageElements();
         JSVTS.initObjects();
-        JSVTS.keepMoving = true;
-        JSVTS.move();
     },
 
     reset: function () {
@@ -115,7 +114,6 @@ var JSVTS = {
         var dims = JSVTS.getWidthHeight();
         JSVTS.docWidth = dims.width; // window.innerWidth;
         JSVTS.docHeight = dims.height; // window.innerHeight;
-        window.addEventListener("keypress", JSVTS.handleKeypress, false);
     },
     
     initObjects: function () {
@@ -132,33 +130,6 @@ var JSVTS = {
             x = w.innerWidth || e.clientWidth || b.clientWidth,
             y = w.innerHeight|| e.clientHeight|| b.clientHeight;
         return { width: x, height: y };
-    },
-
-    handleKeypress: function(ev) {
-        // console.log(ev.charCode);
-        switch (ev.charCode) {
-            case 'x'.charCodeAt(0):
-                JSVTS.reset();
-                break;
-            case 's'.charCodeAt(0):
-                JSVTS.toggleAnimationState();
-                break;
-            case '0'.charCodeAt(0):
-            case '1'.charCodeAt(0):
-            case '2'.charCodeAt(0):
-            case '3'.charCodeAt(0):
-            case '4'.charCodeAt(0):
-            case '5'.charCodeAt(0):
-            case '6'.charCodeAt(0):
-            case '7'.charCodeAt(0):
-            case '8'.charCodeAt(0):
-            case '9'.charCodeAt(0):
-                JSVTS.defaultRoadway = Number(String.fromCharCode(ev.charCode));
-                JSVTS.reset();
-                break;
-            default:
-                // do nothing
-        }
     },
 
     toggleRealtimeState: function () {
@@ -184,7 +155,7 @@ var JSVTS = {
             JSVTS.elapsed = new Date().getTime() - JSVTS.startTime;
             JSVTS.startTime = new Date().getTime();
         } else {
-            JSVTS.elapsed = 10;
+            JSVTS.elapsed = JSVTS.timeStep;
         }
         
         // update segments

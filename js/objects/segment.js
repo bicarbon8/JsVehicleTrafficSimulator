@@ -78,6 +78,11 @@ JSVTS.Segment.prototype.attachVehicle=function(vehicle, atPoint) {
     }
 };
 
+JSVTS.Segment.prototype.setTfc = function (tfc) {
+    this.attachObject(tfc, this.config.end, this.config.start);
+    this.tfc = tfc;
+};
+
 JSVTS.Segment.prototype.attachObject = function (obj, location, lookAt) {
     // set reference data
     obj.segmentId = this.id;
@@ -99,7 +104,7 @@ JSVTS.Segment.prototype.generateMesh = function (options) {
     });
 
     var geometry = new THREE.Geometry();
-    geometry.vertices = this.spline.getPoints(2);
+    geometry.vertices = this.spline.getPoints(1);
     var line = new THREE.Line(geometry, material);
     this.mesh = line;
 
