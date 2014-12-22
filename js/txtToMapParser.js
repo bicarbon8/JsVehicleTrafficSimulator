@@ -29,24 +29,18 @@
  **********************************************************************/
 var JSVTS = JSVTS || {};
 JSVTS.TxtToMapParser = {
-    ParseMapJson: function (jsonObj) {
+    parseMapJson: function (jsonObj) {
         if (jsonObj) {
-            var scale = jsonObj.scale;
-            segments = JSVTS.TxtToMapParser.ParseSegmentsJson(jsonObj.segments);
-            for (var i=0; i<segments.length; i++) {
-                JSVTS.Map.AddSegment(segments[i]);
-            }
+            JSVTS.TxtToMapParser.parseSegmentsJson(jsonObj.segments);
         }
     },
 
-    ParseSegmentsJson: function (jsonObj) {
+    parseSegmentsJson: function (jsonObj) {
         var segments = [];
         for (var i=0; i<jsonObj.length; i++) {
             var seg = jsonObj[i];
             var start = new THREE.Vector3(seg.start.x,seg.start.y,seg.start.z);
             var end = new THREE.Vector3(seg.end.x,seg.end.y,seg.end.z);
-            var tfc = JSVTS.TxtToMapParser.parseTfcJson(seg.tfc);
-            var generator = JSVTS.TxtToMapParser.parseGeneratorJson(seg.generator);
             var segment = new JSVTS.Segment({
                 "start": start,
                 "end": end,
@@ -55,20 +49,15 @@ JSVTS.TxtToMapParser = {
                 "isInlet": seg.isinlet || false,
                 "isMergeLane": seg.ismergelane || false
             });
-            if (tfc) {
-                segment.setTfc(tfc);
-            }
-            if (generator) {
-                segment.attachObject(generator, segment.config.start, segment.config.end);
-                segment.generator = generator;
-            }
-            segments.push(segment);
+            JSVTS.Map.addMovable(segment);
+            JSVTS.TxtToMapParser.parseTfcJson(seg.tfc, segment);
+            JSVTS.TxtToMapParser.parseGeneratorJson(seg.generator, segment);
         }
 
         return segments;
     },
 
-    parseTfcJson: function (jsonObj) {
+    parseTfcJson: function (jsonObj, segment) {
         var tfc = null;
         if (jsonObj) {
             var type = jsonObj.type;
@@ -89,19 +78,21 @@ JSVTS.TxtToMapParser = {
                 default:
                     throw "unknown TrafficFlowControl type of '"+type+"' specified.";
             }
-        }
 
-        return tfc;
+            segment.attachMovable(tfc, segment.config.end, segment.config.start);
+            JSVTS.Map.addMovable(tfc);
+        }
     },
 
-    parseGeneratorJson: function (jsonObj) {
+    parseGeneratorJson: function (jsonObj, segment) {
         var generator = null;
         if (jsonObj) {
             generator = new JSVTS.VehicleGenerator({
                 delay: jsonObj.delay === undefined ? 1 : jsonObj.delay
             });
-        }
 
-        return generator;
+            segment.attachMovable(generator, segment.config.start, segment.config.end);
+            JSVTS.Map.addMovable(generator);
+        }
     }
 };

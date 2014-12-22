@@ -132,15 +132,6 @@ var JSVTS = {
         return { width: x, height: y };
     },
 
-    toggleRealtimeState: function () {
-        if (JSVTS.realtime) {
-            JSVTS.realtime = false;
-        } else {
-            JSVTS.startTime = new Date().getTime();
-            JSVTS.realtime = true;
-        }
-    },
-
     toggleAnimationState: function () {
         if (JSVTS.keepMoving) {
             JSVTS.keepMoving = false;
@@ -151,23 +142,12 @@ var JSVTS = {
     },
     
     move: function () {
-        if (JSVTS.realtime) {
-            JSVTS.elapsed = new Date().getTime() - JSVTS.startTime;
-            JSVTS.startTime = new Date().getTime();
-        } else {
-            JSVTS.elapsed = JSVTS.timeStep;
-        }
+        JSVTS.elapsed = JSVTS.timeStep;
         
         // update segments
-        JSVTS.Map.GetSegments().forEach(function (seg) {
-            seg.update(JSVTS.elapsed);
+        JSVTS.Map.getMovables().forEach(function (mov) {
+            mov.update(JSVTS.elapsed);
         });
-        // update vehicles
-        var vehicles = JSVTS.Map.GetVehicles();
-        for (var m in vehicles) {
-            var v = vehicles[m];
-            v.update(JSVTS.elapsed);
-        }
             
         JSVTS.Plotter.render();
         JSVTS.totalElapsedTime += JSVTS.elapsed;
@@ -179,15 +159,7 @@ var JSVTS = {
 
     loadRoadway: function (index) {
         var jsonObj = JSVTS.roadways[index];
-        JSVTS.TxtToMapParser.ParseMapJson(jsonObj.map);
-        var segments = JSVTS.Map.GetSegments();
-        for (var i in segments) {
-            var segment = segments[i];
-            JSVTS.Plotter.scene.add(segment.mesh);
-            if (segment.tfc) {
-                JSVTS.Plotter.scene.add(segment.tfc.mesh);
-            }
-        }
+        JSVTS.TxtToMapParser.parseMapJson(jsonObj.map);
         JSVTS.Plotter.render();
     }
 };

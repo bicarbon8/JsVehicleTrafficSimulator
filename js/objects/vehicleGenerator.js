@@ -10,11 +10,10 @@ JSVTS.VehicleGenerator = function (options) {
     for (var key in options) { defaults[key] = options[key]; }
     JSVTS.Movable.call(this, defaults);
 
-    this.segmentId = null;
     this.nextVehicle = null;
     this.elapsedMs = 0;
 };
-JSVTS.VehicleGenerator.prototype = Object.create(JSVTS.Movable);
+JSVTS.VehicleGenerator.prototype = Object.create(JSVTS.Movable.prototype);
 JSVTS.VehicleGenerator.prototype.constructor = JSVTS.VehicleGenerator;
 
 JSVTS.VehicleGenerator.prototype.update = function (elapsedMs) {
@@ -32,8 +31,7 @@ JSVTS.VehicleGenerator.prototype.generate = function () {
     }
     
     if (this.canGenerate(this.nextVehicle)) {
-        JSVTS.Map.AddVehicle(this.nextVehicle);
-        JSVTS.Plotter.addObject(this.nextVehicle.mesh);
+        JSVTS.Map.addMovable(this.nextVehicle);
         this.elapsedMs = 0;
         this.nextVehicle = null;
     }
@@ -61,7 +59,7 @@ JSVTS.VehicleGenerator.prototype.prepareNewVehicle = function () {
         changeLaneDelay: Math.floor(JSVTS.Utils.getRandomBetween(5, 15)),
         length: JSVTS.Utils.getRandomBetween(3, 5)
     });
-    var segment = JSVTS.Map.GetSegmentById(this.segmentId);
-    segment.attachVehicle(v);
+    var segment = this.segment;
+    segment.attachMovable(v, segment.config.start, segment.config.end);
     return v;
 };

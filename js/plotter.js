@@ -160,11 +160,15 @@ JSVTS.Plotter = {
         JSVTS.Plotter.renderer.setSize(width, height);
     },
 
-    addObject: function(objectMesh) {
-        JSVTS.Plotter.scene.add(objectMesh);
+    addRenderable: function(renderable) {
+        if (renderable instanceof JSVTS.Renderable) {
+            JSVTS.Plotter.scene.add(renderable.mesh);
+        }
     },
 
-    removeObject: function(objectMesh) {
-        JSVTS.Plotter.scene.remove(objectMesh);
+    removeRenderable: function(renderable) {
+        if (renderable instanceof JSVTS.Renderable) {
+            JSVTS.Plotter.scene.remove(renderable.mesh);
+        }
     }
 };

@@ -32,8 +32,10 @@ JSVTS.TFC_ID_COUNT = 0;
 // abstract base class
 JSVTS.TrafficFlowControl = function (options) {
     JSVTS.Renderable.call(this, options);
-
-    this.segmentId = null;
 };
 JSVTS.TrafficFlowControl.prototype = Object.create(JSVTS.Renderable.prototype);
 JSVTS.TrafficFlowControl.prototype.constructor = JSVTS.TrafficFlowControl;
+
+JSVTS.TrafficFlowControl.prototype.shouldStop = function (vehicle) {
+    throw "abstract base method must be overridden to be called.";
+};

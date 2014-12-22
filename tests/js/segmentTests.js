@@ -2,16 +2,7 @@ var ST = {
     spacing: 1,
     testVehicles: [],
     setup: function () {
-        QUnit.stop();
-        JSVTS.load([
-            "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js",
-            "../js/helpers/utils.js",
-            "../js/objects/segment.js",
-            "../js/map.js",
-            "../ext/helvetiker_regular.typeface.js"
-        ], function () {
-            QUnit.start();
-        });
+        
     },
     teardown: function () {
         

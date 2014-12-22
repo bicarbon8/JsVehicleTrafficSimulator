@@ -37,53 +37,71 @@
  */
 var JSVTS = JSVTS || {};
 JSVTS.Map = {
-	_segments: [],
-	_vehicles: [],
+	_movables: [],
     up: new THREE.Vector3(0, 1, 0),
 
     reset: function () {
-        JSVTS.Map._segments = [];
-        JSVTS.Map._vehicles = [];
+        JSVTS.Map._movables = [];
     },
 
-	AddSegment: function(segment) {
-        JSVTS.Map._segments[segment.id] = segment;
-	},
-
-	AddVehicle: function(vehicle) {
-		JSVTS.Map._vehicles[vehicle.id] = vehicle;
-	},
-
-    removeVehicle: function(v) {
-        // remove v from the Simulation
-        // JSVTS.Map._vehicles = JSVTS.Map._vehicles.splice(JSVTS.Map._vehicles.indexOf(v));
-        delete JSVTS.Map._vehicles[v.id];
-        if (JSVTS.Plotter) {
-            JSVTS.Plotter.removeObject(v.mesh);
-            JSVTS.Plotter.removeObject(v.idMesh);
+    addMovable: function(movable) {
+        if (movable instanceof JSVTS.Movable) {
+            JSVTS.Map._movables[movable.id] = movable;
+            if (JSVTS.Plotter) {
+                JSVTS.Plotter.addRenderable(movable);
+            }
         }
-        v = null;
     },
 
-	GetSegments: function() {
-		return JSVTS.Map._segments;
+    removeMovable: function(movable) {
+        if (movable instanceof JSVTS.Movable) {
+            // remove movable from the Simulation
+            delete JSVTS.Map._movables[movable.id];
+            if (JSVTS.Plotter) {
+                JSVTS.Plotter.removeRenderable(movable);
+            }
+            movable = null;
+        }
+    },
+
+    getMovables: function () {
+        return JSVTS.Map._movables.filter(function (m) {
+            return m;
+        });
+    },
+
+    getMovableById: function (id) {
+        return JSVTS.Map._movables[id];
+    },
+
+    getMovableByType: function (type) {
+        return JSVTS.Map._movables.filter(function(m) {
+            return m instanceof type;
+        });
+    },
+
+    updateMovables: function(movables) {
+        for (var i in movables) {
+            var m = movables[i];
+            JSVTS.Map._movables[m.id] = m;
+        }
+    },
+
+	getSegments: function() {
+		return JSVTS.Map.getMovableByType(JSVTS.Segment);
 	},
 
-	GetSegmentById: function (id) {
-		return JSVTS.Map._segments[id];
-	},
-
-    getSegmentsStartingAt: function (point) {
-        return JSVTS.Map.GetSegments().filter(function (seg) {
+	getSegmentsStartingAt: function (point) {
+        return JSVTS.Map.getSegments().filter(function (seg) {
             return seg.config.start.x === point.x &&
                    seg.config.start.y === point.y &&
                    seg.config.start.z === point.z;
         });
     },
 
-    GetAvailableSegmentsContainingPoint: function(point) {
+    getAvailableSegmentsContainingPoint: function(point) {
         var segments = [];
-        var allSegments = JSVTS.Map.GetSegments();
+        var allSegments = JSVTS.Map.getSegments();
         for (var i in allSegments) {
             var segment = allSegments[i];
             if (segment.config.start.x === point.x && segment.config.start.y === point.y && segment.config.start.z === point.z ||
@@ -101,10 +119,10 @@ JSVTS.Map = {
 		return segments;
 	},
 
-	GetSimilarSegmentsInRoad: function(currentSegment) {
+	getSimilarSegmentsInRoad: function(currentSegment) {
 		var results = [];
 
-		var segments = JSVTS.Map.GetSegments().filter(function (seg) {
+		var segments = JSVTS.Map.getSegments().filter(function (seg) {
             return (seg.config.name === currentSegment.config.name && seg.id !== currentSegment.id);
         });
 		for (var i in segments) {
@@ -121,56 +139,56 @@ JSVTS.Map = {
 		return results;
 	},
 
-	GetVehicles: function() {
-		return JSVTS.Map._vehicles.filter(function (v) {
-            return v;
+    getTypesInSegment: function(segmentId, type) {
+        return JSVTS.Map._movables.filter(function(m) {
+            return m.segment && m.segment.id === segmentId && m instanceof type;
         });
-	},
-
-    getVehicleById: function(id) {
-        return JSVTS.Map._vehicles[id];
     },
 
-	GetVehiclesInSegment: function(id) {
-		return JSVTS.Map.GetVehicles().filter(function (el) {
-            return el.segmentId === id;
+    getTypesNotInSegment: function(segmentId, type) {
+        return JSVTS.Map._movables.filter(function(m) {
+            return m.segment && m.segment.id !== segmentId && m instanceof type;
         });
+    },
+
+	getVehicles: function() {
+        return JSVTS.Map.getMovableByType(JSVTS.Vehicle);
+    },
+
+	getVehiclesInSegment: function(id) {
+		return JSVTS.Map.getTypesInSegment(id, JSVTS.Vehicle);
 	},
 
     getVehiclesNotInSegment: function(id) {
-        return JSVTS.Map.GetVehicles().filter(function (el) {
-            return el.segmentId !== id;
-        });
+        return JSVTS.Map.getTypesNotInSegment(id, JSVTS.Vehicle);
     },
 
     getVehiclesInRangeOf: function (origin, distance) {
-        return JSVTS.Map.GetVehicles().filter(function (el) {
+        return JSVTS.Map.getVehicles().filter(function (el) {
             return JSVTS.Utils.getDistanceBetweenTwoPoints(origin, el.config.location) <= distance;
         });
     },
 
-	UpdateVehicles: function(vehicles) {
-		for (var i in vehicles) {
-			var v = vehicles[i];
-			JSVTS.Map._vehicles[v.id] = v;
-		}
-	},
+    getTfcsInSegment: function(id) {
+        return JSVTS.Map.getTypesInSegment(id, JSVTS.TrafficFlowControl);
+    },
 
-    /**
+	/**
      * this function will determine if we need to stop for any TFC
      * on the current segment
      * @return true if tfc's are within distance and require stop
      */
-    areTfcsWithinDistance: function(vehicle, segment, distance) {
-        if ((distance > 0) && (vehicle && vehicle.segmentId !== null) && (segment)) {
-            if (segment.tfc) {
-                var tfc = segment.tfc;
+    areTfcsWithinDistance: function(vehicle, distance) {
+        if ((distance > 0) && (vehicle && vehicle.segment)) {
+            var tfcs = JSVTS.Map.getTfcsInSegment(vehicle.segment.id);
+            for (var i in tfcs) {
+                var tfc = tfcs[i];
                 var distToTfc = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, tfc.config.location);
 
                 if (distToTfc < distance) {
                     if (tfc.shouldStop(vehicle)) {
                         // don't stop if touching tfc
-                        return { stop: true, type: "tfc", segmentId: segment.id, id: tfc.id };
+                        return { stop: true, type: "tfc", segmentId: tfc.segment.id, id: tfc.id };
                     }
                 }
             }
@@ -188,10 +206,10 @@ JSVTS.Map = {
      * otherwise false is returned instead of an object
      */
     areVehiclesWithinDistance: function(vehicle, distance, skipCollisionCheck) {
-        if ((distance > 0) && (vehicle && vehicle.segmentId !== null)) {
+        if ((distance > 0) && (vehicle && vehicle.segment)) {
             var dist = distance;
             // lookahead within current segment distance
-            var distToSegEnd = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, vehicle.segmentEnd);
+            var distToSegEnd = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, vehicle.segment.config.end);
             if (distance > distToSegEnd) {
                 dist = distToSegEnd;
             }
@@ -206,13 +224,13 @@ JSVTS.Map = {
                     var v = vehicles[key];
                     if (vehicle.hasInView(v.config.location)) {
                         // check if v is in current segment
-                        if (v.segmentId === vehicle.segmentId) {
+                        if (v.segment && v.segment.id === vehicle.segment.id) {
                             found = v.id;
                             break;
                         } else {
                             // check heading of both vehicles' segments and if intersecting then return true
-                            var r = new THREE.Ray(vehicle.config.location.clone(), vehicle.segmentEnd.clone().sub(vehicle.config.location).normalize());
-                            var distToIntersect = r.distanceSqToSegment(v.config.location.clone(), v.segmentEnd.clone());
+                            var r = new THREE.Ray(vehicle.config.location.clone(), vehicle.segment.config.end.clone().sub(vehicle.config.location).normalize());
+                            var distToIntersect = r.distanceSqToSegment(v.config.location.clone(), v.segment.config.end.clone());
                             if (distToIntersect === 0) {
                                 // intersection found
                                 found = v.id;
