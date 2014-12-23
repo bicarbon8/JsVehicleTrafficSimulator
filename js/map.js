@@ -75,7 +75,7 @@ JSVTS.Map = {
     },
 
     getMovableByType: function (type) {
-        return JSVTS.Map._movables.filter(function(m) {
+        return JSVTS.Map._movables.filter(function (m) {
             return m instanceof type;
         });
     },
@@ -85,6 +85,18 @@ JSVTS.Map = {
             var m = movables[i];
             JSVTS.Map._movables[m.id] = m;
         }
+    },
+
+    getTypesInRangeOf: function (type, origin, distance) {
+        return JSVTS.Map._movables.filter(function (m) {
+            return (m instanceof type) && (JSVTS.Utils.getDistanceBetweenTwoPoints(origin, m.config.location) <= distance);
+        });
+    },
+
+    getTypesInRangeOfOnSegment: function (type, origin, distance, segmentId) {
+        return JSVTS.Map._movables.filter(function (m) {
+            return (m instanceof type) && (m.segment && m.segment.id === segmentId) && (JSVTS.Utils.getDistanceBetweenTwoPoints(origin, m.config.location) <= distance);
+        });
     },
 
 	getSegments: function() {
@@ -163,96 +175,7 @@ JSVTS.Map = {
         return JSVTS.Map.getTypesNotInSegment(id, JSVTS.Vehicle);
     },
 
-    getVehiclesInRangeOf: function (origin, distance) {
-        return JSVTS.Map.getVehicles().filter(function (el) {
-            return JSVTS.Utils.getDistanceBetweenTwoPoints(origin, el.config.location) <= distance;
-        });
-    },
-
     getTfcsInSegment: function(id) {
         return JSVTS.Map.getTypesInSegment(id, JSVTS.TrafficFlowControl);
-    },
-
-	/**
-     * this function will determine if we need to stop for any TFC
-     * on the current segment
-     * @return true if tfc's are within distance and require stop
-     */
-    areTfcsWithinDistance: function(vehicle, distance) {
-        if ((distance > 0) && (vehicle && vehicle.segment)) {
-            var tfcs = JSVTS.Map.getTfcsInSegment(vehicle.segment.id);
-            for (var i in tfcs) {
-                var tfc = tfcs[i];
-                var distToTfc = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, tfc.config.location);
-
-                if (distToTfc < distance) {
-                    if (tfc.shouldStop(vehicle)) {
-                        // don't stop if touching tfc
-                        return { stop: true, type: "tfc", segmentId: tfc.segment.id, id: tfc.id };
-                    }
-                }
-            }
-        }
-
-        return false;
-    },
-
-    /**
-     * this function will return true if any vehicles on this segment
-     * and any subsegments recursively down to the terminating 
-     * nodes are within the passed in distance to the passed in
-     * currentLoc
-     * @return {object} obj.stop = true if at least one vehicle found within range
-     * otherwise false is returned instead of an object
-     */
-    areVehiclesWithinDistance: function(vehicle, distance, skipCollisionCheck) {
-        if ((distance > 0) && (vehicle && vehicle.segment)) {
-            var dist = distance;
-            // lookahead within current segment distance
-            var distToSegEnd = JSVTS.Utils.getDistanceBetweenTwoPoints(vehicle.config.location, vehicle.segment.config.end);
-            if (distance > distToSegEnd) {
-                dist = distToSegEnd;
-            }
-            var vehicles = JSVTS.Map.getVehiclesInRangeOf(vehicle.config.location, dist).filter(function (v) {
-                // return all vehicles which aren't this vehicle
-                return (v.id !== vehicle.id);
-            });
-
-            if (vehicles && vehicles.length > 0) {
-                var found = null;
-                for (var key in vehicles) {
-                    var v = vehicles[key];
-                    if (vehicle.hasInView(v.config.location)) {
-                        // check if v is in current segment
-                        if (v.segment && v.segment.id === vehicle.segment.id) {
-                            found = v.id;
-                            break;
-                        } else {
-                            // check heading of both vehicles' segments and if intersecting then return true
-                            var r = new THREE.Ray(vehicle.config.location.clone(), vehicle.segment.config.end.clone().sub(vehicle.config.location).normalize());
-                            var distToIntersect = r.distanceSqToSegment(v.config.location.clone(), v.segment.config.end.clone());
-                            if (distToIntersect === 0) {
-                                // intersection found
-                                found = v.id;
-                                break;
-                            } else if (Number.isNaN(distToIntersect)) {
-                                // parallel lines so check for overlaps
-                                var distToPoint = r.distanceToPoint(v.config.location);
-                                if (distToPoint === 0) {
-                                    // intersection found
-                                    found = v.id;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (found) {
-                    return { stop: true, type: "vehicle", id: found };
-                }
-            }
-        }
-
-        return false;
     },
 };

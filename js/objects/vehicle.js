@@ -205,7 +205,7 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
 
     var dist = distance || this.getLookAheadDistance();
     // check for vehicles in range
-    var foundV = JSVTS.Map.areVehiclesWithinDistance(this, dist, skipCollisionCheck);
+    var foundV = this.shouldStopForVehicle(dist);
     if (foundV && foundV.stop) {
         if (skipCollisionCheck) {
             return foundV;
@@ -217,15 +217,16 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
             if (JSVTS.Utils.isCollidingWith(box1, box2)) {
                 this.crashed = true;
                 vehicle.crashed = true;
+            } else {
+                var changingLanes = this.changeLanesIfAvailable(segment);
+                if (!changingLanes) {
+                    return foundV;
+                }
             }
-        }
-        var changingLanes = this.changeLanesIfAvailable(segment);
-        if (!changingLanes) {
-            return foundV;
         }
     }
     // check for traffic flow controllers
-    var foundTfc = JSVTS.Map.areTfcsWithinDistance(this, dist);
+    var foundTfc = this.shouldStopForTfc(dist);
     if (foundTfc && foundTfc.stop) { // and then check for traffic lights in range
         return foundTfc;
     }
@@ -234,28 +235,67 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
     if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
         return foundCorner;
     }
-
-    return this.checkSubsequentSegments(dist);
 };
 
-JSVTS.Vehicle.prototype.checkSubsequentSegments = function (distance) {
-    if ((distance > 0) && (this.segmentId !== null)) {
-        var skipCollisionCheck = true;
-        var nextSegments = JSVTS.Map.getAvailableSegmentsContainingPoint(this.segment.config.end).filter(function (seg) {
-            return seg.id !== this.segmentId;
-        });
-        for (var i in nextSegments) {
-            var nextSeg = nextSegments[i];
-            
-            var tmpVehicle = new JSVTS.Vehicle({ generateId: false });
-            tmpVehicle.id = this.id;
-            nextSeg.attachMovable(tmpVehicle, this.segment.config.end, nextSeg.config.end);
-            var remainingDistOnSegment = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segment.config.end);
-            if (remainingDistOnSegment > 0) {
-                var found = tmpVehicle.shouldStop(nextSeg, (distance - remainingDistOnSegment), skipCollisionCheck);
-                if (found && found.stop) {
-                    return found;
+/**
+ * @return {object} obj.stop = true if at least one vehicle found within range
+ * otherwise false is returned instead of an object
+ */
+JSVTS.Vehicle.prototype.shouldStopForVehicle = function (distance) {
+    if (!Number.isNaN(distance)) {
+        var vehicles = JSVTS.Map.getTypesInRangeOf(JSVTS.Vehicle, this.config.location, distance);
+        for (var key in vehicles) {
+            var v = vehicles[key];
+            if (v.id !== this.id) {
+                if (this.hasInView(v)) {
+                    // check if v is in current segment
+                    if (v.segment && v.segment.id === this.segment.id) {
+                        return { stop: true, type: "vehicle", id: v.id };
+                    }
+                    // check if v is in intersecting segment
+                    var connectedTo = JSVTS.Map.getAvailableSegmentsContainingPoint(this.segment.config.end);
+                    var containing = connectedTo.filter(function (seg) { return seg.id === v.segment.id; });
+                    if (v.segment && containing.length > 0) {
+                        return { stop: true, type: "vehicle", id: v.id };
+                    } else {
+                        // check for vehicles on segments ahead
+                        var distToSegEnd = JSVTS.Utils.getDistanceBetweenTwoPoints(this.config.location, this.segment.config.end);
+                        if (distToSegEnd < distance) {
+                            var found = false;
+                            for (var i in connectedTo) {
+                                var s = connectedTo[i];
+                                var tmpV = new JSVTS.Vehicle({ generateId: false });
+                                tmpV.dispose(); // don't need mesh
+                                tmpV.id = this.id;
+                                s.attachMovable(tmpV, s.config.start, s.config.end);
+                                found = tmpV.shouldStopForVehicle(distance - distToSegEnd);
+                                if (found && found.stop) {
+                                    return found;
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+        }
+    }
+
+    return false;
+};
+
+/**
+ * this function will determine if we need to stop for any TFC
+ * on the current segment
+ * @return true if tfc's are within distance and require stop
+ */
+JSVTS.Vehicle.prototype.shouldStopForTfc = function (distance) {
+    if (!Number.isNaN(distance)) {
+        var tfcs = JSVTS.Map.getTypesInRangeOfOnSegment(JSVTS.TrafficFlowControl, this.config.location, distance, this.segment.id);
+        for (var i in tfcs) {
+            var tfc = tfcs[i];
+            if (tfc.shouldStop(this)) {
+                // don't stop if touching tfc
+                return { stop: true, type: "tfc", segmentId: tfc.segment.id, id: tfc.id };
             }
         }
     }
@@ -295,10 +335,13 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
             var seg = new JSVTS.Segment({
                 start: this.config.location,
                 end: closestPoint,
-                speedLimit: this.segment.config.speedLimit
+                speedLimit: this.segment.config.speedLimit,
+                generateId: false
             });
+            seg.dispose(); // get rid of mesh since not needed
             var tmpV = new JSVTS.Vehicle({ generateId: false });
             tmpV.id = this.id;
+            tmpV.isChangingLanes = true;
             seg.attachMovable(tmpV, seg.config.start, seg.config.end);
             // don't change lanes if we just have to stop on the new lane too
             var distance = this.getLookAheadDistance() * 2;
@@ -306,8 +349,10 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
                 seg.attachMovable(this, seg.config.start, seg.config.end);
                 this.changeLaneTime = JSVTS.TotalElapsedTime + (this.config.changeLaneDelay * 1000);
                 this.isChangingLanes = true;
+                tmpV.dispose();
                 return true;
             }
+            tmpV.dispose();
         }
     }
 
@@ -364,17 +409,24 @@ JSVTS.Vehicle.prototype.corneringSpeedCalculator = function(headingDifference) {
     }
 };
 
-JSVTS.Vehicle.prototype.hasInView = function(location) {
-    var headingLine = new THREE.Line3(this.config.location, this.segment.config.end);
-    var headingToLocation = new THREE.Line3(this.config.location, location);
-    var maxAngle = 45;
-    if (this.isChangingLanes) {
-        maxAngle = 90;
+JSVTS.Vehicle.prototype.hasInView = function(renderable) {
+    if (renderable instanceof JSVTS.Renderable) {
+        var maxAngle = 45;
+        if (this.isChangingLanes) {
+            maxAngle = 90;
+        }
+        var vertices = renderable.mesh.geometry.vertices.map(function (v) {
+            return new THREE.Vector3().copy(v).applyMatrix4(renderable.mesh.matrix);
+        });
+        for (var i in vertices) {
+            var location = vertices[i];
+            var headingLine = new THREE.Line3(this.config.location, this.segment.config.end);
+            var headingToLocation = new THREE.Line3(this.config.location, location);
+            
+            if (Math.abs(JSVTS.Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
+                return true;
+            }
+        }
     }
-
-    if (Math.abs(JSVTS.Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
-        return true;
-    }
-
     return false;
 };

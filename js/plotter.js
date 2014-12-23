@@ -158,6 +158,11 @@ JSVTS.Plotter = {
 
     resize: function(width, height) {
         JSVTS.Plotter.renderer.setSize(width, height);
+        if (JSVTS.Plotter.camera) {
+            JSVTS.Plotter.camera.aspect = width / height;
+            JSVTS.Plotter.camera.updateProjectionMatrix();
+            JSVTS.Plotter.render();
+        }
     },
 
     addRenderable: function(renderable) {
@@ -169,6 +174,7 @@ JSVTS.Plotter = {
     removeRenderable: function(renderable) {
         if (renderable instanceof JSVTS.Renderable) {
             JSVTS.Plotter.scene.remove(renderable.mesh);
+            renderable.dispose();
         }
     }
 };

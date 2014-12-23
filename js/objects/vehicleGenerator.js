@@ -38,7 +38,7 @@ JSVTS.VehicleGenerator.prototype.generate = function () {
 };
 
 JSVTS.VehicleGenerator.prototype.canGenerate = function (newVehicle) {
-    var vehicles = JSVTS.Map.getVehiclesInRangeOf(newVehicle.config.location, newVehicle.config.length * 3);
+    var vehicles = JSVTS.Map.getTypesInRangeOf(JSVTS.Vehicle, newVehicle.config.location, newVehicle.config.length * 3);
     for (var i in vehicles) {
         var v = vehicles[i];
         var box1 = new THREE.Box3().setFromObject(v.mesh);

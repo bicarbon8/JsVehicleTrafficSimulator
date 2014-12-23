@@ -32,6 +32,7 @@ JSVTS.SEG_OPTIONS = function () {
     var self = {
         start: THREE.Vector3(-10,0,0),
         end: THREE.Vector3(10,0,0),
+        width: 3,
         isInlet: false,
         name: '',
         speedLimit: 30, // Km/h
