@@ -304,7 +304,7 @@ JSVTS.Vehicle.prototype.shouldStopForTfc = function (distance) {
 };
 
 JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
-    if (!this.changeLaneTime || this.changeLaneTime < JSVTS.TotalElapsedTime) {
+    if (!this.changeLaneTime || this.changeLaneTime < JSVTS.totalElapsedTime) {
         var closestPoint = null;
         if (currentSegment) {
             var possibleLanes = JSVTS.Map.getSimilarSegmentsInRoad(currentSegment);
