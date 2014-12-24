@@ -1,6 +1,6 @@
 var MT = {
     setup: function () {
-        
+        JSVTS.Plotter.initScene();
     },
     teardown: function () {
         JSVTS.Map.reset();

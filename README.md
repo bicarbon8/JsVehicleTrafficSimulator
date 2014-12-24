@@ -9,7 +9,4 @@ a vehicle roadway traffic simulator written in javascript, html and css.  render
 2. use your left mouse button to rotate the map, right button to drag the map and scroll wheel to zoom
 
 # DEMO
-[index.html](http://rawgit.com/bicarbon8/JsVehicleTrafficSimulator/master/index.html)
-
-# TESTS
-[tests/allTests.html](http://rawgit.com/bicarbon8/JsVehicleTrafficSimulator/master/tests/AllTests.html)
+[index.html](http://rawgit.com/bicarbon8/JsVehicleTrafficSimulator/master/examples/index.html)

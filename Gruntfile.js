@@ -12,10 +12,14 @@ module.exports = function(grunt) {
     uglify: {
       options: {
         banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */\n',
+        mangle: true,
+        compress: true,
+        sourceMap: true,
+        // beautify: true,
       },
       build: {
         files: {
-          'dist/<%= pkg.main %>-<%= pkg.version %>-<%= grunt.template.today("yyyymmddHHMMss") %>.min.js': [
+          'dist/<%= pkg.main %>.min.js': [
             'js/jsvts.js',
             'js/objects/map.js',
             'js/objects/plotter.js',
@@ -33,19 +37,25 @@ module.exports = function(grunt) {
           ]
         }
       }
+    },
+    copy: {
+      build: {
+        src: 'dist/<%= pkg.main %>.min.js',
+        dest: 'dist/<%= pkg.main %>-<%= pkg.version %>-<%= grunt.template.today("yyyymmddHHMMss") %>.min.js'
+      }
     }
   });
 
+  // Load the plugin that provides the "copy" task.
+  grunt.loadNpmTasks('grunt-contrib-copy');
+
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-uglify');
-
-  // Load the plugin that provides the "concat" task.
-  grunt.loadNpmTasks('grunt-contrib-concat');
 
   // Load the plugin that provides the "clean" task.
   grunt.loadNpmTasks('grunt-contrib-clean');
 
   // Default task(s).
-  grunt.registerTask('default', ['clean','uglify']);
+  grunt.registerTask('default', ['clean','uglify','copy']);
 
 };
