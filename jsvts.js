@@ -82,6 +82,7 @@ var JSVTS = {
             "js/objects/renderable.js",
             "js/objects/segment.js",
             "js/objects/vehicle.js",
+            "js/objects/tempVehicle.js",
             "js/objects/trafficFlowControl.js",
             "js/objects/stopLight.js",
             "js/objects/vehicleGenerator.js",

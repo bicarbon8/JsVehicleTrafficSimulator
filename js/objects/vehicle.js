@@ -54,18 +54,6 @@ JSVTS.Vehicle = function(options) {
 JSVTS.Vehicle.prototype = Object.create(JSVTS.Renderable.prototype);
 JSVTS.Vehicle.prototype.constructor = JSVTS.Vehicle;
 
-JSVTS.Vehicle.prototype.copyFrom = function (vehicle) {
-    if (vehicle) {
-        this.init(vehicle.config);
-        for (var property in vehicle) {
-            if (typeof vehicle[property] !== "function" && typeof vehicle[property] !== "object") {
-                self[property] = vehicle[property];
-            }
-        }
-        return this;
-    }
-};
-
 JSVTS.Vehicle.prototype.getLookAheadDistance = function () {
     /**
      * distance to decelerate from current velocity to 0
@@ -253,7 +241,10 @@ JSVTS.Vehicle.prototype.shouldStopForVehicle = function (distance) {
                         return { stop: true, type: "vehicle", id: v.id };
                     }
                     // check if v is in intersecting segment
-                    var connectedTo = JSVTS.Map.getAvailableSegmentsContainingPoint(this.segment.config.end);
+                    var id = this.segment.id;
+                    var connectedTo = JSVTS.Map.getAvailableSegmentsContainingPoint(this.segment.config.end).filter(function (seg) {
+                        return seg.id !== id;
+                    });
                     var containing = connectedTo.filter(function (seg) { return seg.id === v.segment.id; });
                     if (v.segment && containing.length > 0) {
                         return { stop: true, type: "vehicle", id: v.id };
@@ -264,9 +255,7 @@ JSVTS.Vehicle.prototype.shouldStopForVehicle = function (distance) {
                             var found = false;
                             for (var i in connectedTo) {
                                 var s = connectedTo[i];
-                                var tmpV = new JSVTS.Vehicle({ generateId: false });
-                                tmpV.dispose(); // don't need mesh
-                                tmpV.id = this.id;
+                                var tmpV = new JSVTS.TempVehicle().copyFrom(this);
                                 s.attachMovable(tmpV, s.config.start, s.config.end);
                                 found = tmpV.shouldStopForVehicle(distance - distToSegEnd);
                                 if (found && found.stop) {
@@ -339,8 +328,7 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
                 generateId: false
             });
             seg.dispose(); // get rid of mesh since not needed
-            var tmpV = new JSVTS.Vehicle({ generateId: false });
-            tmpV.id = this.id;
+            var tmpV = new JSVTS.TempVehicle().copyFrom(this);
             tmpV.isChangingLanes = true;
             seg.attachMovable(tmpV, seg.config.start, seg.config.end);
             // don't change lanes if we just have to stop on the new lane too
@@ -349,10 +337,8 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
                 seg.attachMovable(this, seg.config.start, seg.config.end);
                 this.changeLaneTime = JSVTS.TotalElapsedTime + (this.config.changeLaneDelay * 1000);
                 this.isChangingLanes = true;
-                tmpV.dispose();
                 return true;
             }
-            tmpV.dispose();
         }
     }
 

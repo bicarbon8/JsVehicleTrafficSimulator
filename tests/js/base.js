@@ -5,6 +5,7 @@ JSVTS.load([
     "../js/objects/movable.js",
     "../js/objects/renderable.js",
     "../js/objects/vehicle.js",
+    "../js/objects/tempVehicle.js",
     "../js/objects/trafficFlowControl.js",
     "../js/objects/stopLight.js",
     "../js/objects/segment.js",
