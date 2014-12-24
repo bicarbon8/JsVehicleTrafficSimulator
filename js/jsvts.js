@@ -55,7 +55,7 @@ var JSVTS = {
 	},
 
 	load: function (scriptArray, callback) {
-		if (scriptArray && scriptArray.length > 0) {
+        if (scriptArray && scriptArray.length > 0) {
 			var script = scriptArray.shift();
 			JSVTS.injectJs(script, function () { JSVTS.load(scriptArray, callback); });
 		} else if (callback) {
@@ -63,34 +63,36 @@ var JSVTS = {
         }
 	},
 
-    setup: function () {
+    setup: function (relativePath, callback) {
+        var path = relativePath || ".";
+
         JSVTS.load([
             /** external libs **/
-            "ext/threejs-69.min.js",
-            "ext/OrbitControls.js",
-            "ext/stats.min.js",
-            "ext/helvetiker_regular.typeface.js",
+            path + "/ext/threejs-69.min.js",
+            path + "/ext/OrbitControls.js",
+            path + "/ext/stats.min.js",
+            path + "/ext/helvetiker_regular.typeface.js",
             /** helpers **/
-            "js/helpers/utils.js",
+            path + "/helpers/utils.js",
             /** main controllers **/
-            "js/clock.js",
-            "js/map.js",
-            "js/plotter.js",
-            "js/txtToMapParser.js",
-            /** renderable objects **/
-            "js/objects/movable.js",
-            "js/objects/renderable.js",
-            "js/objects/segment.js",
-            "js/objects/vehicle.js",
-            "js/objects/tempVehicle.js",
-            "js/objects/trafficFlowControl.js",
-            "js/objects/stopLight.js",
-            "js/objects/vehicleGenerator.js",
-            /** maps **/
-            "js/roadways/mergeloop.js",
-            "js/roadways/intersection.js"
+            path + "/objects/stats.js",
+            path + "/objects/map.js",
+            path + "/objects/plotter.js",
+            path + "/objects/txtToMapParser.js",
+            /** classes **/
+            path + "/classes/movable.js",
+            path + "/classes/renderable.js",
+            path + "/classes/segment.js",
+            path + "/classes/vehicle.js",
+            path + "/classes/tempVehicle.js",
+            path + "/classes/trafficFlowControl.js",
+            path + "/classes/stopLight.js",
+            path + "/classes/vehicleGenerator.js",
         ], function () {
             JSVTS.init();
+            if (callback) {
+                callback();
+            }
         });
     },
 
