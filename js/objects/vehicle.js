@@ -335,7 +335,7 @@ JSVTS.Vehicle.prototype.changeLanesIfAvailable = function(currentSegment) {
             var distance = this.getLookAheadDistance() * 2;
             if (!tmpV.shouldStop(seg, distance, true)) {
                 seg.attachMovable(this, seg.config.start, seg.config.end);
-                this.changeLaneTime = JSVTS.TotalElapsedTime + (this.config.changeLaneDelay * 1000);
+                this.changeLaneTime = JSVTS.totalElapsedTime + (this.config.changeLaneDelay * 1000);
                 this.isChangingLanes = true;
                 return true;
             }

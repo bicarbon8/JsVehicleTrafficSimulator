@@ -352,7 +352,7 @@ JSVTS.roadways.push({
                 "tfc": {
                     "type":"stoplight",
                     "greenduration":1,
-                    "redduration":10,
+                    "redduration":5,
                     "yellowduration":0,
                     "startstate":0
                 },
@@ -410,7 +410,7 @@ JSVTS.roadways.push({
                 "tfc": {
                     "type":"stoplight",
                     "greenduration":1,
-                    "redduration":10,
+                    "redduration":5,
                     "yellowduration":0,
                     "startstate":2
                 },
