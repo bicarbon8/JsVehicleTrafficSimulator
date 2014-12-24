@@ -1,17 +1,6 @@
 var SL = {
     setup: function () {
-        QUnit.stop();
-        JSVTS.load([
-            "http://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js",
-            "../js/helpers/utils.js",
-            "../js/map.js",
-            "../js/objects/movable.js",
-            "../js/objects/renderable.js",
-            "../js/objects/trafficFlowControl.js",
-            "../js/objects/stopLight.js"
-        ], function () {
-            QUnit.start();
-        });
+        
     },
     teardown: function () {
         

@@ -32,6 +32,7 @@ JSVTS.SEG_OPTIONS = function () {
     var self = {
         start: THREE.Vector3(-10,0,0),
         end: THREE.Vector3(10,0,0),
+        width: 3,
         isInlet: false,
         name: '',
         speedLimit: 30, // Km/h
@@ -47,8 +48,6 @@ JSVTS.Segment = function(options){
     this.tangent = null;
     this.axis = null;
     this.radians = null;
-    this.tfc = null;
-    this.generator = null;
     this.laneChangePoints = [];
 
     this.generateLaneChangePoints();
@@ -56,7 +55,7 @@ JSVTS.Segment = function(options){
 JSVTS.Segment.prototype = Object.create(JSVTS.Renderable.prototype);
 JSVTS.Segment.prototype.constructor = JSVTS.Segment;
 
-JSVTS.Segment.prototype.copy=function(segment) {
+JSVTS.Segment.prototype.copy = function(segment) {
     this.id = segment.id;
     this.config.start = new THREE.Vector3().copy(segment.config.start);
     this.config.end = new THREE.Vector3().copy(segment.config.end);
@@ -65,31 +64,17 @@ JSVTS.Segment.prototype.copy=function(segment) {
     this.generateLaneChangePoints();
 };
 
-JSVTS.Segment.prototype.attachVehicle=function(vehicle, atPoint) {
-    if (!atPoint) {
-        atPoint = this.config.start;
-    }
-    vehicle.config.desiredVelocity = this.config.speedLimit;
-    this.attachObject(vehicle, atPoint, this.config.end);
-    vehicle.segmentStart = this.config.start;
-    vehicle.segmentEnd = this.config.end;
-    if (this.config.isMergeLane) {
-        vehicle.isChangingLanes = true;
-    }
-};
+JSVTS.Segment.prototype.attachMovable = function (obj, location, lookAt) {
+    if (obj instanceof JSVTS.Movable) {
+        // set reference data
+        obj.segment = this;
 
-JSVTS.Segment.prototype.setTfc = function (tfc) {
-    this.attachObject(tfc, this.config.end, this.config.start);
-    this.tfc = tfc;
-};
-
-JSVTS.Segment.prototype.attachObject = function (obj, location, lookAt) {
-    // set reference data
-    obj.segmentId = this.id;
-
-    // set the obj's position to passed in location
-    if (obj instanceof JSVTS.Renderable) {
-        obj.moveTo(location, lookAt);
+        // set the obj's position to passed in location
+        if (obj instanceof JSVTS.Renderable) {
+            obj.moveTo(location, lookAt);
+        } else {
+            obj.moveTo(location);
+        }
     }
 };
 
@@ -152,10 +137,5 @@ JSVTS.Segment.prototype.getLength = function () {
 };
 
 JSVTS.Segment.prototype.update = function (elapsedMs) {
-    if (this.tfc) {
-        this.tfc.update(elapsedMs);
-    }
-    if (this.generator) {
-        this.generator.update(elapsedMs);
-    }
+    // do nothing
 };

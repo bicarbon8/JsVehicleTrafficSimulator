@@ -35,6 +35,8 @@ JSVTS.Renderable = function (options) {
     JSVTS.Movable.call(this, options);
 
     this.mesh = null;
+    this.material = null;
+    this.texture = null;
     
     this.generateMesh(options);
 };
@@ -43,9 +45,10 @@ JSVTS.Renderable.prototype.constructor = JSVTS.Renderable;
 
 JSVTS.Renderable.prototype.updated = function () {
     // indicate that we've updated
-    this.mesh.geometry.dynamic = true;
-    this.mesh.geometry.verticesNeedUpdate = true;
-    this.mesh.geometry.normalsNeedUpdate = true;
+    // this.mesh.geometry.dynamic = true;
+    // this.mesh.geometry.verticesNeedUpdate = true;
+    // this.mesh.geometry.normalsNeedUpdate = true;
+    this.mesh.updateMatrix();
 };
 
 /**
@@ -58,10 +61,13 @@ JSVTS.Renderable.prototype.generateMesh = function (options) {
 
 JSVTS.Renderable.prototype.moveTo = function (location, lookAt) {
     JSVTS.Movable.prototype.moveTo.call(this, location);
-    if (location && lookAt) {
+    if (location) {
         this.mesh.position.set(location.x, location.y, location.z);
+    }
+    if (lookAt) {
         this.mesh.lookAt(lookAt);
     }
+    this.updated();
 };
 
 JSVTS.Renderable.prototype.moveBy = function (distance) {
@@ -69,7 +75,11 @@ JSVTS.Renderable.prototype.moveBy = function (distance) {
         // move to this.config.location and rotate to point at heading
         this.mesh.translateZ(distance);
         this.moveTo(this.mesh.position);
-
-        this.updated();
     }
+};
+
+JSVTS.Renderable.prototype.dispose = function () {
+    if (this.mesh && this.mesh.geometry) { this.mesh.geometry.dispose(); }
+    if (this.material) { this.material.dispose(); }
+    if (this.texture) { this.texture.dispose(); }
 };

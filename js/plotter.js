@@ -158,13 +158,23 @@ JSVTS.Plotter = {
 
     resize: function(width, height) {
         JSVTS.Plotter.renderer.setSize(width, height);
+        if (JSVTS.Plotter.camera) {
+            JSVTS.Plotter.camera.aspect = width / height;
+            JSVTS.Plotter.camera.updateProjectionMatrix();
+            JSVTS.Plotter.render();
+        }
     },
 
-    addObject: function(objectMesh) {
-        JSVTS.Plotter.scene.add(objectMesh);
+    addRenderable: function(renderable) {
+        if (renderable instanceof JSVTS.Renderable) {
+            JSVTS.Plotter.scene.add(renderable.mesh);
+        }
     },
 
-    removeObject: function(objectMesh) {
-        JSVTS.Plotter.scene.remove(objectMesh);
+    removeRenderable: function(renderable) {
+        if (renderable instanceof JSVTS.Renderable) {
+            JSVTS.Plotter.scene.remove(renderable.mesh);
+            renderable.dispose();
+        }
     }
 };

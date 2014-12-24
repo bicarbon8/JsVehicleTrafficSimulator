@@ -28,14 +28,37 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.TFC_ID_COUNT = 0;
-// abstract base class
-JSVTS.TrafficFlowControl = function (options) {
-    JSVTS.Renderable.call(this, options);
+JSVTS.TVEH_OPTIONS = function () {
+    var self = {
+        generateId: false
+    };
+    return self;
 };
-JSVTS.TrafficFlowControl.prototype = Object.create(JSVTS.Renderable.prototype);
-JSVTS.TrafficFlowControl.prototype.constructor = JSVTS.TrafficFlowControl;
+JSVTS.TempVehicle = function(options) {
+    var defaults = JSVTS.TVEH_OPTIONS();
+    for (var key in options) { defaults[key] = options[key]; }
+    JSVTS.Vehicle.call(this, defaults);
 
-JSVTS.TrafficFlowControl.prototype.shouldStop = function (vehicle) {
-    throw "abstract base method must be overridden to be called.";
+    this.dispose(); // remove mesh as it is not needed
+};
+JSVTS.TempVehicle.prototype = Object.create(JSVTS.Vehicle.prototype);
+JSVTS.TempVehicle.prototype.constructor = JSVTS.TempVehicle;
+
+JSVTS.TempVehicle.prototype.copyFrom = function (vehicle) {
+    if (vehicle) {
+        for (var property in vehicle) {
+            if (typeof vehicle[property] !== "function" && typeof vehicle[property] !== "object") {
+                this[property] = vehicle[property];
+            }
+        }
+        for (var property in vehicle.config) {
+            if (typeof vehicle.config[property] !== "function" && typeof vehicle.config[property] !== "object") {
+                this.config[property] = vehicle.config[property];
+            }
+        }
+        this.id = vehicle.id;
+        this.config.location = new THREE.Vector3().copy(vehicle.config.location);
+    }
+
+    return this;
 };
