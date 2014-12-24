@@ -57,25 +57,14 @@ div#controls {
     color: rgb(255, 255, 255);
 }
 </style>
-<link rel="stylesheet" href="http://css-spinners.com/css/spinner/throbber.css" type="text/css" />
 <script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="../js/jsvts.js"></script>
-<script type="text/javascript" src="roadways/mergeloop.js"></script>
-<script type="text/javascript" src="roadways/intersection.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r69/three.js"></script>
+<script type="text/javascript" src="../ext/helvetiker_regular.typeface.js"></script>
+<script type="text/javascript" src="../ext/OrbitControls.js"></script>
+<script type="text/javascript" src="js/jsvts.min.js"></script>
+<script type="text/javascript" src="js/roadways/mergeloop.js"></script>
+<script type="text/javascript" src="js/roadways/intersection.js"></script>
 <script type="text/javascript">
-function setup () {
-    var body = document.querySelector('body');
-    var throbber = document.createElement('div');
-    throbber.id = "throbber";
-    throbber.className = "throbber";
-    throbber.innerHTML = "Loading...";
-    body.appendChild(throbber);
-
-    JSVTS.setup('../js', function () {
-        body.removeChild(throbber);
-    });
-}
-
 function toggleStart () {
     JSVTS.toggleAnimationState();
     var button = document.querySelector('#start');
@@ -107,7 +96,7 @@ function toggleScenarioDisplay() {
 }
 </script>
 </head>
-    <body onload="setup();" onresize="JSVTS.resize();">
+    <body onload="JSVTS.setup();" onresize="JSVTS.resize();">
         <div id="controls">
             <button id="start" onclick="toggleStart();">&#10152;</button>
             <button id="scenarioDropdown" onclick="toggleScenarioDisplay();">Scenario</button>
