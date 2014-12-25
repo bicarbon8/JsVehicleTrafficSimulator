@@ -34,7 +34,6 @@ JSVTS.Plotter = {
     camera: null,
     controls: null,
     stats: null,
-    clock: null,
     light: null,
     width: 0,
     height: 0,
@@ -48,7 +47,6 @@ JSVTS.Plotter = {
         JSVTS.Plotter.initControls();
         JSVTS.Plotter.initLight();
         JSVTS.Plotter.initStats();
-        JSVTS.Plotter.initClock();
         JSVTS.Plotter.initScene([
             JSVTS.Plotter.camera,
             JSVTS.Plotter.light
@@ -57,8 +55,7 @@ JSVTS.Plotter = {
         // last item can end up on top of all previous
         JSVTS.Plotter.initDom([
             JSVTS.Plotter.renderer.domElement,
-            JSVTS.Plotter.stats.domElement,
-            JSVTS.Plotter.clock.domElement
+            JSVTS.Plotter.stats.domElement
         ]);
 
         JSVTS.Plotter.render();
@@ -94,18 +91,11 @@ JSVTS.Plotter = {
     },
 
     initStats: function () {
-        // place in the top left
-        JSVTS.Plotter.stats = new Stats();
+        // place in the top right
+        JSVTS.Plotter.stats = new JSVTS.Stats();
         JSVTS.Plotter.stats.domElement.style.position = 'absolute';
         JSVTS.Plotter.stats.domElement.style.top = '0px';
-    },
-
-    initClock: function () {
-        // place in the top right
-        JSVTS.Plotter.clock = new JSVTS.Clock();
-        JSVTS.Plotter.clock.domElement.style.position = 'absolute';
-        JSVTS.Plotter.clock.domElement.style.top = '0px';
-        JSVTS.Plotter.clock.domElement.style.right = '0px';
+        JSVTS.Plotter.stats.domElement.style.right = '0px';
     },
 
     initControls: function () {
@@ -134,7 +124,6 @@ JSVTS.Plotter = {
     render: function() {
         JSVTS.Plotter.renderer.render(JSVTS.Plotter.scene, JSVTS.Plotter.camera);
         JSVTS.Plotter.stats.update();
-        JSVTS.Plotter.clock.update();
     },
 
     reset: function(elementId){
@@ -144,16 +133,12 @@ JSVTS.Plotter = {
         if (JSVTS.Plotter.stats) {
             document.querySelector('body').removeChild(JSVTS.Plotter.stats.domElement);
         }
-        if (JSVTS.Plotter.clock) {
-            document.querySelector('body').removeChild(JSVTS.Plotter.clock.domElement);
-        }
         
         JSVTS.Plotter.renderer = null;
         JSVTS.Plotter.scene = null;
         JSVTS.Plotter.camera = null;
         JSVTS.Plotter.controls = null;
         JSVTS.Plotter.stats = null;
-        JSVTS.Plotter.clock = null;
     },
 
     resize: function(width, height) {

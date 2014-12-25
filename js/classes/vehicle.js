@@ -230,7 +230,7 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
  * otherwise false is returned instead of an object
  */
 JSVTS.Vehicle.prototype.shouldStopForVehicle = function (distance) {
-    if (!Number.isNaN(distance)) {
+    if (distance > 0) {
         var vehicles = JSVTS.Map.getTypesInRangeOf(JSVTS.Vehicle, this.config.location, distance);
         for (var key in vehicles) {
             var v = vehicles[key];
@@ -278,7 +278,7 @@ JSVTS.Vehicle.prototype.shouldStopForVehicle = function (distance) {
  * @return true if tfc's are within distance and require stop
  */
 JSVTS.Vehicle.prototype.shouldStopForTfc = function (distance) {
-    if (!Number.isNaN(distance)) {
+    if (distance > 0) {
         var tfcs = JSVTS.Map.getTypesInRangeOfOnSegment(JSVTS.TrafficFlowControl, this.config.location, distance, this.segment.id);
         for (var i in tfcs) {
             var tfc = tfcs[i];

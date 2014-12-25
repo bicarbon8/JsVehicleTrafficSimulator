@@ -28,7 +28,7 @@
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
-JSVTS.Clock = function (options) {
+JSVTS.Stats = function (options) {
     this.domElement = null;
     this.startTime = new Date().getTime();
     this.elapsedMs = 0;
@@ -36,33 +36,33 @@ JSVTS.Clock = function (options) {
     this.init(options);
 };
 
-JSVTS.Clock.prototype.init = function (options) {
+JSVTS.Stats.prototype.init = function (options) {
     this.domElement = document.createElement('div');
-    this.domElement.id = 'jsvtsClock';
+    this.domElement.id = 'jsvtsStats';
     this.domElement.style.cssText = "padding: 0px 0px 3px 3px; text-align: left; background-color: rgb(0, 0, 34);";
     var elapsedDiv = document.createElement('div');
-    elapsedDiv.id = 'jsvtsClockElapsed';
+    elapsedDiv.id = 'jsvtsStatsElapsed';
     elapsedDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
     this.domElement.appendChild(elapsedDiv);
     var simulationTimeDiv = document.createElement('div');
-    simulationTimeDiv.id = 'jsvtsClockSimulation';
+    simulationTimeDiv.id = 'jsvtsStatsSimulation';
     simulationTimeDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
     this.domElement.appendChild(simulationTimeDiv);
     var realTimeDiv = document.createElement('div');
-    realTimeDiv.id = 'jsvtsClockReal';
+    realTimeDiv.id = 'jsvtsStatsReal';
     realTimeDiv.style.cssText = "color: rgb(0, 255, 255); font-family: Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; line-height: 15px;";
     this.domElement.appendChild(realTimeDiv);
 };
 
-JSVTS.Clock.prototype.update = function () {
+JSVTS.Stats.prototype.update = function () {
     var step = JSVTS.totalElapsedTime - this.elapsedMs;
     this.elapsedMs += step;
-    this.domElement.querySelector('#jsvtsClockElapsed').innerHTML = "step: " + step;
-    this.domElement.querySelector('#jsvtsClockSimulation').innerHTML = "sim: " + this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
-    this.domElement.querySelector('#jsvtsClockReal').innerHTML = "real: " + this.convertMsToHumanReadable(new Date().getTime() - this.startTime);
+    this.domElement.querySelector('#jsvtsStatsElapsed').innerHTML = "step: " + step;
+    this.domElement.querySelector('#jsvtsStatsSimulation').innerHTML = "sim: " + this.convertMsToHumanReadable(JSVTS.totalElapsedTime);
+    this.domElement.querySelector('#jsvtsStatsReal').innerHTML = "real: " + this.convertMsToHumanReadable(new Date().getTime() - this.startTime);
 };
 
-JSVTS.Clock.prototype.convertMsToHumanReadable = function (milliseconds) {
+JSVTS.Stats.prototype.convertMsToHumanReadable = function (milliseconds) {
     var x = milliseconds / 1000;
     var seconds = parseFloat(Math.round((x % 60) * 100) / 100).toFixed(2);
     x /= 60;

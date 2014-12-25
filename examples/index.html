@@ -34,23 +34,32 @@
 <head>
 <title>Traffic Simulator</title>
 <style type="text/css">
+html, body { height: 100%; }
+html {
+    display: table;
+    width: 100%;
+}
 body {
+    display: table-cell;
     margin: 0px;
     padding: 0px;
     overflow: hidden;
+    text-align: center;
+    vertical-align: middle;
 }
 div#controls {
     position: absolute;
     margin: 0px;
     padding: 0px;
     top: 0px;
-    left: 100px;
+    left: 0px;
     z-index: 1000;
     color: rgb(255, 255, 255);
 }
 </style>
-<script language="javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="jsvts.js"></script>
+<script type="text/javascript" src="js/jsvts-deps.min.js"></script>
+<script type="text/javascript" src="js/roadways/mergeloop.js"></script>
+<script type="text/javascript" src="js/roadways/intersection.js"></script>
 <script type="text/javascript">
 function toggleStart () {
     JSVTS.toggleAnimationState();
@@ -59,7 +68,6 @@ function toggleStart () {
         button.innerHTML = "||";
     } else {
         button.innerHTML = "&#10152;";
-        button.class = "";
     }
 }
 
