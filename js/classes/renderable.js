@@ -71,7 +71,7 @@ JSVTS.Renderable.prototype.moveTo = function (location, lookAt) {
 };
 
 JSVTS.Renderable.prototype.moveBy = function (distance) {
-    if (distance && !isNaN(distance)) {
+    if (distance > 0) {
         // move to this.config.location and rotate to point at heading
         this.mesh.translateZ(distance);
         this.moveTo(this.mesh.position);

@@ -43,6 +43,9 @@ module.exports = function(grunt) {
         src: 'dist/<%= pkg.main %>.min.js',
         dest: 'dist/<%= pkg.main %>-<%= pkg.version %>-<%= grunt.template.today("yyyymmddHHMMss") %>.min.js'
       }
+    },
+    qunit: {
+      all: ['tests/*.html']
     }
   });
 
@@ -55,7 +58,10 @@ module.exports = function(grunt) {
   // Load the plugin that provides the "clean" task.
   grunt.loadNpmTasks('grunt-contrib-clean');
 
+  // This plugin provides the "qunit" task.
+  grunt.loadNpmTasks('grunt-contrib-qunit');
+
   // Default task(s).
-  grunt.registerTask('default', ['clean','uglify','copy']);
+  grunt.registerTask('default', ['clean','uglify','copy','qunit']);
 
 };
