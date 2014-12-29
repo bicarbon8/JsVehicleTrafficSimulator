@@ -1,4 +1,4 @@
-JsVehicleTrafficSimulator
+JsVehicleTrafficSimulator ![build status](https://travis-ci.org/bicarbon8/JsVehicleTrafficSimulator.svg)
 =========================
 
 a vehicle roadway traffic simulator written in javascript, html and css.  rendering is done via the HTML5 canvas.
