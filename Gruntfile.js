@@ -3,6 +3,30 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    files: {
+	    base: [
+			"js/jsvts.js",
+			"js/objects/map.js",
+			"js/objects/plotter.js",
+			"js/objects/txtToMapParser.js",
+			"js/objects/utils.js",
+			"js/classes/stats.js",
+			"js/classes/movable.js",
+			"js/classes/renderable.js",
+			"js/classes/segment.js",
+			"js/classes/trafficFlowControl.js",
+			"js/classes/stopLight.js",
+			"js/classes/vehicle.js",
+			"js/classes/tempVehicle.js",
+			"js/classes/vehicleGenerator.js"
+		],
+		dependencies: [
+			"dependencies/three-r69.js",
+			"dependencies/OrbitControls.js",
+			"dependencies/helvetiker_regular.typeface.js"
+		],
+		tests: "tests/allTests.html"
+	},
     clean: {
       build: {
         src: ['dist/**/*'],
@@ -20,7 +44,7 @@ module.exports = function(grunt) {
           banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */\n'
         },
         files: {
-          'dist/<%= pkg.main %>.min.js': ['<%= pkg.files.base %>']
+          'dist/<%= pkg.main %>.min.js': ['<%= files.base %>']
         }
       },
       buildWithDeps: {
@@ -28,12 +52,12 @@ module.exports = function(grunt) {
           banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %>, includes three.js dependencies from: http://github.com/mrdoob/three.js/ */\n'
         },
         files: {
-          'dist/<%= pkg.main %>-deps.min.js': ['<%= pkg.files.dependencies %>','<%= pkg.files.base %>']
+          'dist/<%= pkg.main %>-deps.min.js': ['<%= files.dependencies %>','<%= files.base %>']
         }
       }
     },
     qunit: {
-      all: ['<%= pkg.files.test %>']
+      all: ['<%= files.tests %>']
     },
     copy: {
       examples: {

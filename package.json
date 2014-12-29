@@ -17,30 +17,6 @@
     "example": "examples",
     "test": "tests"
   },
-  "files": {
-    "base": [
-      "js/jsvts.js",
-      "js/objects/map.js",
-      "js/objects/plotter.js",
-      "js/objects/txtToMapParser.js",
-      "js/objects/utils.js",
-      "js/classes/stats.js",
-      "js/classes/movable.js",
-      "js/classes/renderable.js",
-      "js/classes/segment.js",
-      "js/classes/trafficFlowControl.js",
-      "js/classes/stopLight.js",
-      "js/classes/vehicle.js",
-      "js/classes/tempVehicle.js",
-      "js/classes/vehicleGenerator.js"
-    ],
-    "dependencies": [
-      "dependencies/three-r69.js",
-      "dependencies/OrbitControls.js",
-      "dependencies/helvetiker_regular.typeface.js"
-    ],
-    "test": "tests/allTests.html"
-  },
   "scripts": {
     "test": "grunt --verbose"
   },
