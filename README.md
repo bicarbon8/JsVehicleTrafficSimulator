@@ -28,5 +28,5 @@ a vehicle roadway traffic simulator written in javascript, html and css.  render
 - [QUnit](http://qunitjs.com/) ```included```
 - [QUnitParameterized](https://github.com/AStepaniuk/qunit-parameterize) ```included```
 - [GruntJs](http://gruntjs.com/)
-- [NodeJs](http://nodejs.org/)
+- [NodeJs](http://nodejs.org/) ```v0.10```
 - [PhantomJs](http://phantomjs.org/)
