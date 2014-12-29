@@ -20,7 +20,7 @@ module.exports = function(grunt) {
           banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */\n'
         },
         files: {
-          'dist/<%= pkg.main %>.min.js': ['<%= pkg.scripts.base %>']
+          'dist/<%= pkg.main %>.min.js': ['<%= pkg.files.base %>']
         }
       },
       buildWithDeps: {
@@ -28,12 +28,12 @@ module.exports = function(grunt) {
           banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %>, includes three.js dependencies from: http://github.com/mrdoob/three.js/ */\n'
         },
         files: {
-          'dist/<%= pkg.main %>-deps.min.js': ['<%= pkg.scripts.dependencies %>','<%= pkg.scripts.base %>']
+          'dist/<%= pkg.main %>-deps.min.js': ['<%= pkg.files.dependencies %>','<%= pkg.files.base %>']
         }
       }
     },
     qunit: {
-      all: ['<%= pkg.scripts.test %>']
+      all: ['<%= pkg.files.test %>']
     },
     copy: {
       examples: {
