@@ -13,6 +13,7 @@ a vehicle roadway traffic simulator written in javascript, html and css.  render
 
 # BUILDING
 - checkout the project
+- run the following command from the project root: ```npm install```
 - run the following command from the project root: ```grunt```
 - a ```dist```directory will be generated containing the following:
   - jsvts.min.js ```a minified version of the framework that does not contain dependencies```
