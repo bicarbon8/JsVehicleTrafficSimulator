@@ -1,30 +1,30 @@
 /**********************************************************************
- * This javascript is part of a Vehicle Traffic Simulator written 
- * entirely in Javascript, HTML and CSS.  The application allows for 
+ * This javascript is part of a Vehicle Traffic Simulator written
+ * entirely in Javascript, HTML and CSS.  The application allows for
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
  * rules of the road including traffic lights and speed limits
- * 
+ *
  * @Created: 04/09/2013
  * @Author: Jason Holt Smith (bicarbon8@gmail.com)
  * @Version: 0.2.0
- * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is 
+ * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is
  * distributed under the terms of the GNU General Public License.
- * 
+ *
  * This file is part of JsVehicleTrafficSimulator.
- * 
- * JsVehicleTrafficSimulator is free software: you can redistribute it 
- * and/or modify it under the terms of the GNU General Public License 
- * as published by the Free Software Foundation, either version 3 of 
+ *
+ * JsVehicleTrafficSimulator is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
- * JsVehicleTrafficSimulator is distributed in the hope that it will 
- * be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ *
+ * JsVehicleTrafficSimulator is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with JsVehicleTrafficSimulator.  If not, see 
+ * along with JsVehicleTrafficSimulator.  If not, see
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 var JSVTS = JSVTS || {};
@@ -106,7 +106,7 @@ JSVTS.Vehicle.prototype.update = function (elapsedMs) {
             } else {
                 nextSegments = JSVTS.Map.getSegmentsStartingAt(this.segment.config.end);
             }
-            
+
             if(nextSegments && nextSegments.length > 0){
                 // move to segment (pick randomly)
                 // TODO: lookup values from vehicle's choosen path
@@ -232,6 +232,7 @@ JSVTS.Vehicle.prototype.shouldStop = function (segment, distance, skipCollisionC
 JSVTS.Vehicle.prototype.shouldStopForVehicle = function (distance) {
     if (distance > 0) {
         var vehicles = JSVTS.Map.getTypesInRangeOf(JSVTS.Vehicle, this.config.location, distance);
+        /*jshint loopfunc:true*/
         for (var key in vehicles) {
             var v = vehicles[key];
             if (v.id !== this.id) {
@@ -363,7 +364,7 @@ JSVTS.Vehicle.prototype.shouldSlowForCorner = function(distance){
         }
 
         var corneringSpeed = this.corneringSpeedCalculator(headingDiff, this.velocity);
-        // begin slowing down 
+        // begin slowing down
         if (this.velocity > corneringSpeed) {
             return { stop: true, type: "cornering", heading: headingDiff };
         }
@@ -408,7 +409,7 @@ JSVTS.Vehicle.prototype.hasInView = function(renderable) {
             var location = vertices[i];
             var headingLine = new THREE.Line3(this.config.location, this.segment.config.end);
             var headingToLocation = new THREE.Line3(this.config.location, location);
-            
+
             if (Math.abs(JSVTS.Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
                 return true;
             }

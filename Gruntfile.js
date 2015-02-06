@@ -4,34 +4,31 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     files: {
-	    base: [
-			"js/jsvts.js",
-			"js/objects/map.js",
-			"js/objects/plotter.js",
-			"js/objects/txtToMapParser.js",
-			"js/objects/utils.js",
-			"js/classes/stats.js",
-			"js/classes/movable.js",
-			"js/classes/renderable.js",
-			"js/classes/segment.js",
-			"js/classes/trafficFlowControl.js",
-			"js/classes/stopLight.js",
-			"js/classes/vehicle.js",
-			"js/classes/tempVehicle.js",
-			"js/classes/vehicleGenerator.js"
-		],
-		dependencies: [
-			"dependencies/three-r69.js",
-			"dependencies/OrbitControls.js",
-			"dependencies/helvetiker_regular.typeface.js"
-		],
-		tests: "tests/allTests.html"
-	},
+        js: [
+          "js/jsvts.js",
+          /** main controllers **/
+          "js/objects/utils.js",
+          "js/objects/map.js",
+          "js/objects/plotter.js",
+          "js/objects/txtToMapParser.js",
+          /** renderable objects **/
+          "js/classes/movable.js",
+          "js/classes/renderable.js",
+          "js/classes/segment.js",
+          "js/classes/vehicle.js",
+          "js/classes/tempVehicle.js",
+          "js/classes/trafficFlowControl.js",
+          "js/classes/stopLight.js",
+          "js/classes/vehicleGenerator.js",
+          "js/classes/stats.js",
+        ],
+        tests: "tests/allTests.html",
+    },
     clean: {
-      build: {
-        src: ['dist/**/*'],
-        filter: 'isFile',
-      },
+      dist: ['dist/*']
+    },
+    qunit: {
+      all: ['<%= files.tests %>']
     },
     uglify: {
       options: {
@@ -41,49 +38,21 @@ module.exports = function(grunt) {
       },
       build: {
         options: {
-          banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */\n'
+          banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %> */'
         },
         files: {
-          'dist/<%= pkg.main %>.min.js': ['<%= files.base %>']
+          'dist/<%= pkg.name %>.min.js': ['<%= files.js %>']
         }
       },
-      buildWithDeps: {
-        options: {
-          banner: '/*! <%= pkg.name %> v<%= pkg.version %>, created by: <%= pkg.author %> <%= grunt.template.today("yyyy-mm-dd HH:MM:ss") %>, includes three.js dependencies from: http://github.com/mrdoob/three.js/ */\n'
-        },
-        files: {
-          'dist/<%= pkg.main %>-deps.min.js': ['<%= files.dependencies %>','<%= files.base %>']
-        }
-      }
     },
-    qunit: {
-      all: ['<%= files.tests %>']
-    },
-    copy: {
-      examples: {
-        expand: true,
-        cwd: 'dist/',
-        flatten: true,
-        src: '<%= pkg.main %>-deps.*', 
-        dest: 'examples/js/',
-        filter: 'isFile'
-      }
-    }
   });
 
-  // Load the plugin that provides the "uglify" task.
+  // These plugins provide necessary tasks.
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
-  // Load the plugin that provides the "clean" task.
-  grunt.loadNpmTasks('grunt-contrib-clean');
-
-  // This plugin provides the "qunit" task.
-  grunt.loadNpmTasks('grunt-contrib-qunit');
-
-  // Load the plugin that provides the "copy" task.
-  grunt.loadNpmTasks('grunt-contrib-copy');
-
-  // Default task(s).
-  grunt.registerTask('default', ['clean','uglify','qunit','copy']);
+  // By default, lint and run all tests.
+  grunt.registerTask('default', ['clean', 'qunit', 'uglify']);
 
 };

@@ -1,32 +1,32 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <!--
 /**********************************************************************
- * This javascript is part of a Vehicle Traffic Simulator written 
- * entirely in Javascript, HTML and CSS.  The application allows for 
+ * This javascript is part of a Vehicle Traffic Simulator written
+ * entirely in Javascript, HTML and CSS.  The application allows for
  * the creation of roadways upon which vehicles will travel and
  * attempt to avoid collisions with other vehicles while obeying the
  * rules of the road including traffic lights and speed limits
- * 
+ *
  * @Created: 04/09/2013
  * @Author: Jason Holt Smith (bicarbon8@gmail.com)
  * @Version: 0.2.0
- * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is 
+ * Copyright (c) 2013 Jason Holt Smith. JsVehicleTrafficSimulator is
  * distributed under the terms of the GNU General Public License.
- * 
+ *
  * This file is part of JsVehicleTrafficSimulator.
- * 
- * JsVehicleTrafficSimulator is free software: you can redistribute it 
- * and/or modify it under the terms of the GNU General Public License 
- * as published by the Free Software Foundation, either version 3 of 
+ *
+ * JsVehicleTrafficSimulator is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
- * JsVehicleTrafficSimulator is distributed in the hope that it will 
- * be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ *
+ * JsVehicleTrafficSimulator is distributed in the hope that it will
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with JsVehicleTrafficSimulator.  If not, see 
+ * along with JsVehicleTrafficSimulator.  If not, see
  * <http://www.gnu.org/licenses/>.
  **********************************************************************/
 -->
@@ -41,8 +41,28 @@
 <div id="qunit"></div>
 <div id="qunit-fixture"></div>
 <script src="http://code.jquery.com/qunit/qunit-1.15.0.js"></script>
-<script src="dependencies/qunit-parameterize-0.4.js"></script>
-<script src="../dist/jsvts-deps.min.js"></script>
+<!-- External Dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+<script src="../dependencies/helvetiker_regular.typeface.js"></script>
+<script src="../dependencies/OrbitControls.js"></script>
+<!-- Polyfills for PhantomJs -->
+<script src="js/polyfills.js"></script>
+<!-- Project Files -->
+<script src="../js/jsvts.js"></script>
+<script src="../js/objects/utils.js"></script>
+<script src="../js/objects/map.js"></script>
+<script src="../js/objects/plotter.js"></script>
+<script src="../js/objects/txtToMapParser.js"></script>
+<script src="../js/classes/movable.js"></script>
+<script src="../js/classes/renderable.js"></script>
+<script src="../js/classes/segment.js"></script>
+<script src="../js/classes/vehicle.js"></script>
+<script src="../js/classes/tempVehicle.js"></script>
+<script src="../js/classes/trafficFlowControl.js"></script>
+<script src="../js/classes/stopLight.js"></script>
+<script src="../js/classes/vehicleGenerator.js"></script>
+<script src="../js/classes/stats.js"></script>
+<!-- Tests -->
 <script src="js/mapTests.js"></script>
 <script src="js/stopLightTests.js"></script>
 <script src="js/segmentTests.js"></script>
