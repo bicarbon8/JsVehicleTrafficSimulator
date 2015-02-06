@@ -6,26 +6,26 @@ module.exports = function(grunt) {
     files: {
         js: [
           "js/jsvts.js",
-          "js/helpers/utils.js",
           /** main controllers **/
-          "js/clock.js",
-          "js/map.js",
-          "js/plotter.js",
-          "js/txtToMapParser.js",
+          "js/objects/utils.js",
+          "js/objects/map.js",
+          "js/objects/plotter.js",
+          "js/objects/txtToMapParser.js",
           /** renderable objects **/
-          "js/objects/movable.js",
-          "js/objects/renderable.js",
-          "js/objects/segment.js",
-          "js/objects/vehicle.js",
-          "js/objects/tempVehicle.js",
-          "js/objects/trafficFlowControl.js",
-          "js/objects/stopLight.js",
-          "js/objects/vehicleGenerator.js",
+          "js/classes/movable.js",
+          "js/classes/renderable.js",
+          "js/classes/segment.js",
+          "js/classes/vehicle.js",
+          "js/classes/tempVehicle.js",
+          "js/classes/trafficFlowControl.js",
+          "js/classes/stopLight.js",
+          "js/classes/vehicleGenerator.js",
+          "js/classes/stats.js",
         ],
         tests: "tests/AllTests.html",
     },
     clean: {
-      tests: ['dist']
+      dist: ['dist/*']
     },
     qunit: {
       all: ['<%= files.tests %>']

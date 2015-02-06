@@ -17,17 +17,9 @@ a vehicle roadway traffic simulator written in javascript, html and css.  render
 - run the following command from the project root: ```grunt```
 - a ```dist```directory will be generated containing the following:
   - jsvts.min.js ```a minified version of the framework that does not contain dependencies```
-  - jsvts-deps.min.js ```a minified version of the framework containing external dependencies```
-  - js.map files for both of the above
+  - jsvts.min.js.map
 
 # EXTERNAL DEPENDENCIES
-- [three.js](http://github.com/mrdoob/three.js/) ```included```
-- [three.js OrbitControls](http://threejs.org/examples/js/controls/OrbitControls.js) ```included```
-- [Helvetiker Typeface](http://typeface.neocracy.org/) ```included```
-
-# BUILD DEPENDENCIES
-- [QUnit](http://qunitjs.com/) ```included```
-- [QUnitParameterized](https://github.com/AStepaniuk/qunit-parameterize) ```included```
-- [GruntJs](http://gruntjs.com/)
-- [NodeJs](http://nodejs.org/) ```v0.10```
-- [PhantomJs](http://phantomjs.org/)
+- [three.js](http://github.com/mrdoob/three.js/)
+- [three.js OrbitControls](http://threejs.org/examples/js/controls/OrbitControls.js)
+- [Helvetiker Typeface](http://typeface.neocracy.org/)
