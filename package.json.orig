@@ -1,0 +1,68 @@
+{
+<<<<<<< HEAD
+  "name": "jsvts",
+  "version": "2.0.0",
+  "description": "A roadway vehicle traffic simulation system built in Javascript",
+  "main": "js/jsvts.js",
+  "directories": {
+    "example": "examples",
+    "test": "tests"
+  },
+  "dependencies": {
+    "grunt": "^0.4.5"
+  },
+  "devDependencies": {
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-qunit": "^0.5.2",
+    "grunt-contrib-uglify": "^0.7.0"
+  },
+  "scripts": {
+    "test": "grunt -v"
+=======
+  "name": "JsVehicleTrafficSimulator",
+  "version": "0.5.0",
+  "description": "Javascript Traffic Simulation Framework using three.js",
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-contrib-copy": "~0.7.0",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-nodeunit": "~0.4.1",
+    "grunt-contrib-qunit": "~0.5.2",
+    "grunt-contrib-uglify": "~0.5.0"
+  },
+  "main": "jsvts",
+  "directories": {
+    "javascript": "js",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "grunt --verbose"
+>>>>>>> master
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bicarbon8/JsVehicleTrafficSimulator.git"
+  },
+  "keywords": [
+    "javascript",
+<<<<<<< HEAD
+    "vehicle",
+    "roadway",
+    "simulator"
+  ],
+  "author": "Jason Holt Smith <bicarbon8@gmail.com>",
+=======
+    "traffic",
+    "vehicle",
+    "simulation"
+  ],
+  "author": "Jason Holt Smith (bicarbon8@gmail.com)",
+>>>>>>> master
+  "license": "GPL",
+  "bugs": {
+    "url": "https://github.com/bicarbon8/JsVehicleTrafficSimulator/issues"
+  },
+  "homepage": "https://github.com/bicarbon8/JsVehicleTrafficSimulator"
+}

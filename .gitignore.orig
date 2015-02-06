@@ -27,4 +27,9 @@ obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
+<<<<<<< HEAD
 node_modules/
+=======
+dist/
+node_modules/
+>>>>>>> master
