@@ -22,7 +22,7 @@ module.exports = function(grunt) {
           "js/classes/vehicleGenerator.js",
           "js/classes/stats.js",
         ],
-        tests: "tests/AllTests.html",
+        tests: "tests/allTests.html",
     },
     clean: {
       dist: ['dist/*']
