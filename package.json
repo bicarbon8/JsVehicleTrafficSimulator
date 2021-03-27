@@ -1,31 +1,47 @@
 {
-  "name": "jsvts",
-  "version": "2.0.0",
-  "description": "A roadway vehicle traffic simulation system built in Javascript",
-  "main": "js/jsvts.js",
-  "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-contrib-clean": "^0.6.0",
-    "grunt-contrib-qunit": "^0.5.2",
-    "grunt-contrib-uglify": "^0.7.0"
-  },
+  "name": "js-vehicle-traffic-simulator",
+  "version": "0.0.0",
   "scripts": {
-    "test": "grunt -v"
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e"
   },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/bicarbon8/JsVehicleTrafficSimulator.git"
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "~11.2.0",
+    "@angular/common": "~11.2.0",
+    "@angular/compiler": "~11.2.0",
+    "@angular/core": "~11.2.0",
+    "@angular/forms": "~11.2.0",
+    "@angular/platform-browser": "~11.2.0",
+    "@angular/platform-browser-dynamic": "~11.2.0",
+    "@angular/router": "~11.2.0",
+    "rxjs": "~6.6.0",
+    "three": "^0.126.1",
+    "tslib": "^2.0.0",
+    "zone.js": "~0.11.3"
   },
-  "keywords": [
-    "javascript",
-    "vehicle",
-    "roadway",
-    "simulator"
-  ],
-  "author": "Jason Holt Smith <bicarbon8@gmail.com>",
-  "license": "GPL",
-  "bugs": {
-    "url": "https://github.com/bicarbon8/JsVehicleTrafficSimulator/issues"
-  },
-  "homepage": "https://github.com/bicarbon8/JsVehicleTrafficSimulator"
+  "devDependencies": {
+    "@angular-devkit/build-angular": "~0.1102.0",
+    "@angular/cli": "~11.2.0",
+    "@angular/compiler-cli": "~11.2.0",
+    "@types/jasmine": "~3.6.0",
+    "@types/node": "^12.20.6",
+    "@types/three": "^0.126.1",
+    "codelyzer": "^6.0.0",
+    "jasmine-core": "~3.6.0",
+    "jasmine-spec-reporter": "~5.0.0",
+    "karma": "~6.1.0",
+    "karma-chrome-launcher": "~3.1.0",
+    "karma-coverage": "~2.0.3",
+    "karma-jasmine": "~4.0.0",
+    "karma-jasmine-html-reporter": "^1.5.0",
+    "protractor": "~7.0.0",
+    "ts-node": "~8.3.0",
+    "tslint": "~6.1.0",
+    "typescript": "~4.1.2"
+  }
 }

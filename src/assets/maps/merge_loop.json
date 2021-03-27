@@ -1,0 +1,207 @@
+{
+    "segments": [
+        { 
+            "start":{"x":33, "y":0, "z":97 },
+            "end":{"x":177, "y":0,"z":97},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{
+            "start":{"x":177,"y":0,"z":97},
+            "end":{"x":197,"y":0,"z":77},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":197,"y":0,"z":77 },
+            "end":{"x":197,"y":0,"z":23 },
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{
+            "start":{"x":197,"y":0,"z":23},
+            "end":{"x":177,"y":0,"z":3},
+            "speedLimit":45,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":177, "y":0,"z":3},
+            "end":{"x":33, "y":0,"z":3},
+            "speedLimit":20,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{
+            "start":{"x":33,"y":0,"z":3},
+            "end":{"x":13,"y":0,"z":23},
+            "speedLimit":45,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":13,"y":0,"z":23 },
+            "end":{"x":13,"y":0,"z":77 },
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{
+            "start":{"x":13,"y":0,"z":77},
+            "end":{"x":33,"y":0,"z":97},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":30, "y":0,"z":100},
+            "end":{"x":106,"y":0,"z":100},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":106,"y":0,"z":100},
+            "end":{"x":180, "y":0,"z":100},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":180,"y":0,"z":100},
+            "end":{"x":200,"y":0,"z":80},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":200,"y":0,"z":80 },
+            "end":{"x":200,"y":0,"z":20 },
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":200,"y":0,"z":20 },
+            "end":{"x":180,"y":0,"z":0},
+            "speedLimit":45,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":180, "y":0,"z":0},
+            "end":{"x":100,"y":0,"z":0},
+            "speedLimit":20,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":100,"y":0,"z":0},
+            "end":{"x":30, "y":0,"z":0},
+            "speedLimit":20,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":30,"y":0,"z":0},
+            "end":{"x":10,"y":0,"z":20},
+            "speedLimit":45,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":10,"y":0,"z":20},
+            "end":{"x":10,"y":0,"z":80 },
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":10,"y":0,"z":20},
+            "end":{"x":-20,"y":-10,"z":100},
+            "speedLimit":60,
+            "name":"Exit Lane",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":10,"y":0,"z":80},
+            "end":{"x":30,"y":0,"z":100},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": false
+        },{ 
+            "start":{"x":20,"y":-10,"z":120},
+            "end":{"x":50,"y":-10,"z":110},
+            "speedLimit":35,
+            "name":"On Ramp 1",
+            "tfc":{"type":"stoplight","greenduration":1,"redduration":5,"yellowduration":0,"startstate":0},
+            "generator":{"delay":10},
+            "isInlet":true,
+            "isMergeLane": false
+        },{
+            "start":{"x":50,"y":-10,"z":110},
+            "end":{"x":75,"y":-5,"z":104},
+            "speedLimit":35,
+            "name":"Jason Ave. N.",
+            "isInlet":true,
+            "isMergeLane": true
+        },{
+            "start":{"x":75,"y":-5,"z":104},
+            "end":{"x":106,"y":0,"z":100},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":true,
+            "isMergeLane": true
+        },{
+            "start":{"x":20,"y":-10,"z":124},
+            "end":{"x":50,"y":-10,"z":113},
+            "speedLimit":35,
+            "name":"On Ramp 2",
+            "tfc":{"type":"stoplight","greenduration":1,"redduration":5,"yellowduration":0,"startstate":2},
+            "generator":{"delay":10},
+            "isInlet":true,
+            "isMergeLane": false
+        },{
+            "start":{"x":50,"y":-10,"z":113},
+            "end":{"x":75,"y":-5,"z":107},
+            "speedLimit":35,
+            "name":"Jason Ave. N.",
+            "isInlet":true,
+            "isMergeLane": true
+        },{
+            "start":{"x":75,"y":-5,"z":107},
+            "end":{"x":106,"y":0,"z":100},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":true,
+            "isMergeLane": true
+        },{ 
+            "start":{"x":190,"y":-10,"z":-20},
+            "end":{"x":150,"y":-10,"z":-10},
+            "speedLimit":35,
+            "name":"On Ramp 0",
+            "tfc":{"type":"stoplight","greenduration":1,"redduration":5,"yellowduration":0,"startstate":2},
+            "generator":{"delay":5},
+            "isInlet":true,
+            "isMergeLane": false
+        },{
+            "start":{"x":150,"y":-10,"z":-10},
+            "end":{"x":130,"y":-5,"z":-4},
+            "speedLimit":35,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": true
+        },{
+            "start":{"x":130,"y":-5,"z":-4},
+            "end":{"x":100,"y":0,"z":0},
+            "speedLimit":60,
+            "name":"Jason Ave. N.",
+            "isInlet":false,
+            "isMergeLane": true
+        }
+    ]
+}

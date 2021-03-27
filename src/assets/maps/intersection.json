@@ -1,0 +1,103 @@
+{
+    "segments": [
+        {
+            "start":{"x":200,"y":0,"z":25},
+            "end":{"x":200,"y":0,"z":197},
+            "speedLimit":25,
+            "name":"Road 1 Southbound",
+            "isInlet":true,
+            "isMergeLane":false
+        },{
+            "start":{"x":200,"y":0,"z":197},
+            "end":{"x":200,"y":0,"z":300},
+            "speedLimit":25,
+            "name":"Road 1 Southbound",
+            "isInlet":false,
+            "isMergeLane":false
+        },{
+            "start":{"x":203,"y":0,"z":300},
+            "end":{"x":203,"y":0,"z":206},
+            "speedLimit":25,
+            "name":"Road 1 Northbound",
+            "isInlet":true,
+            "isMergeLane":false
+        },{
+            "start":{"x":203,"y":0,"z":206},
+            "end":{"x":203,"y":0,"z":25},
+            "speedLimit":25,
+            "name":"Road 1 Northbound",
+            "isInlet":false,
+            "isMergeLane":false
+        },{
+            "start":{"x":25,"y":0,"z":203},
+            "end":{"x":197,"y":0,"z":203},
+            "speedLimit":35,
+            "name":"Road 2 Eastbound",
+            "isInlet":true,
+            "isMergeLane":false
+        },{
+            "start":{"x":197,"y":0,"z":203},
+            "end":{"x":300,"y":0,"z":203},
+            "speedLimit":35,
+            "name":"Road 2 Eastbound",
+            "isInlet":false,
+            "isMergeLane":false
+        },{
+            "start":{"x":300,"y":0,"z":200},
+            "end":{"x":206,"y":0,"z":200},
+            "speedLimit":35,
+            "name":"Road 2 Westbound",
+            "isInlet":true,
+            "isMergeLane":false
+        },{
+            "start":{"x":206,"y":0,"z":200},
+            "end":{"x":25,"y":0,"z":200},
+            "speedLimit":35,
+            "name":"Road 2 Westbound",
+            "isInlet":false,
+            "isMergeLane":false
+        }
+    ],
+    "tfcs": [
+        {
+            "type":"stoplight",
+            "location":{"x":200,"y":0,"z":197},
+            "roadName":"Road 1 Southbound",
+            "startState":0
+        }, {
+            "type":"stoplight",
+            "location":{"x":203,"y":0,"z":206},
+            "roadName":"Road 1 Northbound",
+            "startstate":0
+        }, {
+            "type":"stoplight",
+            "location":{"x":197,"y":0,"z":203},
+            "roadName":"Road 2 Eastbound",
+            "startstate":2
+        }, {
+            "type":"stoplight",
+            "location":{"x":206,"y":0,"z":200},
+            "roadName":"Road 2 Westbound",
+            "startState":2
+        }
+    ],
+    "generators": [
+        {
+            "location":{"x":200,"y":0,"z":25},
+            "roadName":"Road 1 Southbound",
+            "delay":5
+        }, {
+            "location":{"x":203,"y":0,"z":300},
+            "roadName":"Road 1 Northbound",
+            "delay":5
+        }, {
+            "location":{"x":25,"y":0,"z":203},
+            "roadName":"Road 2 Eastbound",
+            "delay":5
+        }, {
+            "location":{"x":300,"y":0,"z":200},
+            "roadName":"Road 2 Westbound",
+            "delay":5
+        }
+    ]
+}
