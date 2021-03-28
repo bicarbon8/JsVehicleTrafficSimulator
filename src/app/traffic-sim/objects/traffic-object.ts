@@ -1,5 +1,5 @@
 import { TrafficObjectOptions } from "./traffic-object-options";
-import { Box3,  Mesh, MeshBasicMaterial, Quaternion, Texture, Vector3 } from 'three';
+import { Box3, Material, Mesh, MeshBasicMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
 import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
@@ -8,8 +8,8 @@ import { SimulationManager } from "../simulation-manager";
 export abstract class TrafficObject implements Renderable {
     readonly id: number;
     readonly name: string;
-    protected _mesh: Mesh;
-    protected _material: MeshBasicMaterial;
+    protected _obj3D: Object3D;
+    protected _material: Material;
     protected _texture: Texture;
     protected _segmentId: number;
     protected _simMgr: SimulationManager;
@@ -37,18 +37,27 @@ export abstract class TrafficObject implements Renderable {
         return this._simMgr.getMapManager().getSegmentById(this._segmentId);
     }
     
-    protected abstract generateMesh(): Mesh;
+    protected abstract generateMesh(): Object3D;
+
+    getObj3D(): Object3D {
+        if (!this._obj3D) {
+            this._obj3D = this.generateMesh();
+        }
+        return this._obj3D;
+    }
 
     getMesh(): Mesh {
-        if (!this._mesh) {
-            this._mesh = this.generateMesh();
+        let obj: Object3D = this.getObj3D();
+        if (obj instanceof Mesh) {
+            return obj as Mesh;
         }
-        return this._mesh;
+        return null;
     }
 
     getBoundingBox(): Box3 {
-        this.getMesh()?.geometry.computeBoundingBox();
-        return this.getMesh()?.geometry.boundingBox;
+        let mesh = this.getMesh();
+        mesh?.geometry.computeBoundingBox();
+        return mesh?.geometry.boundingBox;
     }
 
     /**
@@ -58,37 +67,37 @@ export abstract class TrafficObject implements Renderable {
      * this.getMesh().geometry.normalsNeedUpdate = true;
      */
     isUpdated(): void {
-        this.getMesh()?.updateMatrix();
+        this.getObj3D()?.updateMatrix();
     }
 
     moveTo(location: Vector3): void {
         if (location) {
-            this.getMesh()?.position.set(location.x, location.y, location.z);
+            this.getObj3D()?.position.set(location.x, location.y, location.z);
         }
         
         this.isUpdated();
     }
 
     getLocation(): Vector3 {
-        return this.getMesh()?.position.clone();
+        return this.getObj3D()?.position.clone();
     }
 
     setRotation(rotation: Quaternion): void {
         if (rotation) {
-            this.getMesh()?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+            this.getObj3D()?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
         }
     }
 
     lookAt(location: Vector3): void {
         if (location) {
-            this.getMesh()?.lookAt(location);
+            this.getObj3D()?.lookAt(location);
         }
 
         this.isUpdated();
     }
 
     getRotation(): Quaternion {
-        return this.getMesh()?.quaternion.clone();
+        return this.getObj3D()?.quaternion.clone();
     }
 
     /**
@@ -97,11 +106,11 @@ export abstract class TrafficObject implements Renderable {
      */
     moveBy(distance: number): void {
         if (distance > 0) {
-            this.getMesh()?.translateZ(distance);
+            this.getObj3D()?.translateZ(distance);
         }
     }
 
-    abstract update(elapsedMs?: number): void;
+    abstract update(elapsedMs: number): void;
 
     disposeGeometry(): void {
         this.getMesh()?.geometry?.dispose();

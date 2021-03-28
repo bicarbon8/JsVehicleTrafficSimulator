@@ -1,6 +1,6 @@
 import { Utils } from "../../helpers/utils";
 import { Vehicle } from "./vehicle";
-import { Box3, Mesh, Vector3 } from 'three';
+import { Box3, Mesh } from 'three';
 import { SimulationManager } from "../../simulation-manager";
 import { VehicleGeneratorOptions } from "./vehicle-generator-options";
 import { TrafficObject } from "../traffic-object";
@@ -31,6 +31,8 @@ export class VehicleGenerator extends TrafficObject {
         
         if (this._canAddToSegment(nextVehicle)) {
             this.getSegment().addVehicle(nextVehicle);
+            this._simMgr.getViewManager().addRenderable(nextVehicle);
+            console.info(`new vehicle: '${nextVehicle.id}' added to segment: '${this.getSegment().id}'`);
         }
     }
 

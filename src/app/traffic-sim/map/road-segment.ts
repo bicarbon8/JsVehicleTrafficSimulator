@@ -1,4 +1,5 @@
-import { Line3, Mesh, Vector3, LineBasicMaterial, BufferGeometry, Line, TextGeometry, FontLoader, LineCurve3, SphereGeometry, MeshBasicMaterial, Quaternion } from 'three';
+import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, TextGeometry, FontLoader, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
+import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -58,7 +59,7 @@ export class RoadSegment extends TrafficObject {
 
     addTfc(tfc: TrafficFlowControl, location?: Vector3): void {
         let loc: Vector3 = location || this._line.end;
-        console.debug(`adding tfc '${tfc.id}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
+        // console.debug(`adding tfc '${tfc.id}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
         tfc.moveTo(loc);
         tfc.lookAt(this._line.start);
         tfc.setSegmentId(this.id);
@@ -77,22 +78,18 @@ export class RoadSegment extends TrafficObject {
         this._generator = generator;
     }
 
-    protected generateMesh(): Mesh {
-        let mesh: Mesh;
-    
-        var material = new LineBasicMaterial({
-            color: 0xffffff, // white
-        });
-        var geometry = new BufferGeometry().setFromPoints([this._line.start, this._line.end]);
-        var line = new Line(geometry, material);
-        mesh = new Mesh(line.geometry, line.material);
+    protected generateMesh(): Object3D {
+        let lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: 5});
+        let line: Line3 = this.getLine();
+        var geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
+        let obj3D: Object3D = new Line(geometry, lineMat);
     
         var identity: string = this.id.toString();
-        if (this.name && this.name !== '') {
+        if (this.name && this.name != '') {
             identity = this.name;
         }
         let loader = new FontLoader();
-        loader.load('/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+        loader.load('assets/fonts/helvetiker_regular.typeface.json', (font) => {
             let text = new TextGeometry(identity, {
                 font: font,
                 size: 80,
@@ -104,17 +101,17 @@ export class RoadSegment extends TrafficObject {
                 bevelOffset: 0,
                 bevelSegments: 5
             });
-            var textMesh = new Mesh(text, material);
+            var textMesh = new Mesh(text, this._material);
             let pt: Vector3 = this.getCenter();
             textMesh.position.set(pt.x, pt.y, pt.z);
             textMesh.lookAt(this._line.end);
             textMesh.rotateY(90*(Math.PI/180));
-            textMesh.translateY(this.getMesh().position.y + 5);
-            mesh.add(textMesh);
+            textMesh.translateY(this.getObj3D().position.y + 5);
+            obj3D.add(textMesh);
         });
         this._generateLaneChangePoints();
 
-        return mesh;
+        return obj3D;
     }
 
     private _generateLaneChangePoints(): void {
@@ -125,8 +122,9 @@ export class RoadSegment extends TrafficObject {
         // place point every [spacing] units (metres)
         var spacing = 1;
         for (var i=spacing; i<this.getLength(); i+=spacing) {
-            sphere.position.set(this._line.start.x, this._line.start.y, this._line.start.z);
-            sphere.lookAt(this._line.end);
+            let l: Line3 = this.getLine();
+            sphere.position.set(l.start.x, l.start.y, l.start.z);
+            sphere.lookAt(l.end);
             sphere.translateZ(i);
             this._laneChangeLocations.push(sphere.position.clone());
         }
@@ -146,7 +144,7 @@ export class RoadSegment extends TrafficObject {
     }
 
     getLength(): number {
-        return this._line.distance();
+        return Utils.getDistanceBetweenTwoPoints(this._line.start, this._line.end);
     }
 
     getCenter(): Vector3 {
@@ -161,7 +159,13 @@ export class RoadSegment extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-
+        this.getTfcs().forEach((tfc) => {
+            tfc.update(elapsedMs);
+        });
+        this.getVehicleGenerator()?.update(elapsedMs);
+        this.getVehicles().forEach((veh) => {
+            veh.update(elapsedMs);
+        });
     }
 
     clone(): RoadSegment {

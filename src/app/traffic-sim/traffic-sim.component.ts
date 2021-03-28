@@ -13,13 +13,28 @@ export class TrafficSimComponent implements OnInit {
 
   constructor(private httpClient: HttpClient) { }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this._simMgr = SimulationManager.inst;
-    this._simMgr.init();
+    this._simMgr.init('#traffic-sim');
     let path: string = 'assets/maps/intersection.json';
-    this.httpClient.get(path).subscribe((data: RoadMap) =>{
-      this._simMgr.getMapManager().loadMap(data);
-    });
+    await this.loadMap(path);
     this._simMgr.start();
+  }
+
+  async loadMap(path: string): Promise<void> {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.httpClient.get(path).subscribe((data: RoadMap) =>{
+          if (!data) {
+            reject(`unable to load map data from '${path}'`);
+          } else {
+            this._simMgr.loadMap(data);
+            resolve();
+          }
+        });
+      });
+    } catch (e) {
+      console.warn(e);
+    }
   }
 }

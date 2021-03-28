@@ -28,12 +28,6 @@ export class MapManager {
         this._segments = new Map<number, RoadSegment>();
     }
 
-    addVehicle(vehicle: Vehicle, segment: RoadSegment): void {
-        if (this._segments.has(segment.id)) {
-            segment.addVehicle(vehicle);
-        }
-    }
-
     getVehicles(): Vehicle[] {
         let allVehicles: Vehicle[] = [];
         let segments: RoadSegment[] = this.getSegments();
@@ -79,7 +73,7 @@ export class MapManager {
     }
 
     addSegment(segment: RoadSegment): void {
-        console.debug(`adding segment '${segment.id}' from '${JSON.stringify(segment.getStart())}' to '${JSON.stringify(segment.getEnd())}'`);
+        // console.debug(`adding segment '${segment.id}' from '${JSON.stringify(segment.getStart())}' to '${JSON.stringify(segment.getEnd())}'`);
         this._segments.set(segment.id, segment);
     }
 
@@ -156,48 +150,8 @@ export class MapManager {
         });
 	}
 
-    loadMap(map: RoadMap): void {
-        if (map) {
-            // add segments
-            for (var i=0; i<map.segments.length; i++) {
-                let opts: RoadSegmentOptions = map.segments[i];
-                let s: RoadSegment = new RoadSegment(opts)
-                this.addSegment(s);
-            }
-            // add TFCs
-            for (var i=0; i<map.tfcs.length; i++) {
-                let opts: TfcOptions = map.tfcs[i];
-                let tfc: TrafficFlowControl;
-                switch (opts.type.toLowerCase()) {
-                    case 'stoplight':
-                        tfc = new StopLight(opts as StopLightOptions);
-                        break;
-                }
-                if (tfc) {
-                    let segment: RoadSegment = this.getSegmentsEndingAt(opts.location).find((seg) => {
-                        return seg.name.toLowerCase() == tfc.roadName.toLowerCase();
-                    });
-                    if (segment) {
-                        segment.addTfc(tfc);
-                    }
-                }
-            }
-            // add vehicle generators
-            for (var i=0; i<map.generators.length; i++) {
-                let opts: VehicleGeneratorOptions = map.generators[i];
-                let g: VehicleGenerator = new VehicleGenerator(opts);
-                let segment: RoadSegment = this.getSegmentsStartingAt(opts.location).find((seg) => {
-                    return seg.name.toLowerCase() == g.roadName.toLowerCase();
-                });
-                if (segment) {
-                    segment.setVehicleGenerator(g);
-                }
-            }
-        }
-    }
-
     update(elapsedMs: number): void {
-        this.getVehicles().forEach((veh) => veh.update(elapsedMs));
+        this.getSegments().forEach((seg) => seg.update(elapsedMs));
     }
 }
 

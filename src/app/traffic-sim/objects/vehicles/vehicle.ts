@@ -1,4 +1,4 @@
-import { Mesh, BoxGeometry, MeshBasicMaterial, Box3, Line3, Vector3 } from "three";
+import { Mesh, BoxGeometry, MeshBasicMaterial, Box3, Line3, Vector3, Object3D } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
@@ -135,7 +135,7 @@ export class Vehicle extends TrafficObject {
     accelerate(elapsedMs: number): void {
         var elapsedSeconds = elapsedMs/1000;
         this._velocity += (Utils.convertMpsToKmph(this.acceleration * elapsedSeconds));
-        (this._mesh.material as MeshBasicMaterial).color.setHex(0x66ff66); // green
+        (this.getMesh().material as MeshBasicMaterial).color.setHex(0x66ff66); // green
     }
 
     brake(elapsedMs: number): void {
@@ -145,7 +145,7 @@ export class Vehicle extends TrafficObject {
         if (this.getVelocity() < 0) {
             this._velocity = 0;
         }
-        (this._mesh.material as MeshBasicMaterial).color.setHex(0xff0000); // red
+        (this.getMesh().material as MeshBasicMaterial).color.setHex(0xff0000); // red
     }
 
     shouldStop(distance?: number, segment?: RoadSegment, skipCollisionCheck: boolean = false): boolean {
@@ -161,9 +161,9 @@ export class Vehicle extends TrafficObject {
                 return foundV.stop;
             } else {
                 // perform collision check
-                var box1 = new Box3().setFromObject(this._mesh);
+                var box1 = new Box3().setFromObject(this.getObj3D());
                 var vehicle: Vehicle = this._simMgr.getMapManager().getVehicleById(foundV.id);
-                var box2 = new Box3().setFromObject(vehicle.getMesh());
+                var box2 = new Box3().setFromObject(vehicle.getObj3D());
                 if (Utils.isCollidingWith(box1, box2)) {
                     this.crashed = true;
                     vehicle.crashed = true;
@@ -335,8 +335,8 @@ export class Vehicle extends TrafficObject {
         if (this._isChangingLanes) {
             maxAngle = 90;
         }
-        var vertices = (tObj.getMesh().geometry.attributes["position"] as any as Array<Vector3>).map(function (v) {
-            return new Vector3().copy(v).applyMatrix4(tObj.getMesh().matrix);
+        var vertices = ((tObj.getObj3D() as Mesh).geometry.attributes["position"] as any as Array<Vector3>).map(function (v) {
+            return new Vector3().copy(v).applyMatrix4(tObj.getObj3D().matrix);
         });
         for (var i in vertices) {
             var location = vertices[i];
@@ -367,9 +367,8 @@ export class Vehicle extends TrafficObject {
         return distanceTot;
     }
 
-    protected generateMesh(): Mesh {
-        if (!this._mesh) {
-            // z coordinate used for vertical height
+    protected generateMesh(): Object3D {
+        if (!this._obj3D) {
             var geometry = new BoxGeometry(this.width, this.height, this.length);
             var mesh = new Mesh(geometry, this._material);
             return mesh;
