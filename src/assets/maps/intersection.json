@@ -68,17 +68,15 @@
             "type":"stoplight",
             "location":{"x":203,"y":0,"z":206},
             "roadName":"Road 1 Northbound",
-            "startstate":0
+            "startState":0
         }, {
             "type":"stoplight",
             "location":{"x":197,"y":0,"z":203},
-            "roadName":"Road 2 Eastbound",
-            "startstate":2
+            "roadName":"Road 2 Eastbound"
         }, {
             "type":"stoplight",
             "location":{"x":206,"y":0,"z":200},
-            "roadName":"Road 2 Westbound",
-            "startState":2
+            "roadName":"Road 2 Westbound"
         }
     ],
     "generators": [

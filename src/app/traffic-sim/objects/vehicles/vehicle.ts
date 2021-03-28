@@ -25,13 +25,13 @@ export class Vehicle extends TrafficObject {
 
     constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
-        this.width = options?.width;
-        this.length = options?.length;
-        this.height = options?.height;
-        this.reactionTime = options?.reactionTime;
-        this.acceleration = options?.acceleration;
-        this.deceleration = options?.deceleration;
-        this.changeLaneDelay = options?.changeLaneDelay;
+        this.width = options?.width || 2;
+        this.length = options?.length || 3;
+        this.height = options?.height || 1;
+        this.reactionTime = options?.reactionTime || 2.5;
+        this.acceleration = options?.acceleration || 3.5;
+        this.deceleration = options?.deceleration || 7;
+        this.changeLaneDelay = options?.changeLaneDelay || 5;
     }
 
     clone(): Vehicle {

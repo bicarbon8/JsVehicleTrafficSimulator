@@ -135,6 +135,7 @@ export class SimulationManager {
                 let tfc: TrafficFlowControl;
                 switch (opts.type.toLowerCase()) {
                     case 'stoplight':
+                        // console.debug(`tfc.startState: ${opts.startState}`);
                         tfc = new StopLight(opts as StopLightOptions);
                         break;
                 }

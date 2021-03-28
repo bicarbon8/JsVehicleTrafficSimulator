@@ -16,10 +16,11 @@ export abstract class TrafficFlowControl extends TrafficObject {
 
     constructor(options?: TfcOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
-        this.startState = options?.startState || TfcState.stop;
-        this.changeDelay = options?.changeDelay || Infinity;
+        this.startState = (options?.startState === undefined) ? 2 : options?.startState;
+        this.changeDelay = (options?.changeDelay === undefined) ? Infinity : options?.changeDelay;
         this.roadName = options?.roadName;
         this.currentState = this.startState;
+        this.elapsed = 0;
     }
 
     abstract shouldStop(vehicle: Vehicle): boolean;

@@ -24,9 +24,9 @@ export class RoadSegment extends TrafficObject {
         if (!options) {
             options = {start: new Vector3(0, 0, 0), end: new Vector3(0, 0, 0)};
         }
-        this.speedLimit = options.speedLimit || Infinity;
-        this._line = new Line3(options.start || new Vector3(), options.end || new Vector3());
-        this.width = options.width || 3;
+        this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
+        this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
+        this.width = options?.width || 3;
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
@@ -41,10 +41,11 @@ export class RoadSegment extends TrafficObject {
     }
 
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
-        let loc: Vector3 = location || this._line.start;
-        console.info(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
+        let l: Line3 = this.getLine();
+        let loc: Vector3 = location || l.start;
+        // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
         vehicle.moveTo(loc);
-        vehicle.lookAt(this._line.end);
+        vehicle.lookAt(l.end);
         vehicle.setSegmentId(this.id);
         this._vehicles.set(vehicle.id, vehicle);
     }
@@ -58,10 +59,11 @@ export class RoadSegment extends TrafficObject {
     }
 
     addTfc(tfc: TrafficFlowControl, location?: Vector3): void {
-        let loc: Vector3 = location || this._line.end;
-        // console.debug(`adding tfc '${tfc.id}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
+        let l: Line3 = this.getLine();
+        let loc: Vector3 = location || l.end;
+        // console.debug(`adding tfc '${tfc.id}' with state '${tfc.getCurrentState()}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
         tfc.moveTo(loc);
-        tfc.lookAt(this._line.start);
+        tfc.lookAt(l.start);
         tfc.setSegmentId(this.id);
         this._tfcs.set(tfc.id, tfc);
     }
@@ -75,11 +77,13 @@ export class RoadSegment extends TrafficObject {
     }
 
     setVehicleGenerator(generator: VehicleGenerator): void {
+        // console.debug(`setting generator '${generator.id}' on segment '${this.id}'`);
         this._generator = generator;
+        this._generator.setSegmentId(this.id);
     }
 
     protected generateMesh(): Object3D {
-        let lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: 5});
+        let lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
         let line: Line3 = this.getLine();
         var geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
         let obj3D: Object3D = new Line(geometry, lineMat);

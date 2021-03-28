@@ -11,11 +11,13 @@ export class VehicleGenerator extends TrafficObject {
     readonly roadName: string;
     
     private _elapsed: number;
+    private _nextVehicle: Vehicle;
 
     constructor(options?: VehicleGeneratorOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
         this.delay = options?.delay || 0;
         this.roadName = options?.roadName;
+        this._elapsed = 0;
     }
     
     update(elapsedMs: number): void {
@@ -27,12 +29,15 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     generate(): void {
-        let nextVehicle: Vehicle = this._prepareNewVehicle();
+        if (!this._nextVehicle) {
+            this._nextVehicle = this._prepareNewVehicle();
+        }
         
-        if (this._canAddToSegment(nextVehicle)) {
-            this.getSegment().addVehicle(nextVehicle);
-            this._simMgr.getViewManager().addRenderable(nextVehicle);
-            console.info(`new vehicle: '${nextVehicle.id}' added to segment: '${this.getSegment().id}'`);
+        if (this._canAddToSegment(this._nextVehicle)) {
+            this.getSegment().addVehicle(this._nextVehicle);
+            this._simMgr.getViewManager().addRenderable(this._nextVehicle);
+            console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.getSegment().id}'`);
+            this._nextVehicle = null;
         }
     }
 
@@ -60,7 +65,6 @@ export class VehicleGenerator extends TrafficObject {
             reactionTime: Utils.getRandomBetween(2.5, 3.5),
             changeLaneDelay: Math.floor(Utils.getRandomBetween(5, 15))
         });
-        this.getSegment().addVehicle(v);
         return v;
     }
 

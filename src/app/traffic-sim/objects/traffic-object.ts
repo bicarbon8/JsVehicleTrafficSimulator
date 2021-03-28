@@ -72,7 +72,7 @@ export abstract class TrafficObject implements Renderable {
 
     moveTo(location: Vector3): void {
         if (location) {
-            this.getObj3D()?.position.set(location.x, location.y, location.z);
+            this.getObj3D()?.position.lerp(location, 1);
         }
         
         this.isUpdated();

@@ -1,4 +1,4 @@
-import { Mesh, BufferGeometry, Material, SphereGeometry, MeshBasicMaterial } from "three";
+import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D } from "three";
 import { Utils } from "../../helpers/utils";
 import { SimulationManager } from "../../simulation-manager";
 import { Vehicle } from "../vehicles/vehicle";
@@ -14,9 +14,9 @@ export class StopLight extends TrafficFlowControl {
     
     constructor(options?: StopLightOptions, simMgr?: SimulationManager) {
         super(options as TfcOptions, simMgr);
-        this._greenDuration = options?.greenDuration || 56000; // 56 seconds
-        this._yellowDuration = options?.yellowDuration || 4000; // 4 seconds
-        this._redDuration = options?.redDuration || 60000; // 1 minute
+        this._greenDuration = (options?.greenDuration === undefined) ? 24000 : options?.greenDuration; // 24 seconds
+        this._yellowDuration = (options?.yellowDuration === undefined) ? 4000 : options?.yellowDuration; // 4 seconds
+        this._redDuration = (options?.redDuration === undefined) ? 30000 : options?.redDuration; // 30 seconds
     }
 
     shouldStop(vehicle: Vehicle): boolean {
@@ -34,7 +34,7 @@ export class StopLight extends TrafficFlowControl {
         }
     }
     
-    protected generateMesh(): Mesh {
+    protected generateMesh(): Object3D {
         // z coordinate used for vertical height
         var geometry = new SphereGeometry(1);
         var material = new MeshBasicMaterial({
