@@ -1,1 +1,5 @@
+<div class="d-flex simulation-controls">
+    <button class="btn btn-sm btn-primary" (click)="toggleAnimationState()">Toggle State</button>
+    <input type="text" #timeStepInput value="10" (change)="updateTimeStep(timeStepInput.value)" />
+</div>
 <canvas id="traffic-sim"></canvas>

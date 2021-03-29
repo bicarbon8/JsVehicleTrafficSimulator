@@ -17,7 +17,7 @@ export class ViewManager {
         this._initLight();
         this._initScene();
 
-        this.render();
+        this.update();
     }
 
     private _initRenderer(canvasId: string): void {
@@ -26,7 +26,7 @@ export class ViewManager {
         this._renderer.setSize(this.getWidth(), this.getHeight());
         window.addEventListener('resize', () => {
             this.resize();
-            this.render();
+            this.update();
         }, {capture: false});
     }
 
@@ -59,7 +59,7 @@ export class ViewManager {
         this._scene.add(axesHelper, this._light);
     }
 
-    render(): void {
+    update(): void {
         this._renderer?.render(this._scene, this._camera);
     }
 

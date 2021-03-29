@@ -37,4 +37,14 @@ export class TrafficSimComponent implements OnInit {
       console.warn(e);
     }
   }
+
+  async toggleAnimationState(): Promise<void> {
+    this._simMgr.toggleAnimationState();
+  }
+
+  async updateTimeStep(step: number): Promise<void> {
+    if (!isNaN(step)) {
+      this._simMgr.setTimestep(step);
+    }
+  }
 }

@@ -4,4 +4,5 @@ export interface VehicleGeneratorOptions {
     location: Vector3;
     roadName: string;
     delay: number;
+    max: number;
 }

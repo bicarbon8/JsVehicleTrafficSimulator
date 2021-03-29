@@ -10,24 +10,38 @@ import { RoadSegment } from "../../map/road-segment";
 export class VehicleGenerator extends TrafficObject {
     readonly delay: number;
     readonly roadName: string;
+    readonly max: number;
     
     private _elapsed: number;
     private _nextVehicle: Vehicle;
+    private _count: number;
 
     constructor(options?: VehicleGeneratorOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
         this.delay = options?.delay || 0;
         this.roadName = options?.roadName;
+        this.max = options?.max || Infinity;
         this._elapsed = 0;
+        this._count = 0;
+        this._nextVehicle = null;
     }
     
     update(elapsedMs: number): void {
         this._elapsed += elapsedMs;
-        if (this._elapsed >= this.delay) {
+        if (this._shouldGenerate()) {
             this.generate();
             this._elapsed = 0;
         }
     }
+
+    /**
+     * the number of vehicles added to the simulation
+     * @returns the number of vehicles generated
+     */
+    getCount(): number {
+        return this._count;
+    }
+
 
     generate(): void {
         if (!this._nextVehicle) {
@@ -39,7 +53,17 @@ export class VehicleGenerator extends TrafficObject {
             this._simMgr.getViewManager().addRenderable(this._nextVehicle);
             console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.getSegment().id}'`);
             this._nextVehicle = null;
+            this._count++;
         }
+    }
+
+    reset(): void {
+        this._elapsed = 0;
+        this._count = 0;
+    }
+
+    private _shouldGenerate(): boolean {
+        return (this.getCount() < this.max && (this._nextVehicle != null || this._elapsed >= this.delay));
     }
 
     private _canAddToSegment(vehicle: Vehicle): boolean {

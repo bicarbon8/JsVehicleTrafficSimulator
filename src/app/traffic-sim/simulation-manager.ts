@@ -6,6 +6,7 @@ import { StopLight } from "./objects/traffic-controls/stop-light";
 import { StopLightOptions } from "./objects/traffic-controls/stop-light-options";
 import { TfcOptions } from "./objects/traffic-controls/tfc-options";
 import { TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
+import { Vehicle } from "./objects/vehicles/vehicle";
 import { VehicleGenerator } from "./objects/vehicles/vehicle-generator";
 import { VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator-options";
 import { ViewManager } from "./view/view-manager";
@@ -17,8 +18,7 @@ export class SimulationManager {
     private _canvasId: string;
     private _startTime: number; // in milliseconds
     private _realtime: boolean;
-    private _elapsed: number;
-    private _keepMoving: boolean;
+    private _updateMap: boolean;
     private _totalElapsedTime: number; // in milliseconds
     /**
      * number of steps between each update; lower values are more accurate, but slower.
@@ -30,11 +30,10 @@ export class SimulationManager {
     private _viewMgr: ViewManager;
 
     constructor(mapMgr?: MapManager, viewMgr?: ViewManager) {
-        this._elapsed = 0;
         this._realtime = false;
-        this._keepMoving = false;
+        this._updateMap = false;
         this._totalElapsedTime = 0;
-        this._timeStep = 1;
+        this._timeStep = 10;
 
         this._mapManager = mapMgr || MapManager.inst;
         this._viewMgr = viewMgr || ViewManager.inst;
@@ -43,6 +42,7 @@ export class SimulationManager {
 	init(canvasId: string): void {
         this._canvasId = canvasId;
         this._initObjects();
+        this.update();
     }
 
     reset(): void {
@@ -54,11 +54,11 @@ export class SimulationManager {
 
     private _initObjects(): void {
         this._viewMgr.init(this._canvasId);
-        this._viewMgr.render();
+        this._viewMgr.update();
     }
 
     toggleAnimationState(): void {
-        if (this._keepMoving) {
+        if (this._updateMap) {
             this.stop();
         } else {
             this.start();
@@ -67,45 +67,47 @@ export class SimulationManager {
 
     start(): void {
         this._startTime = new Date().getTime();
-        this._keepMoving = true;
-        this.move();
+        this._updateMap = true;
     }
 
     stop(): void {
-        this._keepMoving = false;
+        this._updateMap = false;
     }
 
-    move(): void {
-        this._elapsed = this.getTimestep();
-
-        // console.debug(`updating map...`);
-        this._mapManager.update(this._elapsed);
-
-        // console.debug(`rendering view...`);
-        this._viewMgr.render();
-        this._totalElapsedTime += this._elapsed;
-        // console.debug(`total elapsed ms: '${this._totalElapsedTime}'`);
-
-        if (this._keepMoving) {
-            requestAnimationFrame(() => this.move());
+    update(): void {
+        let elapsed: number = this.getElapsed();
+        this._totalElapsedTime += elapsed;
+        // console.debug(`elapsed: '${elapsed}'; total elapsed: '${this._totalElapsedTime}'`);
+        
+        if (this._updateMap) {
+            // console.debug(`updating map...`);
+            this._mapManager.update(elapsed);
         }
+        
+        // console.debug(`updating view...`);
+        this._viewMgr.update();
+        
+        requestAnimationFrame(() => this.update());
     }
 
     /**
-     * provides the number of milliseconds elapsed for calculations
-     * of movement
+     * provides the number of milliseconds elapsed since last {update}
      * @returns number of milliseconds elapsed
      */
-    getTimestep(): number {
-        return this._timeStep;
+    getElapsed(): number {
+        if (this._realtime) {
+            let now: number = new Date().getTime();
+            return now - this.getTotalElapsed();
+        }
+        return this.getTimestep();
     }
 
     setTimestep(timestep: number): void {
         this._timeStep = timestep;
     }
 
-    getElapsed(): number {
-        return this._elapsed;
+    getTimestep(): number {
+        return this._timeStep;
     }
 
     getTotalElapsed(): number {
@@ -161,6 +163,12 @@ export class SimulationManager {
                 }
             }
         }
+    }
+
+    removeVehicle(vehicle: Vehicle) {
+        this._viewMgr.removeRenderable(vehicle);
+        vehicle.getSegment().removeVehicle(vehicle.id);
+        vehicle.disposeGeometry();
     }
 }
 
