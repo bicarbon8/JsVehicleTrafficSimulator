@@ -14,7 +14,7 @@ export class StopLight extends TrafficFlowControl {
     
     constructor(options?: StopLightOptions, simMgr?: SimulationManager) {
         super(options as TfcOptions, simMgr);
-        this._greenDuration = (options?.greenDuration === undefined) ? 24000 : options?.greenDuration; // 24 seconds
+        this._greenDuration = (options?.greenDuration === undefined) ? 26000 : options?.greenDuration; // 24 seconds
         this._yellowDuration = (options?.yellowDuration === undefined) ? 4000 : options?.yellowDuration; // 4 seconds
         this._redDuration = (options?.redDuration === undefined) ? 30000 : options?.redDuration; // 30 seconds
     }

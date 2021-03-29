@@ -32,6 +32,8 @@ export class Vehicle extends TrafficObject {
         this.acceleration = options?.acceleration || 3.5;
         this.deceleration = options?.deceleration || 7;
         this.changeLaneDelay = options?.changeLaneDelay || 5;
+        
+        this._velocity = 0;
     }
 
     clone(): Vehicle {
@@ -46,7 +48,7 @@ export class Vehicle extends TrafficObject {
             deceleration: this.deceleration,
             changeLaneDelay: this.changeLaneDelay
         });
-        v.moveTo(this.getLocation());
+        v.setPosition(this.getLocation());
         v.setRotation(this.getRotation());
 
         return v;
@@ -63,6 +65,7 @@ export class Vehicle extends TrafficObject {
         this.updateVelocity(elapsedMs, isStopping);
 
         var distTraveled = (this.getVelocity() * elapsedSeconds);
+        // console.debug(`vehicle '${this.id}' distance travelled is: ${distTraveled}`);
         if(distTraveled > 0) {
             var remainingDistOnSegment = Utils.getDistanceBetweenTwoPoints(this.getLocation(), this.getSegment().getEnd());
             if (distTraveled >= remainingDistOnSegment) {
@@ -109,11 +112,15 @@ export class Vehicle extends TrafficObject {
                     this._crashCleanupTime = Math.random() * (this._simMgr.CRASH_CLEANUP_MAX_DELAY - this._simMgr.CRASH_CLEANUP_MIN_DELAY) + this._simMgr.CRASH_CLEANUP_MIN_DELAY;
                 }
             } else {
-                this.moveBy(distTraveled);
+                this.moveForwardBy(distTraveled);
             }
         }
     }
 
+    /**
+     * returns the speed along the Z axis (fowards / backwards)
+     * @returns the speed in metres per second
+     */
     getVelocity(): number {
         return this._velocity;
     }
@@ -134,13 +141,13 @@ export class Vehicle extends TrafficObject {
 
     accelerate(elapsedMs: number): void {
         var elapsedSeconds = elapsedMs/1000;
-        this._velocity += (Utils.convertMpsToKmph(this.acceleration * elapsedSeconds));
+        this._velocity += (Utils.convertMetresPerSecToKmph(this.acceleration * elapsedSeconds));
         (this.getMesh().material as MeshBasicMaterial).color.setHex(0x66ff66); // green
     }
 
     brake(elapsedMs: number): void {
         var elapsedSeconds = elapsedMs/1000;
-        this._velocity -= (Utils.convertMpsToKmph(this.deceleration * elapsedSeconds));
+        this._velocity -= (Utils.convertMetresPerSecToKmph(this.deceleration * elapsedSeconds));
         // prevent going backwards
         if (this.getVelocity() < 0) {
             this._velocity = 0;
@@ -190,13 +197,12 @@ export class Vehicle extends TrafficObject {
     shouldStopForVehicle(distance: number): ShouldStopResponse {
         if (distance > 0) {
             var vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadius(this, distance);
-            /*jshint loopfunc:true*/
             for (var i=0; i<vehicles.length; i++) {
                 let v: Vehicle = vehicles[i];
                 if (v.id !== this.id) {
                     if (this.hasInView(v)) {
                         // check if v is in current segment
-                        if (v.getSegment() === this.getSegment()) {
+                        if (v.getSegmentId() == this.getSegmentId()) {
                             return { stop: true, type: ShouldStopType.vehicle, id: v.id };
                         }
                         // check if v is in intersecting segment
@@ -284,13 +290,13 @@ export class Vehicle extends TrafficObject {
                 var tmpV = this.clone();
                 tmpV.setSegmentId(seg.id);
                 tmpV._isChangingLanes = true;
-                tmpV.moveTo(seg.getStart());
+                tmpV.setPosition(seg.getStart());
                 tmpV.lookAt(seg.getEnd());
                 // don't change lanes if we just have to stop on the new lane too
                 var distance = this.getLookAheadDistance() * 2;
                 if (!tmpV.shouldStop(distance, seg, true)) {
                     this.setSegmentId(seg.id);
-                    this.moveTo(seg.getStart());
+                    this.setPosition(seg.getStart());
                     this.lookAt(seg.getEnd());
                     this._changeLaneTime = this._simMgr.getTotalElapsed() + (this.changeLaneDelay * 1000);
                     this._isChangingLanes = true;
@@ -335,16 +341,22 @@ export class Vehicle extends TrafficObject {
         if (this._isChangingLanes) {
             maxAngle = 90;
         }
-        var vertices = ((tObj.getObj3D() as Mesh).geometry.attributes["position"] as any as Array<Vector3>).map(function (v) {
-            return new Vector3().copy(v).applyMatrix4(tObj.getObj3D().matrix);
-        });
-        for (var i in vertices) {
-            var location = vertices[i];
-            var headingLine = new Line3(this.getLocation(), this.getSegment().getEnd());
-            var headingToLocation = new Line3(this.getLocation(), location);
+        let mesh: Mesh = tObj.getMesh();
+        // get geometry vertices
+        let geoVerts: Vector3[] = mesh?.geometry.attributes?.position as unknown as Array<Vector3>;
+        if (typeof geoVerts?.map == "function") {
+            // move geometry vertices to actual world locations
+            var vertices: Vector3[] = geoVerts?.map((v: Vector3) => {
+                return v.clone().applyMatrix4(mesh?.matrixWorld);
+            }) || [];
+            for (var i=0; i<vertices.length; i++) {
+                var location = vertices[i];
+                var headingLine = new Line3(this.getLocation(), this.getSegment().getEnd());
+                var headingToLocation = new Line3(this.getLocation(), location);
 
-            if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
-                return true;
+                if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
+                    return true;
+                }
             }
         }
         return false;
@@ -359,7 +371,7 @@ export class Vehicle extends TrafficObject {
      * d = distance (m)
      */
     getLookAheadDistance(): number { 
-        var mps = Utils.convertKmphToMps(this.getVelocity());
+        var mps = Utils.convertKmphToMetresPerSec(this.getVelocity());
         var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.deceleration))) / 2;
         var distanceToReact = this.reactionTime * mps;
         var distanceTot = distanceToStop + (this.length * 2) + distanceToReact;

@@ -34,7 +34,7 @@ export class SimulationManager {
         this._realtime = false;
         this._keepMoving = false;
         this._totalElapsedTime = 0;
-        this._timeStep = 10;
+        this._timeStep = 1;
 
         this._mapManager = mapMgr || MapManager.inst;
         this._viewMgr = viewMgr || ViewManager.inst;

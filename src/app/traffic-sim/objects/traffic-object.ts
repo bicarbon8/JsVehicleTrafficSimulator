@@ -70,12 +70,22 @@ export abstract class TrafficObject implements Renderable {
         this.getObj3D()?.updateMatrix();
     }
 
-    moveTo(location: Vector3): void {
+    setPosition(location: Vector3): void {
         if (location) {
             this.getObj3D()?.position.lerp(location, 1);
         }
         
         this.isUpdated();
+    }
+
+    /**
+     * moves this object along it's z-axis by the specified {distance}
+     * @param distance distance to move forward by
+     */
+    moveForwardBy(distance: number): void {
+        if (distance > 0) {
+            this.getObj3D()?.translateZ(distance);
+        }
     }
 
     getLocation(): Vector3 {
@@ -98,16 +108,6 @@ export abstract class TrafficObject implements Renderable {
 
     getRotation(): Quaternion {
         return this.getObj3D()?.quaternion.clone();
-    }
-
-    /**
-     * moves this object along it's z-axis by the specified {distance}
-     * @param distance distance to move forward by
-     */
-    moveBy(distance: number): void {
-        if (distance > 0) {
-            this.getObj3D()?.translateZ(distance);
-        }
     }
 
     abstract update(elapsedMs: number): void;

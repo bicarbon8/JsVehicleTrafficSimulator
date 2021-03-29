@@ -44,7 +44,7 @@ export class RoadSegment extends TrafficObject {
         let l: Line3 = this.getLine();
         let loc: Vector3 = location || l.start;
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
-        vehicle.moveTo(loc);
+        vehicle.setPosition(loc);
         vehicle.lookAt(l.end);
         vehicle.setSegmentId(this.id);
         this._vehicles.set(vehicle.id, vehicle);
@@ -62,7 +62,7 @@ export class RoadSegment extends TrafficObject {
         let l: Line3 = this.getLine();
         let loc: Vector3 = location || l.end;
         // console.debug(`adding tfc '${tfc.id}' with state '${tfc.getCurrentState()}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
-        tfc.moveTo(loc);
+        tfc.setPosition(loc);
         tfc.lookAt(l.start);
         tfc.setSegmentId(this.id);
         this._tfcs.set(tfc.id, tfc);
@@ -181,7 +181,7 @@ export class RoadSegment extends TrafficObject {
             end: this._line.end,
             speedLimit: this.speedLimit
         });
-        r.moveTo(this.getLocation());
+        r.setPosition(this.getLocation());
         r.setRotation(this.getRotation());
 
         return r;

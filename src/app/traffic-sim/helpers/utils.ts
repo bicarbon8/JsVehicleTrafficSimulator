@@ -25,19 +25,19 @@ export module Utils {
     }
 
     export function isCollidingWith(box1: THREE.Box3, box2: THREE.Box3) {
-        if (box1.intersectsBox(box2)) {
-            return true;
+        if (box1 && box2) {
+            return box1.intersectsBox(box2);
         }
         return false;
     }
 
-    export function convertKmphToMps(kilometersPerHour: number): number {
+    export function convertKmphToMetresPerSec(kilometersPerHour: number): number {
 		var result = 0;
 		result = (kilometersPerHour / SECONDS_PER_HOUR) * METERS_PER_KILOMETER;
 		return result;
 	}
 
-	export function convertMpsToKmph(metersPerSecond: number): number {
+	export function convertMetresPerSecToKmph(metersPerSecond: number): number {
 		var result = 0;
 		result = (metersPerSecond * SECONDS_PER_HOUR) / METERS_PER_KILOMETER;
 		return result;

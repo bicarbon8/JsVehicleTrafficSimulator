@@ -1,10 +1,11 @@
 import { Utils } from "../../helpers/utils";
 import { Vehicle } from "./vehicle";
-import { Box3, Mesh } from 'three';
+import { Box3, Line3, Mesh } from 'three';
 import { SimulationManager } from "../../simulation-manager";
 import { VehicleGeneratorOptions } from "./vehicle-generator-options";
 import { TrafficObject } from "../traffic-object";
 import { TrafficObjectOptions } from "../traffic-object-options";
+import { RoadSegment } from "../../map/road-segment";
 
 export class VehicleGenerator extends TrafficObject {
     readonly delay: number;
@@ -65,6 +66,10 @@ export class VehicleGenerator extends TrafficObject {
             reactionTime: Utils.getRandomBetween(2.5, 3.5),
             changeLaneDelay: Math.floor(Utils.getRandomBetween(5, 15))
         });
+        let seg: RoadSegment = this.getSegment();
+        let line: Line3 = seg.getLine();
+        v.setPosition(line.start);
+        v.lookAt(line.end);
         return v;
     }
 
