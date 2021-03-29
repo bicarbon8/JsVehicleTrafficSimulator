@@ -56,8 +56,14 @@ export abstract class TrafficObject implements Renderable {
 
     getBoundingBox(): Box3 {
         let mesh = this.getMesh();
-        mesh?.geometry.computeBoundingBox();
-        return mesh?.geometry.boundingBox;
+        var bbox = new Box3().setFromObject(mesh);
+        bbox.min.sub(mesh?.position);
+        bbox.max.sub(mesh?.position);
+        return bbox;
+    }
+
+    getMaterial(): MeshBasicMaterial {
+        return this.getMesh().material as MeshBasicMaterial;
     }
 
     /**
@@ -68,11 +74,12 @@ export abstract class TrafficObject implements Renderable {
      */
     isUpdated(): void {
         this.getObj3D()?.updateMatrix();
+        this.getObj3D()?.updateMatrixWorld();
     }
 
     setPosition(location: Vector3): void {
         if (location) {
-            this.getObj3D()?.position.lerp(location, 1);
+            this.getObj3D()?.position.set(location.x, location.y, location.z);
         }
         
         this.isUpdated();
@@ -86,6 +93,8 @@ export abstract class TrafficObject implements Renderable {
         if (distance > 0) {
             this.getObj3D()?.translateZ(distance);
         }
+
+        this.isUpdated();
     }
 
     getLocation(): Vector3 {

@@ -67,12 +67,11 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _canAddToSegment(vehicle: Vehicle): boolean {
-        let vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadius(vehicle, vehicle.length * 3);
+        let segment: RoadSegment = this.getSegment();
+        let vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadiusAhead(segment.getLine().start, segment, vehicle.length * 3);
         for (var i=0; i<vehicles.length; i++) {
             let v: Vehicle = vehicles[i];
-            let box1: Box3 = v.getBoundingBox();
-            let box2: Box3 = vehicle.getBoundingBox();
-            if (Utils.isCollidingWith(box1, box2)) {
+            if (Utils.isCollidingWith(vehicle, v)) {
                 return false;
             }
         }
@@ -85,8 +84,8 @@ export class VehicleGenerator extends TrafficObject {
             width: Utils.getRandomBetween(2, 3),
             height: Utils.getRandomBetween(1, 1.5),
             length: Utils.getRandomBetween(3, 5),
-            acceleration: Utils.getRandomBetween(2.5, 4.5),
-            deceleration: Utils.getRandomBetween(3.8, 5),
+            acceleration: Utils.getRandomBetween(3, 4),
+            deceleration: Utils.getRandomBetween(1.1, 2),
             reactionTime: Utils.getRandomBetween(2.5, 3.5),
             changeLaneDelay: Math.floor(Utils.getRandomBetween(5, 15))
         });

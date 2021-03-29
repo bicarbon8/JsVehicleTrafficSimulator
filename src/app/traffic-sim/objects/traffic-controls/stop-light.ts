@@ -1,5 +1,4 @@
 import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D } from "three";
-import { Utils } from "../../helpers/utils";
 import { SimulationManager } from "../../simulation-manager";
 import { Vehicle } from "../vehicles/vehicle";
 import { StopLightOptions } from "./stop-light-options";
@@ -20,18 +19,10 @@ export class StopLight extends TrafficFlowControl {
     }
 
     shouldStop(vehicle: Vehicle): boolean {
-        let distanceToV: number = Utils.getDistanceBetweenTwoPoints(vehicle.getLocation(), this.getLocation());
-        if (distanceToV < vehicle.getLookAheadDistance() - (vehicle.length * 2)) {
-            if (this.currentState == TfcState.stop) {
-                return true;
-            }
-            return false;
-        } else {
-            if (this.currentState == TfcState.caution || this.currentState == TfcState.stop) {
-                return true;
-            }
-            return false;
+        if (this.currentState == TfcState.caution || this.currentState == TfcState.stop) {
+            return true;
         }
+        return false;
     }
     
     protected generateMesh(): Object3D {
@@ -45,6 +36,11 @@ export class StopLight extends TrafficFlowControl {
 
     update(elapsedMs?: number): void {
         this.elapsed += elapsedMs;
+        this._updateState();
+        this._setColour();
+    }
+
+    private _updateState(): void {
         switch (this.currentState) {
             case TfcState.proceed:
                 if (this.elapsed >= this._greenDuration) {
@@ -65,16 +61,18 @@ export class StopLight extends TrafficFlowControl {
                 }
                 break;
         }
-    
+    }
+
+    private _setColour(): void {
         switch (this.currentState) {
             case TfcState.proceed:
-                (this.getMesh()?.material as MeshBasicMaterial)?.color.setHex(0x00ff00); // green
+                this.getMaterial()?.color.setHex(0x00ff00); // green
                 break;
             case TfcState.caution:
-                (this.getMesh()?.material as MeshBasicMaterial)?.color.setHex(0xffff00); // yellow
+                this.getMaterial()?.color.setHex(0xffff00); // yellow
                 break;
             case TfcState.stop:
-                (this.getMesh()?.material as MeshBasicMaterial)?.color.setHex(0xff0000); // red
+                this.getMaterial()?.color.setHex(0xff0000); // red
                 break;
         }
     }

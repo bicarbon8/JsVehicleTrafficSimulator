@@ -1,15 +1,8 @@
 import { Vector3 } from 'three';
 import { Utils } from '../helpers/utils';
-import { StopLight } from '../objects/traffic-controls/stop-light';
-import { StopLightOptions } from '../objects/traffic-controls/stop-light-options';
-import { TfcOptions } from '../objects/traffic-controls/tfc-options';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { Vehicle } from '../objects/vehicles/vehicle';
-import { VehicleGenerator } from '../objects/vehicles/vehicle-generator';
-import { VehicleGeneratorOptions } from '../objects/vehicles/vehicle-generator-options';
-import { RoadMap } from './road-map';
 import { RoadSegment } from './road-segment';
-import { RoadSegmentOptions } from './road-segment-options';
 
 export class MapManager {
     private _segments: Map<number, RoadSegment>;
@@ -49,10 +42,23 @@ export class MapManager {
         });
     }
 
-    getVehiclesWithinRadiusOnSegment(vehicle: Vehicle, distance: number, segmentId: number): Vehicle[] {
-        return this.getSegmentById(segmentId).getVehicles().filter((m) => {
-            return (Utils.getDistanceBetweenTwoPoints(vehicle.getLocation(), m.getLocation()) <= distance);
+    getVehiclesWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): Vehicle[] {
+        let distanceToEnd: number = Utils.getDistanceBetweenTwoPoints(location, segment.getEnd());
+        let vehicles: Vehicle[] = segment.getVehicles().filter((v) => {
+            let distToVeh: number = Utils.getDistanceBetweenTwoPoints(location, v.getLocation());
+            if (distToVeh <= distance) {
+                return (Utils.getDistanceBetweenTwoPoints(v.getLocation(), segment.getLine().end) <= distanceToEnd);
+            }
+            return false;
         });
+        if (distanceToEnd < distance) {
+            let segments: RoadSegment[] = this.getSegmentsStartingAt(segment.getEnd());
+            segments.forEach((seg) => {
+                vehicles.splice(0, 0, ...this.getVehiclesWithinRadiusAhead(segment.getEnd(), seg, distance - distanceToEnd));
+            });
+        }
+
+        return vehicles;
     }
 
     getTfcs(): TrafficFlowControl[] {
@@ -66,10 +72,23 @@ export class MapManager {
         return allTfcs;
     }
 
-    getTfcsWithinRadiusOnSegment(vehicle: Vehicle, distance: number, segmentId: number): TrafficFlowControl[] {
-        return this.getSegmentById(segmentId).getTfcs().filter((m) => {
-            return (Utils.getDistanceBetweenTwoPoints(vehicle.getLocation(), m.getLocation()) <= distance);
+    getTfcsWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): TrafficFlowControl[] {
+        let distanceToEnd: number = Utils.getDistanceBetweenTwoPoints(location, segment.getEnd());
+        let tfcs: TrafficFlowControl[] = segment.getTfcs().filter((tfc) => {
+            let distToTfc: number = Utils.getDistanceBetweenTwoPoints(location, tfc.getLocation());
+            if (distToTfc <= distance) {
+                return (Utils.getDistanceBetweenTwoPoints(tfc.getLocation(), segment.getLine().end) <= distanceToEnd);
+            }
+            return false;
         });
+        if (distanceToEnd < distance) {
+            let segments: RoadSegment[] = this.getSegmentsStartingAt(segment.getEnd());
+            segments.forEach((seg) => {
+                tfcs.splice(0, 0, ...this.getTfcsWithinRadiusAhead(segment.getEnd(), seg, distance - distanceToEnd));
+            });
+        }
+
+        return tfcs;
     }
 
     addSegment(segment: RoadSegment): void {

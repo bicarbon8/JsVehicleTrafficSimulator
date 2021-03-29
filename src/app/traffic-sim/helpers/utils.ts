@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { TrafficObject } from '../objects/traffic-object';
+import { Box3, Line3, Vector3 } from 'three';
+import { Renderable } from '../view/renderable';
 
 export module Utils {
     var _id: number = 0;
@@ -14,19 +14,21 @@ export module Utils {
 		return Math.random() * (max - min) + min;
 	}
 
-	export function getDistanceBetweenTwoPoints(p1: THREE.Vector3, p2: THREE.Vector3): number {
-        return new THREE.Line3(new THREE.Vector3().copy(p1), new THREE.Vector3().copy(p2)).distance();
+	export function getDistanceBetweenTwoPoints(p1: Vector3, p2: Vector3): number {
+        return new Line3(new Vector3().copy(p1), new Vector3().copy(p2)).distance();
     }
 
-    export function angleFormedBy(line1: THREE.Line3, line2: THREE.Line3): number {
-        var a = new THREE.Vector3().copy(line1.end).sub(line1.start).normalize();
-        var b = new THREE.Vector3().copy(line2.end).sub(line2.start).normalize();
+    export function angleFormedBy(line1: Line3, line2: Line3): number {
+        var a = new Vector3().copy(line1.end).sub(line1.start).normalize();
+        var b = new Vector3().copy(line2.end).sub(line2.start).normalize();
         return (Math.acos(a.dot(b))*(180/Math.PI));
     }
 
-    export function isCollidingWith(box1: THREE.Box3, box2: THREE.Box3) {
-        if (box1 && box2) {
-            return box1.intersectsBox(box2);
+    export function isCollidingWith<T extends Renderable>(obj1: T, obj2: T): boolean {
+        if (obj1 && obj2) {
+            let b1: Box3 = new Box3().setFromObject(obj1.getMesh());
+            let b2: Box3 = new Box3().setFromObject(obj2.getMesh());
+            return b1.intersectsBox(b2);
         }
         return false;
     }

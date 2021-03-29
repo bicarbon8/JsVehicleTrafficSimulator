@@ -20,7 +20,7 @@ export class Vehicle extends TrafficObject {
     private _isChangingLanes: boolean;
     private _changeLaneTime: number;
     private _velocity: number; // Km/h
-    crashed: boolean;
+    private _crashedAt: number; // time when (if) crash occurred
     private _crashCleanupTime: number;
 
     constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
@@ -57,72 +57,56 @@ export class Vehicle extends TrafficObject {
     update(elapsedMs: number): void {
         var isStopping: boolean = false;
         var elapsedSeconds: number = (elapsedMs / 1000);
-        var shouldRemove = false;
+        var shouldRemoveNow = false;
 
-        if (this.crashed) {
-            setTimeout(() => {
-                this._simMgr.removeVehicle(this);
-            }, this._crashCleanupTime);
-        } else {
-            if (this.shouldStop()) {
-                isStopping = true;
-            }
-            this.updateVelocity(elapsedMs, isStopping);
+        if (this.shouldStop()) {
+            isStopping = true;
+        }
+        this.updateVelocity(elapsedMs, isStopping);
 
-            var distTraveled = (this.getVelocity() * elapsedSeconds);
-            // console.debug(`vehicle '${this.id}' distance travelled is: ${distTraveled}`);
-            if(distTraveled > 0) {
-                var remainingDistOnSegment = Utils.getDistanceBetweenTwoPoints(this.getLocation(), this.getSegment().getEnd());
-                if (distTraveled >= remainingDistOnSegment) {
-                    // if there is a next Segment
-                    var nextSegments: RoadSegment[];
-                    if (this._isChangingLanes) {
-                        this._isChangingLanes = false;
-                        nextSegments = this._simMgr.getMapManager().getSegmentsContainingPoint(this.getSegment().getEnd());
-                    } else {
-                        nextSegments = this._simMgr.getMapManager().getSegmentsStartingAt(this.getSegment().getEnd());
-                    }
-
-                    if(nextSegments && nextSegments.length > 0){
-                        // move to segment (pick randomly)
-                        // TODO: lookup values from vehicle's choosen path
-                        var randIndex = Math.floor((Math.random() * nextSegments.length));
-                        var nextSeg: RoadSegment = nextSegments[randIndex];
-                        nextSeg.addVehicle(this);
-
-                        distTraveled -= remainingDistOnSegment;
-                    } else{
-                        // TODO: set flag indicating SimulationManager should cleanup vehicle
-                        shouldRemove = true;
-                    }
-                }
-            }
-
-            if (shouldRemove) {
-                this._simMgr.removeVehicle(this);
-            } else {
-                if (this.crashed) {
-                    this.brake(elapsedMs);
-                    if (this._crashCleanupTime) {
-                        // remove vehicle after
-                        if (this._crashCleanupTime <= this._simMgr.getTotalElapsed()) {
-                            // remove self from the Simulation
-                            console.log("Vehicle removed: "+this.id);
-                            this._simMgr.getMapManager().getSegmentById(this.getSegmentId()).removeVehicle(this.id);
-                        }
-                    } else {
-                        console.log("Vehicle crashed: "+this.id);
-                        var rand = Math.random();
-                        if (rand <= 0.8) {
-                            this._crashCleanupTime = Math.random() * this._simMgr.CRASH_CLEANUP_MIN_DELAY;
-                        }
-                        this._crashCleanupTime = Math.random() * (this._simMgr.CRASH_CLEANUP_MAX_DELAY - this._simMgr.CRASH_CLEANUP_MIN_DELAY) + this._simMgr.CRASH_CLEANUP_MIN_DELAY;
-                    }
+        var distTraveled = (this.getVelocity() * elapsedSeconds);
+        // console.debug(`vehicle '${this.id}' distance travelled is: ${distTraveled}`);
+        if(distTraveled > 0) {
+            var remainingDistOnSegment = Utils.getDistanceBetweenTwoPoints(this.getLocation(), this.getSegment().getEnd());
+            if (distTraveled >= remainingDistOnSegment) {
+                // if there is a next Segment
+                var nextSegments: RoadSegment[];
+                if (this._isChangingLanes) {
+                    this._isChangingLanes = false;
+                    nextSegments = this._simMgr.getMapManager().getSegmentsContainingPoint(this.getSegment().getEnd());
                 } else {
-                    this.moveForwardBy(distTraveled);
+                    nextSegments = this._simMgr.getMapManager().getSegmentsStartingAt(this.getSegment().getEnd());
+                }
+
+                if(nextSegments && nextSegments.length > 0){
+                    // move to segment (pick randomly)
+                    // TODO: lookup values from vehicle's choosen path
+                    var randIndex = Math.floor((Math.random() * nextSegments.length));
+                    var nextSeg: RoadSegment = nextSegments[randIndex];
+                    nextSeg.addVehicle(this);
+
+                    distTraveled -= remainingDistOnSegment;
+                } else{
+                    // TODO: set flag indicating SimulationManager should cleanup vehicle
+                    shouldRemoveNow = true;
                 }
             }
         }
+
+        if (shouldRemoveNow) {
+            this._simMgr.removeVehicle(this);
+        }
+        
+        if (this.isCrashed()) {
+            this.brake(elapsedMs);
+            // remove vehicle after
+            if (this._crashedAt + this._crashCleanupTime >= this._simMgr.getTotalElapsed()) {
+                // remove self from the Simulation
+                this._simMgr.removeVehicle(this);
+            }
+        }
+        
+        this.moveForwardBy(distTraveled);
     }
 
     /**
@@ -133,18 +117,23 @@ export class Vehicle extends TrafficObject {
         return this._velocity;
     }
 
-    setVelocity(velocity: number): void {
-        this._velocity = velocity;
+    setCrashed(): void {
+        this._crashedAt = new Date().getTime();
+        this.getMaterial().color.setHex(0xff0000); // red
+    }
+
+    isCrashed(): boolean {
+        return this._crashedAt !== null && this._crashedAt !== undefined;
     }
 
     updateVelocity(elapsedMs: number, isStopping: boolean): void {
-        if (this.getSegment()) {
+        if (this.getSegmentId()) {
             // speed up or slow down
-            if (this.getVelocity() < this.getSegment().speedLimit && !isStopping) {
+            if (!isStopping && this.getVelocity() < this.getSegment().speedLimit) {
                 // speed up: avg. rate of acceleration is 3.5 m/s^2
                 this.accelerate(elapsedMs);
             }
-            if (this.getVelocity() > this.getSegment().speedLimit || isStopping) {
+            if (isStopping) {
                 // slow down: avg. rate of deceleration is 3.5 m/s^2
                 this.brake(elapsedMs);
             }
@@ -154,7 +143,7 @@ export class Vehicle extends TrafficObject {
     accelerate(elapsedMs: number): void {
         var elapsedSeconds = elapsedMs/1000;
         this._velocity += (Utils.convertMetresPerSecToKmph(this.acceleration * elapsedSeconds));
-        (this.getMesh().material as MeshBasicMaterial).color.setHex(0x66ff66); // green
+        this.getMaterial()?.color.setHex(0x66ff66); // green
     }
 
     brake(elapsedMs: number): void {
@@ -164,41 +153,49 @@ export class Vehicle extends TrafficObject {
         if (this.getVelocity() < 0) {
             this._velocity = 0;
         }
-        (this.getMesh().material as MeshBasicMaterial).color.setHex(0xff0000); // red
+        if (this.isCrashed()) {
+            this.getMaterial()?.color.setHex(0xff0000); // red
+        } else {
+            this.getMaterial()?.color.setHex(0xffff00); // yellow
+        }
     }
 
-    shouldStop(distance?: number, segment?: RoadSegment, skipCollisionCheck: boolean = false): boolean {
-        if (!segment) {
-            segment = this._simMgr.getMapManager().getSegmentById(this.getSegmentId());
-        }
-    
-        var dist = distance || this.getLookAheadDistance();
-        // check for vehicles in range
-        var foundV = this.shouldStopForVehicle(dist);
-        if (foundV && foundV.stop) {
-            if (skipCollisionCheck) {
-                return foundV.stop;
-            } else {
-                // perform collision check
-                var box1 = new Box3().setFromObject(this.getObj3D());
-                var vehicle: Vehicle = this._simMgr.getMapManager().getVehicleById(foundV.id);
-                var box2 = new Box3().setFromObject(vehicle.getObj3D());
-                if (Utils.isCollidingWith(box1, box2)) {
-                    this.crashed = true;
-                    vehicle.crashed = true;
-                } else {
-                    var changingLanes = this.changeLanesIfAvailable();
-                    if (!changingLanes) {
-                        return foundV.stop;
-                    }
+    shouldStop(skipCollisionCheck: boolean = false): boolean {
+        if (!skipCollisionCheck) {
+            // perform collision check
+            var vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadius(this, this.length * 2);
+            vehicles.forEach((vehicle) => {
+                if (Utils.isCollidingWith(this, vehicle)) {
+                    console.warn(`crash of vehicle: ${this.id} at ${JSON.stringify(this.getLocation())} with vehicle: ${vehicle.id} at ${JSON.stringify(vehicle.getLocation())}`);
+                    this.setCrashed();
+                    vehicle.setCrashed();
                 }
-            }
+            });
         }
-        // check for traffic flow controllers
-        var foundTfc = this.shouldStopForTfc(dist);
-        if (foundTfc && foundTfc.stop) { // and then check for traffic lights in range
+        
+        if (this.isCrashed()) {
+            return true;
+        }
+
+        var dist: number = this.getLookAheadDistance();
+        
+        // check for vehicles in range
+        var foundV: ShouldStopResponse = this.shouldStopForVehicle(dist);
+        if (foundV && foundV.stop) {
+            var changingLanes = this.changeLanesIfAvailable();
+            if (changingLanes) {
+                return false;
+            }
+            return true;
+        }
+
+        // check for traffic flow controllers in range that say "stop"
+        var foundTfc: ShouldStopResponse = this.shouldStopForTfc(dist);
+        if (foundTfc && foundTfc.stop) {
+            // console.debug(`vehicle ${this.id} should stop for tfc ${foundTfc.id}`);
             return foundTfc.stop;
         }
+
         // check for corners
         var foundCorner = this.shouldSlowForCorner(dist);
         if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
@@ -208,41 +205,12 @@ export class Vehicle extends TrafficObject {
 
     shouldStopForVehicle(distance: number): ShouldStopResponse {
         if (distance > 0) {
-            var vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadius(this, distance);
+            var vehicles: Vehicle[] = this._simMgr.getMapManager()
+                .getVehiclesWithinRadiusAhead(this.getLocation(), this.getSegment(), distance);
             for (var i=0; i<vehicles.length; i++) {
                 let v: Vehicle = vehicles[i];
                 if (v.id !== this.id) {
-                    if (this.hasInView(v)) {
-                        // check if v is in current segment
-                        if (v.getSegmentId() == this.getSegmentId()) {
-                            return { stop: true, type: ShouldStopType.vehicle, id: v.id };
-                        }
-                        // check if v is in intersecting segment
-                        let currentSegment: RoadSegment = this._simMgr.getMapManager().getSegmentById(this.getSegmentId());
-                        var connectedTo = this._simMgr.getMapManager().getSegmentsContainingPoint(currentSegment.getEnd()).filter(function (seg) {
-                            return seg.id !== v.getSegmentId();
-                        });
-                        var containing = connectedTo.filter(function (seg) { return seg.id === v.getSegmentId(); });
-                        if (v.getSegment() && containing.length > 0) {
-                            return { stop: true, type: ShouldStopType.vehicle, id: v.id };
-                        } else {
-                            // check for vehicles on segments ahead
-                            var distToSegEnd = Utils.getDistanceBetweenTwoPoints(this.getLocation(), currentSegment.getEnd());
-                            if (distToSegEnd < distance) {
-                                var found: ShouldStopResponse = {stop: false};
-                                for (var j=0; j<connectedTo.length; j++) {
-                                    var s: RoadSegment = connectedTo[j];
-                                    var tmpV = this.clone();
-                                    s.addVehicle(tmpV);
-                                    found = tmpV.shouldStopForVehicle(distance - distToSegEnd);
-                                    tmpV.disposeGeometry();
-                                    if (found && found.stop) {
-                                        return found;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
                 }
             }
         }
@@ -252,11 +220,11 @@ export class Vehicle extends TrafficObject {
 
     shouldStopForTfc(distance: number): ShouldStopResponse {
         if (distance > 0) {
-            var tfcs = this._simMgr.getMapManager().getTfcsWithinRadiusOnSegment(this, distance, this.getSegmentId());
+            var tfcs = this._simMgr.getMapManager().getTfcsWithinRadiusAhead(this.getLocation(), this.getSegment(), distance);
             for (var i=0; i<tfcs.length; i++) {
                 var tfc = tfcs[i];
                 if (tfc.shouldStop(this)) {
-                    return { stop: true, type: ShouldStopType.tfc, segmentId: tfc.getSegmentId(), id: tfc.id };
+                    return {stop: true, type: ShouldStopType.tfc, segmentId: tfc.getSegmentId(), id: tfc.id};
                 }
             }
         }
@@ -278,6 +246,7 @@ export class Vehicle extends TrafficObject {
                         var line1 = new Line3(this.getLocation(), point);
                         var line2 = this.getSegment().getLine();
                         var angle = Math.abs(Utils.angleFormedBy(line1, line2));
+                        // TODO: base angle on speed where greater angles allowed at lower speeds
                         if (angle <= 25 && angle > 5) {
                             if (!closestPoint) {
                                 closestPoint = point;
@@ -304,11 +273,8 @@ export class Vehicle extends TrafficObject {
                 tmpV._isChangingLanes = true;
                 tmpV.setPosition(seg.getStart());
                 tmpV.lookAt(seg.getEnd());
-                // don't change lanes if we just have to stop on the new lane too
-                var distance = this.getLookAheadDistance() * 2;
-                if (!tmpV.shouldStop(distance, seg, true)) {
+                if (!tmpV.shouldStop(true)) {
                     this.setSegmentId(seg.id);
-                    this.setPosition(seg.getStart());
                     this.lookAt(seg.getEnd());
                     this._changeLaneTime = this._simMgr.getTotalElapsed() + (this.changeLaneDelay * 1000);
                     this._isChangingLanes = true;
@@ -348,47 +314,42 @@ export class Vehicle extends TrafficObject {
         return {stop: false};
     }
 
-    hasInView<T extends TrafficObject>(tObj: T): boolean {
+    hasInView(otherVehicle: Vehicle): boolean {
         var maxAngle = 45;
         if (this._isChangingLanes) {
             maxAngle = 90;
         }
-        let mesh: Mesh = tObj.getMesh();
-        // get geometry vertices
-        let geoVerts: Vector3[] = mesh?.geometry.attributes?.position as unknown as Array<Vector3>;
-        if (typeof geoVerts?.map == "function") {
-            // move geometry vertices to actual world locations
-            var vertices: Vector3[] = geoVerts?.map((v: Vector3) => {
-                return v.clone().applyMatrix4(mesh?.matrixWorld);
-            }) || [];
-            for (var i=0; i<vertices.length; i++) {
-                var location = vertices[i];
-                var headingLine = new Line3(this.getLocation(), this.getSegment().getEnd());
-                var headingToLocation = new Line3(this.getLocation(), location);
+        let otherLoc: Vector3 = otherVehicle.getLocation();
+        var headingLine = new Line3(this.getLocation(), this.getSegment().getEnd());
+        var headingToLocation = new Line3(this.getLocation(), otherLoc);
 
-                if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
-                    return true;
-                }
-            }
+        if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
+            return true;
         }
         return false;
     }
 
     /**
-     * distance to decelerate from current velocity to 0
-     * (2) d = -u² / 2a
-     * v = desired velocity (0 metres/second)
-     * u = current velocity (metres/second)
+     * time to stop from current velocity:
+     * t = vf-vi/a
+     * 
+     * distance travelled over time:
+     * vf^2−vi^2=2ad | d = (vf^2-vi^2)/2a
+     * d = (t/vi)/2
+     * 
+     * vf = desired velocity (0 metres/second)
+     * vi = current velocity (metres/second)
      * a = acceleration (metres/second)
      * d = distance (metres)
      */
     getLookAheadDistance(): number { 
         var mps = Utils.convertKmphToMetresPerSec(this.getVelocity());
-        var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.deceleration))) / 2;
-        var distanceToReact = this.reactionTime * mps;
-        var distanceTot = distanceToStop + (this.length * 2) + distanceToReact;
-        // TODO: use distanceToReact as a setTimeout for when to check distances again
-        return distanceTot;
+        let time: number = mps / this.deceleration;
+        let dist: number = (Math.pow(mps, 2)) / (2 * this.deceleration)
+        // var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.deceleration))) / 2;
+        // var distanceToReact = this.reactionTime * mps;
+        // var distanceTot = distanceToStop + (this.length * 2) + distanceToReact;
+        return (dist + this.length) * 1.5;
     }
 
     protected generateMesh(): Object3D {
