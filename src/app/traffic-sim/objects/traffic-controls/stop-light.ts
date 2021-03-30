@@ -7,8 +7,17 @@ import { TfcState } from "./tfc-state";
 import { TrafficFlowControl } from "./traffic-flow-control";
 
 export class StopLight extends TrafficFlowControl {
+    /**
+     * number of milliseconds the light remains green
+     */
     private readonly _greenDuration: number;
+    /**
+     * number of milliseconds the light remains yellow
+     */
     private readonly _yellowDuration: number;
+    /**
+     * number of milliseconds the light remains red
+     */
     private readonly _redDuration: number;
     
     constructor(options?: StopLightOptions, simMgr?: SimulationManager) {

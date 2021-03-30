@@ -1,5 +1,4 @@
 import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, TextGeometry, FontLoader, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
-import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -148,17 +147,17 @@ export class RoadSegment extends TrafficObject {
     }
 
     getLength(): number {
-        return Utils.getDistanceBetweenTwoPoints(this._line.start, this._line.end);
+        return this.getLine().distance() || 0;
     }
 
     getCenter(): Vector3 {
         let v: Vector3 = new Vector3();
-        this._line.getCenter(v);
+        this.getLine().getCenter(v) || new Vector3();
         return v;
     }
 
     getTangent(): Vector3 {
-        let s: LineCurve3 = new LineCurve3(this._line.start, this._line.end);
+        let s: LineCurve3 = new LineCurve3(this.getLine().start, this.getLine().end);
         return s.getTangent(0);
     }
 
@@ -177,8 +176,8 @@ export class RoadSegment extends TrafficObject {
             id: this.id,
             name: this.name,
             width: this.width,
-            start: this._line.start,
-            end: this._line.end,
+            start: this.getLine().start,
+            end: this.getLine().end,
             speedLimit: this.speedLimit
         });
         r.setPosition(this.getLocation());

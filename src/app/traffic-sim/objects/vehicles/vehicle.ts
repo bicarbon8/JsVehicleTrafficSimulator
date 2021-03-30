@@ -9,13 +9,38 @@ import { ShouldStopType } from "./should-stop-type";
 import { VehicleOptions } from "./vehicle-options";
 
 export class Vehicle extends TrafficObject {
-    readonly width: number; // 2,
-    readonly length: number; // 4,
-    readonly height: number; // 2,
-    readonly reactionTime: number; // 2.5, // seconds to react
-    readonly acceleration: number; // 3.5, // meters per second
-    readonly deceleration: number; // 7, // meters per second
-    readonly changeLaneDelay: number; // 5 // don't change lanes for 5 seconds after a change
+    /**
+     * width of vehicle in Metres
+     */
+    readonly width: number;
+    /**
+     * length of vehicle in Metres
+     */
+    readonly length: number;
+    /**
+     * height of vehicle in Metres
+     */
+    readonly height: number;
+    /**
+     * milliseconds taken to react to events
+     */
+    readonly reactionTime: number;
+    /**
+     * acceleration in Kilometres per Hour
+     */
+    readonly acceleration: number;
+    /**
+     * deceleration in Kilometres per Hour
+     */
+    readonly deceleration: number;
+    /**
+     * amount of time after changing lanes before considering changing again in milliseconds
+     */
+    readonly changeLaneDelay: number;
+    /**
+     * maximum velocity vehicle can go in Kilometres per Hour
+     */
+    readonly maxVelocity: number;
 
     private _isChangingLanes: boolean;
     private _changeLaneTime: number;
@@ -28,10 +53,11 @@ export class Vehicle extends TrafficObject {
         this.width = options?.width || 2;
         this.length = options?.length || 3;
         this.height = options?.height || 1;
-        this.reactionTime = options?.reactionTime || 2.5;
-        this.acceleration = options?.acceleration || 3.5;
-        this.deceleration = options?.deceleration || 7;
-        this.changeLaneDelay = options?.changeLaneDelay || 5;
+        this.reactionTime = options?.reactionTime || 2500;
+        this.acceleration = options?.acceleration || 10.8;
+        this.deceleration = options?.deceleration || 3.96;
+        this.changeLaneDelay = options?.changeLaneDelay || 5000;
+        this.maxVelocity = options?.maxVelocity || 260;
         
         this._velocity = 0;
     }
@@ -46,7 +72,8 @@ export class Vehicle extends TrafficObject {
             reactionTime: this.reactionTime,
             acceleration: this.acceleration,
             deceleration: this.deceleration,
-            changeLaneDelay: this.changeLaneDelay
+            changeLaneDelay: this.changeLaneDelay,
+            maxVelocity: this.maxVelocity
         });
         v.setPosition(this.getLocation());
         v.setRotation(this.getRotation());
@@ -67,7 +94,7 @@ export class Vehicle extends TrafficObject {
         var distTraveled = (this.getVelocity() * elapsedSeconds);
         // console.debug(`vehicle '${this.id}' distance travelled is: ${distTraveled}`);
         if(distTraveled > 0) {
-            var remainingDistOnSegment = Utils.getDistanceBetweenTwoPoints(this.getLocation(), this.getSegment().getEnd());
+            var remainingDistOnSegment = Utils.getDistance(this.getLocation(), this.getSegment().getEnd());
             if (distTraveled >= remainingDistOnSegment) {
                 // if there is a next Segment
                 var nextSegments: RoadSegment[];
@@ -95,6 +122,7 @@ export class Vehicle extends TrafficObject {
 
         if (shouldRemoveNow) {
             this._simMgr.removeVehicle(this);
+            return;
         }
         
         if (this.isCrashed()) {
@@ -111,7 +139,7 @@ export class Vehicle extends TrafficObject {
 
     /**
      * returns the speed along the Z axis (fowards / backwards)
-     * @returns the speed in Kilometres per second
+     * @returns the speed in Kilometres per hour
      */
     getVelocity(): number {
         return this._velocity;
@@ -127,23 +155,34 @@ export class Vehicle extends TrafficObject {
     }
 
     updateVelocity(elapsedMs: number, isStopping: boolean): void {
-        if (this.getSegmentId()) {
-            // speed up or slow down
-            if (!isStopping && this.getVelocity() < this.getSegment().speedLimit) {
-                // speed up: avg. rate of acceleration is 3.5 m/s^2
-                this.accelerate(elapsedMs);
-            }
-            if (isStopping) {
-                // slow down: avg. rate of deceleration is 3.5 m/s^2
-                this.brake(elapsedMs);
-            }
+        // speed up or slow down
+        if (isStopping) {
+            this.brake(elapsedMs);
+        } else {
+            this.accelerate(elapsedMs);
         }
     }
 
+    /**
+     * if this vehicle is not exceeding its {maxVelocity} and the
+     * {RoadSegment.speedLimit} the current velocity will be increased
+     * using the following formula:
+     * `Vf = Vi + A * t`
+     * 
+     * where:
+     * `Vf` is the final velocity in Kilometres per Hour
+     * `Vi` is the current velocity in Kilometres per Hour
+     * `A` is the {acceleration} in Kilometres per Hour
+     * `t` is the elapsed time in Hours
+     * @param elapsedMs amount of time, in milliseconds, elapsed since last update
+     */
     accelerate(elapsedMs: number): void {
-        var elapsedSeconds = elapsedMs/1000;
-        this._velocity += (Utils.convertMetresPerSecToKmph(this.acceleration * elapsedSeconds));
-        this.getMaterial()?.color.setHex(0x66ff66); // green
+        let vel: number = this.getVelocity();
+        if (vel < this.maxVelocity && vel < this.getSegment()?.speedLimit) {
+            let elapsedHours: number = Utils.convertMillisecondsToHours(elapsedMs);
+            this._velocity += this.acceleration * elapsedHours;
+            this.getMaterial()?.color.setHex(0x66ff66); // green
+        }
     }
 
     brake(elapsedMs: number): void {
@@ -161,6 +200,10 @@ export class Vehicle extends TrafficObject {
     }
 
     shouldStop(skipCollisionCheck: boolean = false): boolean {
+        if (this.isCrashed()) {
+            return true;
+        }
+        
         if (!skipCollisionCheck) {
             // perform collision check
             var vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadius(this, this.length * 2);
@@ -172,7 +215,8 @@ export class Vehicle extends TrafficObject {
                 }
             });
         }
-        
+
+        // check again as we may have crashed
         if (this.isCrashed()) {
             return true;
         }
@@ -252,7 +296,7 @@ export class Vehicle extends TrafficObject {
                                 closestPoint = point;
                             } else {
                                 if (line1.distance() <
-                                    Utils.getDistanceBetweenTwoPoints(closestPoint, this.getLocation())) {
+                                    Utils.getDistance(closestPoint, this.getLocation())) {
                                     closestPoint = point;
                                 }
                             }
@@ -289,7 +333,7 @@ export class Vehicle extends TrafficObject {
 
     shouldSlowForCorner(distance: number): ShouldStopResponse {
         // slow down when the next segment is in range and has a different heading
-        var distanceToSegEnd = Utils.getDistanceBetweenTwoPoints(this.getLocation(), this.getSegment().getEnd());
+        var distanceToSegEnd = Utils.getDistance(this.getLocation(), this.getSegment().getEnd());
         if (distanceToSegEnd < distance) {
             // base the amount on how different the heading is
             var headingDiff = 0;
@@ -331,25 +375,26 @@ export class Vehicle extends TrafficObject {
 
     /**
      * time to stop from current velocity:
-     * t = vf-vi/a
+     * t = (Vf - Vi) / A
      * 
      * distance travelled over time:
-     * vf^2−vi^2=2ad | d = (vf^2-vi^2)/2a
-     * d = (t/vi)/2
+     * d = ((Vf + Vi) / 2) * t
      * 
-     * vf = desired velocity (0 metres/second)
-     * vi = current velocity (metres/second)
-     * a = acceleration (metres/second)
-     * d = distance (metres)
+     * Vf = desired velocity (0 Kilometres per Hour)
+     * Vi = current velocity (Kilometres per Hour)
+     * d = distance (Kilometres)
+     * t = time (Hours)
+     * @returns the distance required to stop in metres
      */
     getLookAheadDistance(): number { 
-        var mps = Utils.convertKmphToMetresPerSec(this.getVelocity());
-        let time: number = mps / this.deceleration;
-        let dist: number = (Math.pow(mps, 2)) / (2 * this.deceleration)
+        var vel = this.getVelocity(); // Kilometres per Hour
+        let time: number = vel / this.deceleration; // Hours
+        let dist: number = (vel / 2) * time;
+        let distInMetres = dist * 1000;
         // var distanceToStop = (-(Math.pow(mps, 2)) / (2 * -(this.deceleration))) / 2;
         // var distanceToReact = this.reactionTime * mps;
         // var distanceTot = distanceToStop + (this.length * 2) + distanceToReact;
-        return (dist + this.length) * 1.5;
+        return (distInMetres + this.length) * 1.5;
     }
 
     protected generateMesh(): Object3D {

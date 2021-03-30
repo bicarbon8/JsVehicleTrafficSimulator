@@ -14,13 +14,13 @@ export module Utils {
 		return Math.random() * (max - min) + min;
 	}
 
-	export function getDistanceBetweenTwoPoints(p1: Vector3, p2: Vector3): number {
-        return new Line3(new Vector3().copy(p1), new Vector3().copy(p2)).distance();
+	export function getDistance(p1: Vector3, p2: Vector3): number {
+        return new Line3(p1, p2).distance();
     }
 
     export function angleFormedBy(line1: Line3, line2: Line3): number {
-        var a = new Vector3().copy(line1.end).sub(line1.start).normalize();
-        var b = new Vector3().copy(line2.end).sub(line2.start).normalize();
+        var a = line1.end.clone().sub(line1.start.clone()).normalize();
+        var b = line2.end.clone().sub(line2.start.clone()).normalize();
         return (Math.acos(a.dot(b))*(180/Math.PI));
     }
 
@@ -44,6 +44,18 @@ export module Utils {
 		result = (metersPerSecond * SECONDS_PER_HOUR) / METERS_PER_KILOMETER;
 		return result;
 	}
+
+    export function convertMillisecondsToSeconds(ms: number): number {
+        return ms / 1000;
+    }
+
+    export function convertMillisecondsToMinutes(ms: number): number {
+        return convertMillisecondsToSeconds(ms) / 60;
+    }
+
+    export function convertMillisecondsToHours(ms: number): number {
+        return convertMillisecondsToMinutes(ms) / 60;
+    }
 
     export function convertMsToHumanReadable(milliseconds: number): string {
         var x = milliseconds / 1000;

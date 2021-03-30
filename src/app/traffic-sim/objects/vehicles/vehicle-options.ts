@@ -14,19 +14,23 @@ export interface VehicleOptions extends TrafficObjectOptions {
      */
     height: number;
     /**
-     * seconds to react
+     * milliseconds to react
      */
     reactionTime: number;
     /**
-     * metres per second
+     * acceleration in Kilometres per Hour
      */
     acceleration: number;
     /**
-     * metres per second
+     * deceleration in Kilometres per Hour
      */
     deceleration: number;
     /**
-     * minimum time to wait after changing lanes before changing again
+     * minimum time in milliseconds to wait after changing lanes before changing again
      */
     changeLaneDelay: number;
+    /**
+     * maximum velocity this vehicle can sustain in Kilometres per Hour
+     */
+    maxVelocity: number;
 }

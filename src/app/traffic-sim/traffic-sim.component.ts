@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { Utils } from './helpers/utils';
 import { RoadMap } from './map/road-map';
 import { SimulationManager } from './simulation-manager';
 
@@ -18,6 +19,7 @@ export class TrafficSimComponent implements OnInit {
     this._simMgr.init('#traffic-sim');
     let path: string = 'assets/maps/intersection.json';
     await this.loadMap(path);
+    this._simMgr.setRealtime(true);
     this._simMgr.start();
   }
 
@@ -46,5 +48,9 @@ export class TrafficSimComponent implements OnInit {
     if (!isNaN(step)) {
       this._simMgr.setTimestep(step);
     }
+  }
+
+  getSimulationTimeElapsed(): string {
+    return Utils.convertMsToHumanReadable(this._simMgr.getTotalElapsed());
   }
 }

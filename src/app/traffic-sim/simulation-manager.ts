@@ -33,7 +33,7 @@ export class SimulationManager {
         this._realtime = false;
         this._updateMap = false;
         this._totalElapsedTime = 0;
-        this._timeStep = 10;
+        this._timeStep = 200;
 
         this._mapManager = mapMgr || MapManager.inst;
         this._viewMgr = viewMgr || ViewManager.inst;
@@ -63,6 +63,10 @@ export class SimulationManager {
         } else {
             this.start();
         }
+    }
+
+    setRealtime(realtime: boolean): void {
+        this._realtime = realtime;
     }
 
     start(): void {
