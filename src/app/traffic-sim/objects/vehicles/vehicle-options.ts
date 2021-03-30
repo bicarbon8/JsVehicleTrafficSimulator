@@ -18,11 +18,11 @@ export interface VehicleOptions extends TrafficObjectOptions {
      */
     reactionTime: number;
     /**
-     * acceleration in Kilometres per Hour
+     * acceleration in Metres per Second
      */
     acceleration: number;
     /**
-     * deceleration in Kilometres per Hour
+     * deceleration in Metres per Second
      */
     deceleration: number;
     /**
@@ -30,7 +30,7 @@ export interface VehicleOptions extends TrafficObjectOptions {
      */
     changeLaneDelay: number;
     /**
-     * maximum velocity this vehicle can sustain in Kilometres per Hour
+     * maximum speed this vehicle can sustain in Kilometres per Hour
      */
-    maxVelocity: number;
+    maxSpeed: number;
 }

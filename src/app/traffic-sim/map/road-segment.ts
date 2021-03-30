@@ -9,7 +9,13 @@ import { RoadSegmentOptions } from './road-segment-options';
 export class RoadSegment extends TrafficObject {
     readonly id: number;
     readonly name: string;
+    /**
+     * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
+     */
     readonly speedLimit: number;
+    /**
+     * width of {RoadSegment} in Metres
+     */
     readonly width: number;
 
     private _line: Line3;

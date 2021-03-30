@@ -17,8 +17,9 @@ export class SimulationManager {
     
     private _canvasId: string;
     private _startTime: number; // in milliseconds
+    private _lastUpdate: number; // millisecond time
     private _realtime: boolean;
-    private _updateMap: boolean;
+    private _runSimulation: boolean;
     private _totalElapsedTime: number; // in milliseconds
     /**
      * number of steps between each update; lower values are more accurate, but slower.
@@ -31,9 +32,9 @@ export class SimulationManager {
 
     constructor(mapMgr?: MapManager, viewMgr?: ViewManager) {
         this._realtime = false;
-        this._updateMap = false;
+        this._runSimulation = false;
         this._totalElapsedTime = 0;
-        this._timeStep = 200;
+        this._timeStep = 1000;
 
         this._mapManager = mapMgr || MapManager.inst;
         this._viewMgr = viewMgr || ViewManager.inst;
@@ -58,7 +59,7 @@ export class SimulationManager {
     }
 
     toggleAnimationState(): void {
-        if (this._updateMap) {
+        if (this._runSimulation) {
             this.stop();
         } else {
             this.start();
@@ -71,20 +72,17 @@ export class SimulationManager {
 
     start(): void {
         this._startTime = new Date().getTime();
-        this._updateMap = true;
+        this._runSimulation = true;
     }
 
     stop(): void {
-        this._updateMap = false;
+        this._runSimulation = false;
     }
 
     update(): void {
-        let elapsed: number = this.getElapsed();
-        this._totalElapsedTime += elapsed;
-        // console.debug(`elapsed: '${elapsed}'; total elapsed: '${this._totalElapsedTime}'`);
-        
-        if (this._updateMap) {
-            // console.debug(`updating map...`);
+        if (this._runSimulation) {
+            let elapsed: number = this.getElapsed();
+            this._totalElapsedTime += elapsed;
             this._mapManager.update(elapsed);
         }
         
@@ -101,7 +99,12 @@ export class SimulationManager {
     getElapsed(): number {
         if (this._realtime) {
             let now: number = new Date().getTime();
-            return now - this.getTotalElapsed();
+            if (!this._lastUpdate) {
+                this._lastUpdate = this._startTime;
+            }
+            let elapsed: number = now - this._lastUpdate;
+            this._lastUpdate = now;
+            return elapsed;
         }
         return this.getTimestep();
     }

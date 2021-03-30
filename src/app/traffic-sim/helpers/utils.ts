@@ -3,9 +3,7 @@ import { Renderable } from '../view/renderable';
 
 export module Utils {
     var _id: number = 0;
-    export const SECONDS_PER_HOUR: number = 3600;
-    export const METERS_PER_KILOMETER: number = 1000;
-
+    
     export function getNewId(): number {
         return _id++;
     }
@@ -14,7 +12,7 @@ export module Utils {
 		return Math.random() * (max - min) + min;
 	}
 
-	export function getDistance(p1: Vector3, p2: Vector3): number {
+	export function getLength(p1: Vector3, p2: Vector3): number {
         return new Line3(p1, p2).distance();
     }
 
@@ -34,15 +32,11 @@ export module Utils {
     }
 
     export function convertKmphToMetresPerSec(kilometersPerHour: number): number {
-		var result = 0;
-		result = (kilometersPerHour / SECONDS_PER_HOUR) * METERS_PER_KILOMETER;
-		return result;
+		return kilometersPerHour / 3.6;
 	}
 
 	export function convertMetresPerSecToKmph(metersPerSecond: number): number {
-		var result = 0;
-		result = (metersPerSecond * SECONDS_PER_HOUR) / METERS_PER_KILOMETER;
-		return result;
+		return metersPerSecond * 3.6;
 	}
 
     export function convertMillisecondsToSeconds(ms: number): number {
@@ -64,8 +58,10 @@ export module Utils {
         var minutes: string = Math.floor(x % 60).toString();
         x /= 60;
         var hours: string = Math.floor(x % 24).toString();
+        x /= 24;
+        let days: string = Math.floor(x).toString();
 
-        var elapsedReadable: string = `${hours}:${minutes}:${seconds}`;
+        var elapsedReadable: string = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
         return elapsedReadable;
     }
@@ -91,5 +87,20 @@ export module Utils {
         if (headingAngle >= 135) {
             return 1;
         }
+    }
+
+    /**
+     * returns the distance based on the below formula
+     * `d = v * t`
+     * 
+     * where:
+     * `d` = distance in metres
+     * `v` = {velocity} in Metres per Second
+     * `t` = time in Seconds
+     * @param velocity the speed in Metres per Second
+     * @param elapsedMs the time in milliseconds
+     */
+    export function getDistanceTravelled(velocity: number, elapsedMs: number): number {
+        return velocity * convertMillisecondsToSeconds(elapsedMs);
     }
 }

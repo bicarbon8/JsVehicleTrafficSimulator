@@ -11,8 +11,12 @@ import { SimulationManager } from './simulation-manager';
 })
 export class TrafficSimComponent implements OnInit {
   private _simMgr: SimulationManager;
+  
+  rand: number;
 
-  constructor(private httpClient: HttpClient) { }
+  constructor(private httpClient: HttpClient) { 
+    this.rand = 0;
+  }
 
   async ngOnInit(): Promise<void> {
     this._simMgr = SimulationManager.inst;
@@ -21,6 +25,10 @@ export class TrafficSimComponent implements OnInit {
     await this.loadMap(path);
     this._simMgr.setRealtime(true);
     this._simMgr.start();
+  }
+
+  getRandom(): void {
+    this.rand = Utils.getRandomBetween(2.7, 6.7);
   }
 
   async loadMap(path: string): Promise<void> {

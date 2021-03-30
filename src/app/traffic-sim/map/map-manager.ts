@@ -38,16 +38,16 @@ export class MapManager {
 
     getVehiclesWithinRadius(vehicle: Vehicle, distance: number): Vehicle[] {
         return this.getVehicles().filter((v) => {
-            return v.id != vehicle.id && (Utils.getDistance(vehicle.getLocation(), v.getLocation()) <= distance);
+            return v.id != vehicle.id && (Utils.getLength(vehicle.getLocation(), v.getLocation()) <= distance);
         });
     }
 
     getVehiclesWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): Vehicle[] {
-        let distanceToEnd: number = Utils.getDistance(location, segment.getEnd());
+        let distanceToEnd: number = Utils.getLength(location, segment.getEnd());
         let vehicles: Vehicle[] = segment.getVehicles().filter((v) => {
-            let distToVeh: number = Utils.getDistance(location, v.getLocation());
+            let distToVeh: number = Utils.getLength(location, v.getLocation());
             if (distToVeh <= distance) {
-                return (Utils.getDistance(v.getLocation(), segment.getLine().end) <= distanceToEnd);
+                return (Utils.getLength(v.getLocation(), segment.getLine().end) <= distanceToEnd);
             }
             return false;
         });
@@ -73,11 +73,11 @@ export class MapManager {
     }
 
     getTfcsWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): TrafficFlowControl[] {
-        let distanceToEnd: number = Utils.getDistance(location, segment.getEnd());
+        let distanceToEnd: number = Utils.getLength(location, segment.getEnd());
         let tfcs: TrafficFlowControl[] = segment.getTfcs().filter((tfc) => {
-            let distToTfc: number = Utils.getDistance(location, tfc.getLocation());
+            let distToTfc: number = Utils.getLength(location, tfc.getLocation());
             if (distToTfc <= distance) {
-                return (Utils.getDistance(tfc.getLocation(), segment.getLine().end) <= distanceToEnd);
+                return (Utils.getLength(tfc.getLocation(), segment.getLine().end) <= distanceToEnd);
             }
             return false;
         });

@@ -84,11 +84,11 @@ export class VehicleGenerator extends TrafficObject {
             width: Utils.getRandomBetween(2, 3),
             height: Utils.getRandomBetween(1, 1.5),
             length: Utils.getRandomBetween(3, 5),
-            acceleration: Utils.getRandomBetween(30000, 80000),
-            deceleration: Utils.getRandomBetween(108495, 127053),
+            acceleration: Utils.getRandomBetween(2.78, 6.95), // 0-100 in 4 to 10 seconds
+            deceleration: Utils.getRandomBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
             reactionTime: Utils.getRandomBetween(2500, 3500),
             changeLaneDelay: Math.floor(Utils.getRandomBetween(5000, 15000)),
-            maxVelocity: Math.floor(Utils.getRandomBetween(200, 260))
+            maxSpeed: Math.floor(Utils.getRandomBetween(200, 260))
         });
         let seg: RoadSegment = this.getSegment();
         let line: Line3 = seg.getLine();
