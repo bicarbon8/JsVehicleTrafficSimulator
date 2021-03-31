@@ -1,6 +1,8 @@
-import { Vector3 } from 'three';
+import { Line3, Vector3 } from 'three';
 import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
+import { ShouldStopResponse } from '../objects/vehicles/should-stop-response';
+import { ShouldStopType } from '../objects/vehicles/should-stop-type';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { RoadSegment } from './road-segment';
 
@@ -11,6 +13,10 @@ export class MapManager {
     constructor() {
         this._segments = new Map<number, RoadSegment>();
         this._up = new Vector3(0, 1, 0);
+    }
+
+    update(elapsedMs: number): void {
+        this.getSegments().forEach((seg) => seg.update(elapsedMs));
     }
 
     getUp(): Vector3 {
@@ -165,12 +171,116 @@ export class MapManager {
 	getSimilarSegmentsInRoad(currentSegment: RoadSegment) {
 		return this.getSegmentsInRoad(currentSegment.name).filter((seg) => {
             // if less than 5 degrees variance in lines they're similar so return true
-            return (Math.abs(Utils.angleFormedBy(seg.getLine(), currentSegment.getLine())) < 5);
+            return currentSegment.id != seg.id && (Math.abs(Utils.angleFormedBy(seg.getLine(), currentSegment.getLine())) < 5);
         });
 	}
 
-    update(elapsedMs: number): void {
-        this.getSegments().forEach((seg) => seg.update(elapsedMs));
+    shouldStopForVehicles(vehicle: Vehicle, distance: number): ShouldStopResponse {
+        if (distance > 0) {
+            var vehicles: Vehicle[] = this.getVehiclesWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), distance);
+            for (var i=0; i<vehicles.length; i++) {
+                let v: Vehicle = vehicles[i];
+                if (v.id !== vehicle.id) {
+                    return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
+                }
+            }
+        }
+    
+        return {stop: false};
+    }
+
+    shouldStopForTfcs(vehicle: Vehicle, distance: number): ShouldStopResponse {
+        if (distance > 0) {
+            var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), distance);
+            for (var i=0; i<tfcs.length; i++) {
+                var tfc = tfcs[i];
+                if (tfc.shouldStop(vehicle)) {
+                    return {stop: true, type: ShouldStopType.tfc, segmentId: tfc.getSegmentId(), id: tfc.id};
+                }
+            }
+        }
+    
+        return {stop: false};
+    }
+
+    shouldSlowForCorner(vehicle: Vehicle, distance: number): ShouldStopResponse {
+        // slow down when the next segment is in range and has a different heading
+        let segEnd: Vector3 = vehicle.getSegment().getEnd();
+        var distanceToSegEnd = Utils.getLength(vehicle.getLocation(), segEnd);
+        if (distanceToSegEnd < distance) {
+            // base the amount on how different the heading is
+            var headingDiff = 0;
+            var line1: Line3 = vehicle.getSegment().getLine();
+            var nextSegments: RoadSegment[] = this.getSegmentsStartingAt(segEnd);
+            // TODO: only calculate for next segment on choosen path
+            for (var i in nextSegments) {
+                var nextSegment: RoadSegment = nextSegments[i];
+                var line2: Line3 = nextSegment.getLine();
+                var angle: number = Math.abs(Utils.angleFormedBy(line1, line2));
+                if (angle > headingDiff) {
+                    headingDiff = angle;
+                }
+            }
+
+            var corneringSpeed: number = Utils.corneringSpeedCalculator(headingDiff);
+            // begin slowing down
+            if (vehicle.getVelocity() > corneringSpeed) {
+                return { stop: true, type: ShouldStopType.cornering, headingDifference: headingDiff };
+            }
+        }
+
+        return {stop: false};
+    }
+
+    createChangeLaneSegment(vehicle: Vehicle): RoadSegment {
+        let changeLaneSegment: RoadSegment;
+        let closestPoint: Vector3;
+        let currentSeg: RoadSegment = vehicle.getSegment();
+        if (currentSeg) {
+            let availableLanes: RoadSegment[] = this.getSimilarSegmentsInRoad(currentSeg);
+            for (var i=0; i<availableLanes.length; i++) {
+                let availableLane: RoadSegment = availableLanes[i];
+                // check angle to all change points on possible lane
+                let points: Vector3[] = availableLane.getLaneChangePoints();
+                for (var j=0; j<points.length; j++) {
+                    var point: Vector3 = points[j];
+                    var line1: Line3 = new Line3(vehicle.getLocation(), point);
+                    var line2: Line3 = currentSeg.getLine();
+                    var angle: number = Math.abs(Utils.angleFormedBy(line1, line2));
+                    // TODO: base angle on speed where greater angles allowed at lower speeds
+                    if (angle <= 25 && angle > 5) {
+                        if (!closestPoint) {
+                            closestPoint = point;
+                        } else {
+                            if (line1.distance() < Utils.getLength(closestPoint, vehicle.getLocation())) {
+                                closestPoint = point;
+                            }
+                        }
+                    }
+                }
+
+                if (closestPoint) {
+                    // create tmp segment to new lane
+                    var seg = new RoadSegment({
+                        start: vehicle.getLocation(),
+                        end: closestPoint,
+                        speedLimit: currentSeg.speedLimit
+                    });
+                    var tmpV = vehicle.clone();
+                    tmpV.setSegmentId(seg.id);
+                    tmpV.setChangingLanes(true);
+                    tmpV.setPosition(seg.getStart());
+                    tmpV.lookAt(seg.getEnd());
+                    if (!tmpV.shouldDecelerate(true)) {
+                        changeLaneSegment = seg;
+                        break;
+                    }
+                    tmpV.disposeGeometry();
+                }
+            }
+        }
+
+        return changeLaneSegment;
     }
 }
 

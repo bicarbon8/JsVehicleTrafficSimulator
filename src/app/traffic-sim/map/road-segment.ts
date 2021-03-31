@@ -31,10 +31,20 @@ export class RoadSegment extends TrafficObject {
         }
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
         this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
-        this.width = options?.width || 3;
+        this.width = options?.width || 5;
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
+    }
+
+    update(elapsedMs: number): void {
+        this.getTfcs().forEach((tfc) => {
+            tfc.update(elapsedMs);
+        });
+        this.getVehicleGenerator()?.update(elapsedMs);
+        this.getVehicles().forEach((veh) => {
+            veh.update(elapsedMs);
+        });
     }
     
     getLaneChangePoints(): Vector3[] {
@@ -42,7 +52,7 @@ export class RoadSegment extends TrafficObject {
     }
 
     getVehicles(): Vehicle[] {
-        return Array.from(this._vehicles.values());
+        return Array.from(this._vehicles.values()).filter((v) => v.isActive());
     }
 
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
@@ -51,11 +61,16 @@ export class RoadSegment extends TrafficObject {
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
         vehicle.setPosition(loc);
         vehicle.lookAt(l.end);
+        let oldSegment: RoadSegment = vehicle.getSegment();
+        if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
         vehicle.setSegmentId(this.id);
         this._vehicles.set(vehicle.id, vehicle);
     }
 
     removeVehicle(vehicleId: number): boolean {
+        // console.debug(`removing vehicle ${vehicleId} from segment ${this.id}`);
+        let v: Vehicle = this._vehicles.get(vehicleId);
+        v.setSegmentId(-1);
         return this._vehicles.delete(vehicleId);
     }
 
@@ -165,16 +180,6 @@ export class RoadSegment extends TrafficObject {
     getTangent(): Vector3 {
         let s: LineCurve3 = new LineCurve3(this.getLine().start, this.getLine().end);
         return s.getTangent(0);
-    }
-
-    update(elapsedMs: number): void {
-        this.getTfcs().forEach((tfc) => {
-            tfc.update(elapsedMs);
-        });
-        this.getVehicleGenerator()?.update(elapsedMs);
-        this.getVehicles().forEach((veh) => {
-            veh.update(elapsedMs);
-        });
     }
 
     clone(): RoadSegment {

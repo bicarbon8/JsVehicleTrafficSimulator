@@ -69,7 +69,7 @@ export module Utils {
     export function corneringSpeedCalculator(headingAngle: number): number {
         if (headingAngle < 12) {
             // no real difference
-            return this.velocity; // fast as you like
+            return Infinity; // fast as you like
         }
         if (headingAngle < 25) {
             // mild / gentle curve

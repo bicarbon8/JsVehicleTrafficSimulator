@@ -33,4 +33,8 @@ export interface VehicleOptions extends TrafficObjectOptions {
      * maximum speed this vehicle can sustain in Kilometres per Hour
      */
     maxSpeed: number;
+    /**
+     * the starting speed along the forward trajectory for this vehicle
+     */
+    startingVelocity?: number;
 }

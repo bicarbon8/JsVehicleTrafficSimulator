@@ -5,4 +5,6 @@ export interface VehicleGeneratorOptions {
     roadName: string;
     delay: number;
     max: number;
+    startSpeedMax?: number;
+    startSpeedMin?: number;
 }

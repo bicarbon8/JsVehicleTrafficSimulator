@@ -83,8 +83,7 @@
         {
             "location":{"x":-3,"y":0,"z":-100},
             "roadName":"Road 1 Southbound",
-            "delay":5,
-            "max": 1
+            "delay":5
         }, {
             "location":{"x":3,"y":0,"z":100},
             "roadName":"Road 1 Northbound",
