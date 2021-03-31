@@ -52,7 +52,7 @@ export class RoadSegment extends TrafficObject {
     }
 
     getVehicles(): Vehicle[] {
-        return Array.from(this._vehicles.values()).filter((v) => v.isActive());
+        return Array.from(this._vehicles.values());
     }
 
     addVehicle(vehicle: Vehicle, location?: Vector3): void {

@@ -61,10 +61,6 @@ export class Vehicle extends TrafficObject {
      * time when vehicle should be removed from simulation following crash
      */
     private _crashCleanupTime: number;
-    /**
-     * indicates if the vehicle is still valid
-     */
-    private _isActive: boolean;
 
     constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
@@ -79,7 +75,6 @@ export class Vehicle extends TrafficObject {
         
         this._velocity = options?.startingVelocity || 0; // Metres per Second
         this._changeLaneTime = new Date().getTime() + this.changeLaneDelay;
-        this._isActive = true;
     }
 
     clone(): Vehicle {
@@ -103,53 +98,49 @@ export class Vehicle extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-        if (this.isActive()) {
-            // console.info(`velocity: ${this.getVelocity()}`);
-            this.updateVelocity(elapsedMs);
-            let distTravelled: number = Utils.getDistanceTravelled(this.getVelocity(), elapsedMs);
+        // console.info(`velocity: ${this.getVelocity()}`);
+        this.updateVelocity(elapsedMs);
+        let distTravelled: number = Utils.getDistanceTravelled(this.getVelocity(), elapsedMs);
 
-            // check if we should move to next RoadSegment or remove vehicle from the simulation
-            if(distTravelled > 0) {
-                let remainingDistOnSegment: number = Utils.getLength(this.getLocation(), this.getSegment().getEnd());
-                if (distTravelled >= remainingDistOnSegment) {
-                    // if there is a next Segment
-                    let nextSegments: RoadSegment[];
-                    if (this.isChangingLanes()) { // then we've finished changing lanes
-                        this.setChangingLanes(false);
-                        nextSegments = this._simMgr.getMapManager().getSegmentsContainingPoint(this.getSegment().getEnd());
-                    } else {
-                        nextSegments = this._simMgr.getMapManager().getSegmentsStartingAt(this.getSegment().getEnd());
-                    }
-
-                    if(nextSegments?.length) {
-                        // move to segment (pick randomly)
-                        // TODO: lookup values from vehicle's choosen path
-                        var randIndex = Math.floor((Math.random() * nextSegments.length));
-                        var nextSeg: RoadSegment = nextSegments[randIndex];
-                        nextSeg.addVehicle(this, this.getSegment().getEnd());
-
-                        distTravelled -= remainingDistOnSegment;
-                    } else {
-                        // end of Road reached... remove vehicle from Simulation
-                        this._isActive = false;
-                        this._simMgr.removeVehicle(this);
-                        return;
-                    }
+        // check if we should move to next RoadSegment or remove vehicle from the simulation
+        if(distTravelled > 0) {
+            let remainingDistOnSegment: number = Utils.getLength(this.getLocation(), this.getSegment().getEnd());
+            if (distTravelled >= remainingDistOnSegment) {
+                // if there is a next Segment
+                let nextSegments: RoadSegment[];
+                if (this.isChangingLanes()) { // then we've finished changing lanes
+                    this.setChangingLanes(false);
+                    nextSegments = this._simMgr.getMapManager().getSegmentsContainingPoint(this.getSegment().getEnd());
+                } else {
+                    nextSegments = this._simMgr.getMapManager().getSegmentsStartingAt(this.getSegment().getEnd());
                 }
-            }
-            
-            if (this.isCrashed()) {
-                // remove vehicle after appropriate time has passed
-                if (this._crashedAt + this._crashCleanupTime >= this._simMgr.getTotalElapsed()) {
-                    // remove self from the Simulation
-                    this._isActive = false;
+
+                if(nextSegments?.length) {
+                    // move to segment (pick randomly)
+                    // TODO: lookup values from vehicle's choosen path
+                    var randIndex = Math.floor((Math.random() * nextSegments.length));
+                    var nextSeg: RoadSegment = nextSegments[randIndex];
+                    nextSeg.addVehicle(this, this.getSegment().getEnd());
+
+                    distTravelled -= remainingDistOnSegment;
+                } else {
+                    // end of Road reached... remove vehicle from Simulation
                     this._simMgr.removeVehicle(this);
                     return;
                 }
             }
-            
-            this.moveForwardBy(distTravelled);
         }
+        
+        if (this.isCrashed()) {
+            // remove vehicle after appropriate time has passed
+            if (this._crashedAt + this._crashCleanupTime >= this._simMgr.getTotalElapsed()) {
+                // remove self from the Simulation
+                this._simMgr.removeVehicle(this);
+                return;
+            }
+        }
+        
+        this.moveForwardBy(distTravelled);
     }
 
     updateVelocity(elapsedMs: number): void {
@@ -187,10 +178,6 @@ export class Vehicle extends TrafficObject {
 
     isChangingLanes(): boolean {
         return this._isChangingLanes;
-    }
-
-    isActive(): boolean {
-        return this._isActive;
     }
 
     /**
