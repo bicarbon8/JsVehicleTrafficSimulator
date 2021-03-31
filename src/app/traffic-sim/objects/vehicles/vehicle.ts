@@ -1,4 +1,4 @@
-import { Mesh, BoxGeometry, Line3, Vector3, Object3D } from "three";
+import { Mesh, BoxGeometry, Line3, Vector3, Object3D, Box3, Quaternion } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
@@ -9,35 +9,35 @@ import { VehicleOptions } from "./vehicle-options";
 
 export class Vehicle extends TrafficObject {
     /**
-     * width of vehicle in Metres
+     * width of vehicle in Metres (defaults to 2)
      */
     readonly width: number;
     /**
-     * length of vehicle in Metres
+     * length of vehicle in Metres (defaults to 3)
      */
     readonly length: number;
     /**
-     * height of vehicle in Metres
+     * height of vehicle in Metres (defaults to 1.5)
      */
     readonly height: number;
     /**
-     * milliseconds taken to react to events
+     * milliseconds taken to react to events (defaults to 2500 ms)
      */
     readonly reactionTime: number;
     /**
-     * acceleration in Metres per Second
+     * acceleration in Metres per Second (defaults to 2.78 mps)
      */
     readonly acceleration: number;
     /**
-     * deceleration in Metres per Second
+     * deceleration in Metres per Second (defaults to 6.94 mps)
      */
     readonly deceleration: number;
     /**
-     * amount of time after changing lanes before considering changing again in milliseconds
+     * amount of time after changing lanes before considering changing again in milliseconds (defaults to 5000 ms)
      */
     readonly changeLaneDelay: number;
     /**
-     * maximum velocity vehicle can go in Kilometres per Hour
+     * maximum velocity vehicle can go in Kilometres per Hour (defaults to 260)
      */
     readonly maxSpeed: number;
 
@@ -66,7 +66,7 @@ export class Vehicle extends TrafficObject {
         super(options as TrafficObjectOptions, simMgr);
         this.width = options?.width || 2; // metres
         this.length = options?.length || 3; // metres
-        this.height = options?.height || 1; // metres
+        this.height = options?.height || 1.5; // metres
         this.reactionTime = options?.reactionTime || 2500; // milliseconds
         this.acceleration = options?.acceleration || 2.78; // Metres per Second
         this.deceleration = options?.deceleration || 6.94; // Metres per Second
@@ -241,20 +241,20 @@ export class Vehicle extends TrafficObject {
         var lookAheadDist: number = this.getLookAheadDistance();
         
         // check for vehicles in range
-        var foundV: ShouldStopResponse = this._simMgr.getMapManager().shouldStopForVehicles(this, lookAheadDist);
+        var foundV: ShouldStopResponse = this._simMgr.getMapManager().shouldStopForVehicles(this);
         if (foundV && foundV.stop) {
             return !this.changeLanesIfAvailable();
         }
 
         // check for traffic flow controllers in range that say "stop"
-        var foundTfc: ShouldStopResponse = this._simMgr.getMapManager().shouldStopForTfcs(this, lookAheadDist);
+        var foundTfc: ShouldStopResponse = this._simMgr.getMapManager().shouldStopForTfcs(this);
         if (foundTfc && foundTfc.stop) {
             // console.debug(`vehicle ${this.id} should stop for tfc ${foundTfc.id}`);
             return foundTfc.stop;
         }
 
         // check for corners
-        var foundCorner = this._simMgr.getMapManager().shouldSlowForCorner(this, lookAheadDist);
+        var foundCorner = this._simMgr.getMapManager().shouldSlowForCorner(this);
         if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
             return foundCorner.stop;
         }
@@ -294,10 +294,10 @@ export class Vehicle extends TrafficObject {
      * distance travelled over time:
      * `d = ((Vf + Vi) / 2) * t`
      * 
-     * Vf = desired velocity (0 Metres per Second)
-     * Vi = current velocity (Metres per Second)
-     * d = distance (Metres)
-     * t = time (Seconds)
+     * `Vf` = desired velocity (0 Metres per Second)
+     * `Vi` = current velocity (Metres per Second)
+     * `d` = distance (Metres)
+     * `t` = time (Seconds)
      * @returns the distance required to safely stop in metres
      */
     getLookAheadDistance(): number { 
@@ -308,6 +308,19 @@ export class Vehicle extends TrafficObject {
         // var distanceToReact = this.reactionTime * mps;
         // var distanceTot = distanceToStop + (this.length * 2) + distanceToReact;
         return (dist + (this.length * 2));
+    }
+
+    getLookAheadCollisionBox(): Box3 {
+        let dist: number = this.getLookAheadDistance();
+        let mesh: Mesh = new Mesh(new BoxGeometry(this.width, this.height, dist));
+        let pos: Vector3 = this.getLocation();
+        let rot: Quaternion = this.getRotation();
+        mesh.position.set(pos.x, pos.y, pos.z);
+        mesh.rotation.setFromQuaternion(rot);
+        mesh.translateZ(dist / 2);
+        let lookAheadCollisionBox: Box3 = new Box3().setFromObject(mesh);
+        mesh.geometry.dispose();
+        return lookAheadCollisionBox;
     }
 
     protected generateMesh(): Object3D {

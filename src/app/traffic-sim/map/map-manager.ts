@@ -1,4 +1,4 @@
-import { Line3, Vector3 } from 'three';
+import { Box3, BoxGeometry, Line3, Mesh, Quaternion, Vector3 } from 'three';
 import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { ShouldStopResponse } from '../objects/vehicles/should-stop-response';
@@ -65,6 +65,23 @@ export class MapManager {
         }
 
         return vehicles;
+    }
+
+    getIntersectingVehicles(vehicle: Vehicle): Vehicle[] {
+        let intersects: Vehicle[] = [];
+        let dist: number = vehicle.getLookAheadDistance();
+        let vehicles: Vehicle[] = this.getVehiclesWithinRadius(vehicle, dist);
+        let mainVIntersect: Box3 = vehicle.getLookAheadCollisionBox();
+        
+        for (var i=0; i<vehicles.length; i++) {
+            let v: Vehicle = vehicles[i];
+            let vIntersect: Box3 = v.getLookAheadCollisionBox();
+            if (mainVIntersect.intersectsBox(vIntersect)) {
+                intersects.push(v);
+            }
+        }
+
+        return intersects;
     }
 
     getTfcs(): TrafficFlowControl[] {
@@ -175,36 +192,33 @@ export class MapManager {
         });
 	}
 
-    shouldStopForVehicles(vehicle: Vehicle, distance: number): ShouldStopResponse {
-        if (distance > 0) {
-            var vehicles: Vehicle[] = this.getVehiclesWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), distance);
-            for (var i=0; i<vehicles.length; i++) {
-                let v: Vehicle = vehicles[i];
-                if (v.id !== vehicle.id) {
-                    return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
-                }
+    shouldStopForVehicles(vehicle: Vehicle): ShouldStopResponse {
+        var vehicles: Vehicle[] = this.getIntersectingVehicles(vehicle);
+        for (var i=0; i<vehicles.length; i++) {
+            let v: Vehicle = vehicles[i];
+            if (vehicle.hasInView(v)) {
+                return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
             }
         }
     
         return {stop: false};
     }
 
-    shouldStopForTfcs(vehicle: Vehicle, distance: number): ShouldStopResponse {
-        if (distance > 0) {
-            var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), distance);
-            for (var i=0; i<tfcs.length; i++) {
-                var tfc = tfcs[i];
-                if (tfc.shouldStop(vehicle)) {
-                    return {stop: true, type: ShouldStopType.tfc, segmentId: tfc.getSegmentId(), id: tfc.id};
-                }
+    shouldStopForTfcs(vehicle: Vehicle): ShouldStopResponse {
+        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), vehicle.getLookAheadDistance());
+        for (var i=0; i<tfcs.length; i++) {
+            var tfc = tfcs[i];
+            if (tfc.shouldStop(vehicle)) {
+                return {stop: true, type: ShouldStopType.tfc, segmentId: tfc.getSegmentId(), id: tfc.id};
             }
         }
     
         return {stop: false};
     }
 
-    shouldSlowForCorner(vehicle: Vehicle, distance: number): ShouldStopResponse {
+    shouldSlowForCorner(vehicle: Vehicle): ShouldStopResponse {
         // slow down when the next segment is in range and has a different heading
+        let distance: number = vehicle.getLookAheadDistance();
         let segEnd: Vector3 = vehicle.getSegment().getEnd();
         var distanceToSegEnd = Utils.getLength(vehicle.getLocation(), segEnd);
         if (distanceToSegEnd < distance) {
