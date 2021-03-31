@@ -186,16 +186,18 @@ export class MapManager {
 	}
 
 	getSimilarSegmentsInRoad(currentSegment: RoadSegment) {
-		return this.getSegmentsInRoad(currentSegment.name).filter((seg) => {
+		return this.getSegmentsInRoad(currentSegment.roadName).filter((seg) => {
             // if less than 5 degrees variance in lines they're similar so return true
             return currentSegment.id != seg.id && (Math.abs(Utils.angleFormedBy(seg.getLine(), currentSegment.getLine())) < 5);
         });
 	}
 
     shouldStopForVehicles(vehicle: Vehicle): ShouldStopResponse {
-        var vehicles: Vehicle[] = this.getIntersectingVehicles(vehicle);
-        for (var i=0; i<vehicles.length; i++) {
-            let v: Vehicle = vehicles[i];
+        
+        
+        var intersecting: Vehicle[] = this.getIntersectingVehicles(vehicle);
+        for (var i=0; i<intersecting.length; i++) {
+            let v: Vehicle = intersecting[i];
             if (vehicle.hasInView(v)) {
                 return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
             }

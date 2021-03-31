@@ -4,58 +4,42 @@
             "start":{"x":-3,"y":0,"z":-100},
             "end":{"x":-3,"y":0,"z":-5},
             "speedLimit":25,
-            "name":"Road 1 Southbound",
-            "isInlet":true,
-            "isMergeLane":false
+            "roadName":"Road 1 Southbound"
         },{
             "start":{"x":-3,"y":0,"z":-5},
             "end":{"x":-3,"y":0,"z":100},
             "speedLimit":25,
-            "name":"Road 1 Southbound",
-            "isInlet":false,
-            "isMergeLane":false
+            "roadName":"Road 1 Southbound"
         },{
             "start":{"x":3,"y":0,"z":100},
             "end":{"x":3,"y":0,"z":5},
             "speedLimit":25,
-            "name":"Road 1 Northbound",
-            "isInlet":true,
-            "isMergeLane":false
+            "roadName":"Road 1 Northbound"
         },{
             "start":{"x":3,"y":0,"z":5},
             "end":{"x":3,"y":0,"z":-100},
             "speedLimit":25,
-            "name":"Road 1 Northbound",
-            "isInlet":false,
-            "isMergeLane":false
+            "roadName":"Road 1 Northbound"
         },{
             "start":{"x":-100,"y":0,"z":3},
             "end":{"x":-5,"y":0,"z":3},
             "speedLimit":35,
-            "name":"Road 2 Eastbound",
-            "isInlet":true,
-            "isMergeLane":false
+            "roadName":"Road 2 Eastbound"
         },{
             "start":{"x":-5,"y":0,"z":3},
             "end":{"x":100,"y":0,"z":3},
             "speedLimit":35,
-            "name":"Road 2 Eastbound",
-            "isInlet":false,
-            "isMergeLane":false
+            "roadName":"Road 2 Eastbound"
         },{
             "start":{"x":100,"y":0,"z":-3},
             "end":{"x":5,"y":0,"z":-3},
             "speedLimit":35,
-            "name":"Road 2 Westbound",
-            "isInlet":true,
-            "isMergeLane":false
+            "roadName":"Road 2 Westbound"
         },{
             "start":{"x":5,"y":0,"z":-3},
             "end":{"x":-100,"y":0,"z":-3},
             "speedLimit":35,
-            "name":"Road 2 Westbound",
-            "isInlet":false,
-            "isMergeLane":false
+            "roadName":"Road 2 Westbound"
         }
     ],
     "tfcs": [

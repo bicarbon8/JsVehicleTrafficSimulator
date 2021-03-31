@@ -3,7 +3,7 @@ import { VehicleGeneratorOptions } from "../objects/vehicles/vehicle-generator-o
 import { RoadSegmentOptions } from "./road-segment-options";
 
 export interface RoadMap {
-    segments: RoadSegmentOptions[];
-    tfcs: TfcOptions[];
-    generators: VehicleGeneratorOptions[];
+    segments?: RoadSegmentOptions[];
+    tfcs?: TfcOptions[];
+    generators?: VehicleGeneratorOptions[];
 }

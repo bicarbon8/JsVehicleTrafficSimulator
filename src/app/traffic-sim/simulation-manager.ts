@@ -132,14 +132,14 @@ export class SimulationManager {
     loadMap(map: RoadMap): void {
         if (map) {
             // add segments
-            for (var i=0; i<map.segments.length; i++) {
+            for (var i=0; i<map.segments?.length; i++) {
                 let opts: RoadSegmentOptions = map.segments[i];
                 let s: RoadSegment = new RoadSegment(opts)
                 this.getMapManager().addSegment(s);
                 this.getViewManager().addRenderable(s);
             }
             // add TFCs
-            for (var i=0; i<map.tfcs.length; i++) {
+            for (var i=0; i<map.tfcs?.length; i++) {
                 let opts: TfcOptions = map.tfcs[i];
                 let tfc: TrafficFlowControl;
                 switch (opts.type.toLowerCase()) {
@@ -150,7 +150,7 @@ export class SimulationManager {
                 }
                 if (tfc) {
                     let segment: RoadSegment = this.getMapManager().getSegmentsEndingAt(opts.location).find((seg) => {
-                        return seg.name.toLowerCase() == tfc.roadName.toLowerCase();
+                        return seg.roadName.toLowerCase() == tfc.roadName.toLowerCase();
                     });
                     if (segment) {
                         segment.addTfc(tfc);
@@ -159,11 +159,11 @@ export class SimulationManager {
                 }
             }
             // add vehicle generators
-            for (var i=0; i<map.generators.length; i++) {
+            for (var i=0; i<map.generators?.length; i++) {
                 let opts: VehicleGeneratorOptions = map.generators[i];
                 let g: VehicleGenerator = new VehicleGenerator(opts);
                 let segment: RoadSegment = this.getMapManager().getSegmentsStartingAt(opts.location).find((seg) => {
-                    return seg.name.toLowerCase() == g.roadName.toLowerCase();
+                    return seg.roadName.toLowerCase() == g.roadName.toLowerCase();
                 });
                 if (segment) {
                     segment.setVehicleGenerator(g);

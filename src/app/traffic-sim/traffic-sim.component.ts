@@ -21,8 +21,9 @@ export class TrafficSimComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this._simMgr = SimulationManager.inst;
     this._simMgr.init('#traffic-sim');
-    let path: string = 'assets/maps/intersection.json';
-    await this.loadMap(path);
+    let intersection: string = 'assets/maps/intersection.json';
+    let mergeLoop: string = 'assets/maps/merge_loop.json';
+    await this.loadMap(mergeLoop);
     this._simMgr.setRealtime(true);
     this._simMgr.start();
   }

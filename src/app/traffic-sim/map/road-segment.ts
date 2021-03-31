@@ -8,7 +8,7 @@ import { RoadSegmentOptions } from './road-segment-options';
 
 export class RoadSegment extends TrafficObject {
     readonly id: number;
-    readonly name: string;
+    readonly roadName: string;
     /**
      * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
      */
@@ -29,6 +29,7 @@ export class RoadSegment extends TrafficObject {
         if (!options) {
             options = {start: new Vector3(0, 0, 0), end: new Vector3(0, 0, 0)};
         }
+        this.roadName = options?.roadName;
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
         this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
         this.width = options?.width || 5;
