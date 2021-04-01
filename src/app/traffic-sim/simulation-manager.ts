@@ -20,6 +20,7 @@ export class SimulationManager {
     private _lastUpdate: number; // millisecond time
     private _realtime: boolean;
     private _isRunning: boolean;
+    private _previousState: boolean;
     private _totalElapsedTime: number; // in milliseconds
     /**
      * number of steps between each update; lower values are more accurate, but slower.
@@ -40,6 +41,8 @@ export class SimulationManager {
         this._viewMgr = viewMgr || ViewManager.inst;
 
         this._lastUpdate = 0;
+
+        document.addEventListener("visibilitychange", () => this._handleBrowserVisibilityChange(), false);
     }
 
 	init(canvasId: string): void {
@@ -185,6 +188,21 @@ export class SimulationManager {
         this._viewMgr.removeRenderable(vehicle);
         vehicle.getSegment().removeVehicle(vehicle.id);
         vehicle.disposeGeometry();
+    }
+
+    private _handleBrowserVisibilityChange() {
+        if (document.visibilityState == 'hidden') {
+            if (this.isRunning()) {
+                this._previousState = true;
+                this.stop();
+            }
+        } 
+        if (document.visibilityState == 'visible') {
+            if (this._previousState) {
+                this._previousState = false;
+                this.start();
+            }
+        }
     }
 }
 
