@@ -346,7 +346,7 @@ export class Vehicle extends TrafficObject {
         var vel = this.getVelocity(); // Metres per Second
         let time: number = vel / this.deceleration; // Seconds
         let distanceToStop: number = (vel / 2) * time; // metres
-        // var distanceToReact = this.reactionTime * mps;
+        // var distanceToReact = Utils.convertMillisecondsToSeconds(this.reactionTime) * (vel / 2);
         let total: number = distanceToStop + (this.length * 2);
         return total;
     }

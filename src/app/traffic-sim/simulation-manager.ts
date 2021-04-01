@@ -19,7 +19,7 @@ export class SimulationManager {
     private _startTime: number; // in milliseconds
     private _lastUpdate: number; // millisecond time
     private _realtime: boolean;
-    private _runSimulation: boolean;
+    private _isRunning: boolean;
     private _totalElapsedTime: number; // in milliseconds
     /**
      * number of steps between each update; lower values are more accurate, but slower.
@@ -32,12 +32,14 @@ export class SimulationManager {
 
     constructor(mapMgr?: MapManager, viewMgr?: ViewManager) {
         this._realtime = false;
-        this._runSimulation = false;
+        this._isRunning = false;
         this._totalElapsedTime = 0;
         this._timeStep = 1000;
 
         this._mapManager = mapMgr || MapManager.inst;
         this._viewMgr = viewMgr || ViewManager.inst;
+
+        this._lastUpdate = 0;
     }
 
 	init(canvasId: string): void {
@@ -58,8 +60,12 @@ export class SimulationManager {
         this._viewMgr.update();
     }
 
+    isRunning(): boolean {
+        return this._isRunning;
+    }
+
     toggleAnimationState(): void {
-        if (this._runSimulation) {
+        if (this.isRunning()) {
             this.stop();
         } else {
             this.start();
@@ -71,24 +77,27 @@ export class SimulationManager {
     }
 
     start(): void {
-        this._startTime = new Date().getTime();
-        this._runSimulation = true;
+        this._startTime = (this._realtime) ? new Date().getTime() : 0;
+        this._isRunning = true;
     }
 
     stop(): void {
-        this._runSimulation = false;
+        this._isRunning = false;
+        this._lastUpdate = null;
     }
 
     update(): void {
-        if (this._runSimulation) {
+        if (this._isRunning) {
             let elapsed: number = this.getElapsed();
             this._totalElapsedTime += elapsed;
             this._mapManager.update(elapsed);
+
+            this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
         }
         
         // console.debug(`updating view...`);
         this._viewMgr.update();
-        
+
         requestAnimationFrame(() => this.update());
     }
 
@@ -103,7 +112,6 @@ export class SimulationManager {
                 this._lastUpdate = this._startTime;
             }
             let elapsed: number = now - this._lastUpdate;
-            this._lastUpdate = now;
             return elapsed;
         }
         return this.getTimestep();
@@ -131,6 +139,7 @@ export class SimulationManager {
 
     loadMap(map: RoadMap): void {
         if (map) {
+            this.reset();
             // add segments
             for (var i=0; i<map.segments?.length; i++) {
                 let opts: RoadSegmentOptions = map.segments[i];

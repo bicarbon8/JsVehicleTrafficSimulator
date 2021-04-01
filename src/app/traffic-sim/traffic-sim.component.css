@@ -9,4 +9,6 @@
 
 button, input {
     pointer-events: auto;
+    border: 1px;
+    border-color: black;
 }

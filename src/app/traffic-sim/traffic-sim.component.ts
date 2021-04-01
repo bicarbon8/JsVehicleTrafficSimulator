@@ -12,36 +12,27 @@ import { SimulationManager } from './simulation-manager';
 export class TrafficSimComponent implements OnInit {
   private _simMgr: SimulationManager;
   
-  rand: number;
+  runningState: string;
 
-  constructor(private httpClient: HttpClient) { 
-    this.rand = 0;
+  constructor(private httpClient: HttpClient) {
+    this.runningState = 'running';
   }
 
   async ngOnInit(): Promise<void> {
     this._simMgr = SimulationManager.inst;
     this._simMgr.init('#traffic-sim');
-    let intersection: string = 'assets/maps/intersection.json';
     let mergeLoop: string = 'assets/maps/merge_loop.json';
     await this.loadMap(mergeLoop);
     this._simMgr.setRealtime(true);
     this._simMgr.start();
   }
 
-  getRandom(): void {
-    this.rand = Utils.getRandomBetween(2.7, 6.7);
-  }
-
   async loadMap(path: string): Promise<void> {
     try {
       await new Promise<void>((resolve, reject) => {
         this.httpClient.get(path).subscribe((data: RoadMap) =>{
-          if (!data) {
-            reject(`unable to load map data from '${path}'`);
-          } else {
-            this._simMgr.loadMap(data);
-            resolve();
-          }
+          this._simMgr.loadMap(data);
+          resolve();
         });
       });
     } catch (e) {
@@ -49,8 +40,18 @@ export class TrafficSimComponent implements OnInit {
     }
   }
 
+  isRunning(): boolean {
+    return this._simMgr.isRunning();
+  }
+
   async toggleAnimationState(): Promise<void> {
-    this._simMgr.toggleAnimationState();
+    if (this.isRunning()) {
+      this.runningState = 'paused';
+      this._simMgr.stop();
+    } else {
+      this.runningState = 'running';
+      this._simMgr.start();
+    }
   }
 
   async updateTimeStep(step: number): Promise<void> {
