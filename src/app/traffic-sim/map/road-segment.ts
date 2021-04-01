@@ -8,6 +8,11 @@ import { RoadSegmentOptions } from './road-segment-options';
 
 export class RoadSegment extends TrafficObject {
     readonly id: number;
+    /**
+     * name of the road to which this {RoadSegment} belongs. this
+     * is used in determining which lanes are available for change
+     * lane manouvres
+     */
     readonly roadName: string;
     /**
      * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
@@ -17,6 +22,11 @@ export class RoadSegment extends TrafficObject {
      * width of {RoadSegment} in Metres
      */
     readonly width: number;
+    /**
+     * indicates that this {RoadSegment} merges with other traffic so the
+     * collision detection should look across a wider range
+     */
+    readonly isInlet: boolean;
 
     private _line: Line3;
     private _vehicles: Map<number, Vehicle>;
@@ -33,6 +43,7 @@ export class RoadSegment extends TrafficObject {
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
         this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
         this.width = options?.width || 5;
+        this.isInlet = options?.isInlet || false;
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
@@ -54,6 +65,10 @@ export class RoadSegment extends TrafficObject {
 
     getVehicles(): Vehicle[] {
         return Array.from(this._vehicles.values());
+    }
+
+    getVehicleById(id: number): Vehicle {
+        return this._vehicles.get(id);
     }
 
     addVehicle(vehicle: Vehicle, location?: Vector3): void {

@@ -38,8 +38,14 @@ export class MapManager {
         return allVehicles;
     }
 
-    getVehicleById(vehicleId): Vehicle {
-        return this.getVehicles().find((v) => v.id == vehicleId);
+    getVehicleById(vehicleId: number): Vehicle {
+        let segments: RoadSegment[] = this.getSegments();
+        for (var i=0; i<segments.length; i++) {
+            let seg: RoadSegment = segments[i];
+            let v: Vehicle = seg.getVehicleById(vehicleId);
+            if (v) { return v; }
+        }
+        return null;
     }
 
     getVehiclesWithinRadius(vehicle: Vehicle, distance: number): Vehicle[] {
@@ -53,7 +59,7 @@ export class MapManager {
         let vehicles: Vehicle[] = segment.getVehicles().filter((v) => {
             let distToVeh: number = Utils.getLength(location, v.getLocation());
             if (distToVeh <= distance) {
-                return (Utils.getLength(v.getLocation(), segment.getLine().end) <= distanceToEnd);
+                return (Utils.getLength(v.getLocation(), segment.getEnd()) <= distanceToEnd);
             }
             return false;
         });
@@ -71,12 +77,12 @@ export class MapManager {
         let intersects: Vehicle[] = [];
         let dist: number = vehicle.getLookAheadDistance();
         let vehicles: Vehicle[] = this.getVehiclesWithinRadius(vehicle, dist);
-        let mainVIntersect: Box3 = vehicle.getLookAheadCollisionBox();
+        let vehicleBox: Box3 = vehicle.getLookAheadCollisionBox();
         
         for (var i=0; i<vehicles.length; i++) {
             let v: Vehicle = vehicles[i];
-            let vIntersect: Box3 = v.getLookAheadCollisionBox();
-            if (mainVIntersect.intersectsBox(vIntersect)) {
+            let vBox: Box3 = v.getLookAheadCollisionBox();
+            if (vehicleBox.intersectsBox(vBox)) {
                 intersects.push(v);
             }
         }
@@ -120,11 +126,6 @@ export class MapManager {
     }
 
     removeSegment(segmentId: number): void {
-        // remove all vehicles from segment
-        let seg: RoadSegment = this._segments.get(segmentId);
-        seg.getVehicles().forEach((veh) => {
-            seg.removeVehicle(veh.id);
-        });
         // remove segment from map
         this._segments.delete(segmentId);
     }
@@ -160,7 +161,7 @@ export class MapManager {
     }
 
     getSegmentsInRoad(roadName: string): RoadSegment[] {
-        return this.getSegments().filter((seg) => seg.name == roadName);
+        return this.getSegments().filter((seg) => seg.roadName == roadName);
     }
 
     getSegmentsContainingPoint(point: Vector3): RoadSegment[] {
@@ -193,8 +194,6 @@ export class MapManager {
 	}
 
     shouldStopForVehicles(vehicle: Vehicle): ShouldStopResponse {
-        
-        
         var intersecting: Vehicle[] = this.getIntersectingVehicles(vehicle);
         for (var i=0; i<intersecting.length; i++) {
             let v: Vehicle = intersecting[i];
@@ -248,52 +247,36 @@ export class MapManager {
         return {stop: false};
     }
 
-    createChangeLaneSegment(vehicle: Vehicle): RoadSegment {
+    createChangeLaneSegment(location: Vector3, newSegment: RoadSegment): RoadSegment {
         let changeLaneSegment: RoadSegment;
         let closestPoint: Vector3;
-        let currentSeg: RoadSegment = vehicle.getSegment();
-        if (currentSeg) {
-            let availableLanes: RoadSegment[] = this.getSimilarSegmentsInRoad(currentSeg);
-            for (var i=0; i<availableLanes.length; i++) {
-                let availableLane: RoadSegment = availableLanes[i];
-                // check angle to all change points on possible lane
-                let points: Vector3[] = availableLane.getLaneChangePoints();
-                for (var j=0; j<points.length; j++) {
-                    var point: Vector3 = points[j];
-                    var line1: Line3 = new Line3(vehicle.getLocation(), point);
-                    var line2: Line3 = currentSeg.getLine();
-                    var angle: number = Math.abs(Utils.angleFormedBy(line1, line2));
-                    // TODO: base angle on speed where greater angles allowed at lower speeds
-                    if (angle <= 25 && angle > 5) {
-                        if (!closestPoint) {
-                            closestPoint = point;
-                        } else {
-                            if (line1.distance() < Utils.getLength(closestPoint, vehicle.getLocation())) {
-                                closestPoint = point;
-                            }
-                        }
+        let points: Vector3[] = newSegment.getLaneChangePoints();
+        for (var j=0; j<points.length; j++) {
+            var point: Vector3 = points[j];
+            var line1: Line3 = new Line3(location, point);
+            var line2: Line3 = newSegment.getLine();
+            var angle: number = Math.abs(Utils.angleFormedBy(line1, line2));
+            // TODO: base angle on speed where greater angles allowed at lower speeds
+            if (angle <= 25 && angle > 5) {
+                if (!closestPoint) {
+                    closestPoint = point;
+                } else {
+                    if (line1.distance() < Utils.getLength(closestPoint, location)) {
+                        closestPoint = point;
                     }
-                }
-
-                if (closestPoint) {
-                    // create tmp segment to new lane
-                    var seg = new RoadSegment({
-                        start: vehicle.getLocation(),
-                        end: closestPoint,
-                        speedLimit: currentSeg.speedLimit
-                    });
-                    var tmpV = vehicle.clone();
-                    tmpV.setSegmentId(seg.id);
-                    tmpV.setChangingLanes(true);
-                    tmpV.setPosition(seg.getStart());
-                    tmpV.lookAt(seg.getEnd());
-                    if (!tmpV.shouldDecelerate(true)) {
-                        changeLaneSegment = seg;
-                        break;
-                    }
-                    tmpV.disposeGeometry();
                 }
             }
+        }
+
+        if (closestPoint) {
+            // create tmp segment to new lane
+            changeLaneSegment = new RoadSegment({
+                start: location,
+                end: closestPoint,
+                speedLimit: newSegment.speedLimit,
+                isInlet: true
+            });
+            this.addSegment(changeLaneSegment);
         }
 
         return changeLaneSegment;

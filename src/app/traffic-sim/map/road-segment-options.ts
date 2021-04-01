@@ -18,5 +18,9 @@ export interface RoadSegmentOptions extends TrafficObjectOptions {
      * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
      */
     speedLimit?: number;
+    /**
+     * indicates that this {RoadSegment} merges with other traffic so the
+     * collision detection should look across a wider range
+     */
     isInlet?: boolean;
 }
