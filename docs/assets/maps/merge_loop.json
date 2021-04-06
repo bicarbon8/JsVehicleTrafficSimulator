@@ -1,0 +1,203 @@
+{
+    "segments": [
+        {
+            "start":{"x":-150,"y":0,"z":100},
+            "end":{"x":150,"y":0,"z":100},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Lower"
+        },{
+            "start":{"x":150,"y":0,"z":100},
+            "end":{"x":190,"y":0,"z":60},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Lower-Right"
+        },{
+            "start":{"x":190,"y":0,"z":60},
+            "end":{"x":190,"y":0,"z":-60},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Right"
+        },{
+            "start":{"x":190,"y":0,"z":-60},
+            "end":{"x":150,"y":0,"z":-100},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Upper-Right"
+        },{
+            "start":{"x":150,"y":0,"z":-100},
+            "end":{"x":-150,"y":0,"z":-100},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Upper"
+        },{
+            "start":{"x":-150,"y":0,"z":-100},
+            "end":{"x":-190,"y":0,"z":-60},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Upper-Left"
+        },{
+            "start":{"x":-190,"y":0,"z":-60},
+            "end":{"x":-190,"y":0,"z":60},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Left"
+        },{
+            "start":{"x":-190,"y":0,"z":60},
+            "end":{"x":-150,"y":0,"z":100},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Inner-Lower-Left"
+        },{
+            "start":{"x":-155,"y":0,"z":105},
+            "end":{"x":0,"y":0,"z":105},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Lower-0"
+        },{
+            "start":{"x":0,"y":0,"z":105},
+            "end":{"x":155,"y":0,"z":105},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Lower-1"
+        },{
+            "start":{"x":155,"y":0,"z":105},
+            "end":{"x":195,"y":0,"z":65},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Lower-Right"
+        },{
+            "start":{"x":195,"y":0,"z":65},
+            "end":{"x":195,"y":0,"z":-65},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Right"
+        },{
+            "start":{"x":195,"y":0,"z":-65},
+            "end":{"x":155,"y":0,"z":-105},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Upper-Right"
+        },{
+            "start":{"x":155,"y":0,"z":-105},
+            "end":{"x":50,"y":0,"z":-105},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Upper-0"
+        },{
+            "start":{"x":50,"y":0,"z":-105},
+            "end":{"x":-155,"y":0,"z":-105},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Upper-1"
+        },{
+            "start":{"x":-155,"y":0,"z":-105},
+            "end":{"x":-195,"y":0,"z":-65},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Upper-Left"
+        },{
+            "start":{"x":-195,"y":0,"z":-65},
+            "end":{"x":-195,"y":0,"z":65},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Left"
+        },{
+            "start":{"x":-195,"y":0,"z":65},
+            "end":{"x":-155,"y":0,"z":105},
+            "speedLimit":100,
+            "roadName":"Loop",
+            "name":"Outer-Lower-Left"
+        },{
+            "start":{"x":-195,"y":0,"z":-65},
+            "end":{"x":-220,"y":0,"z":-30},
+            "speedLimit":60,
+            "roadName":"Loop",
+            "name":"Exit-Lane-Left-0"
+        },{
+            "start":{"x":-220,"y":0,"z":-30},
+            "end":{"x":-250,"y":0,"z":0},
+            "speedLimit":40,
+            "roadName":"Loop",
+            "name":"Exit-Lane-Left-1"
+        },{
+            "start":{"x":150,"y":0,"z":-130},
+            "end":{"x":90,"y":0,"z":-130},
+            "speedLimit":40,
+            "roadName":"Entrance Upper",
+            "name":"Merge-0"
+        },{
+            "start":{"x":90,"y":0,"z":-130},
+            "end":{"x":50,"y":0,"z":-105},
+            "speedLimit":100,
+            "roadName":"Entrance Upper",
+            "name":"Merge-1",
+            "isInlet": true
+        },{
+            "start":{"x":-150,"y":0,"z":140},
+            "end":{"x":-100,"y":0,"z":140},
+            "speedLimit":40,
+            "roadName":"Entrance Lower",
+            "name":"Merge-Lower-0"
+        },{
+            "start":{"x":-100,"y":0,"z":140},
+            "end":{"x":-50,"y":0,"z":135},
+            "speedLimit":60,
+            "roadName":"Entrance Lower",
+            "name":"Merge-Lower-1"
+        },{
+            "start":{"x":-150,"y":0,"z":135},
+            "end":{"x":-100,"y":0,"z":135},
+            "speedLimit":40,
+            "roadName":"Entrance Lower",
+            "name":"Merge-Upper-0"
+        },{
+            "start":{"x":-100,"y":0,"z":135},
+            "end":{"x":-50,"y":0,"z":135},
+            "speedLimit":60,
+            "roadName":"Entrance Lower",
+            "name":"Merge-Upper-1"
+        },{
+            "start":{"x":-50,"y":0,"z":135},
+            "end":{"x":0,"y":0,"z":105},
+            "speedLimit":60,
+            "roadName":"Entrance Lower",
+            "name":"Merge",
+            "isInlet": true
+        }
+    ],
+    "tfcs": [
+        {
+            "type":"stoplight",
+            "location":{"x":-100,"y":0,"z":140},
+            "roadName":"Entrance Lower",
+            "startState":0,
+            "greenDuration":2000,
+            "yellowDuration":2000,
+            "redDuration":4000
+        },{
+            "type":"stoplight",
+            "location":{"x":-100,"y":0,"z":135},
+            "roadName":"Entrance Lower",
+            "startState":2,
+            "greenDuration":2000,
+            "yellowDuration":2000,
+            "redDuration":4000
+        }
+    ],
+    "generators": [
+        {
+            "location":{"x":150,"y":0,"z":-130},
+            "roadName":"Entrance Upper",
+            "delay":5
+        },{
+            "location":{"x":-150,"y":0,"z":140},
+            "roadName":"Entrance Lower",
+            "delay":5
+        },{
+            "location":{"x":-150,"y":0,"z":135},
+            "roadName":"Entrance Lower",
+            "delay":5
+        }
+    ]
+}
