@@ -1,25 +1,27 @@
-JsVehicleTrafficSimulator ![build status](https://travis-ci.org/bicarbon8/JsVehicleTrafficSimulator.svg)
-=========================
+# JsVehicleTrafficSimulator
 
-a vehicle roadway traffic simulator written in javascript, html and css.  rendering is done via the HTML5 canvas.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.0.
 
-# RUNNING:
+## Development server
 
-1. open the index.html file in your browser
-2. use your left mouse button to rotate the map, right button to drag the map and scroll wheel to zoom
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-# DEMO
-[index.html](http://rawgit.com/bicarbon8/JsVehicleTrafficSimulator/master/examples/index.html)
+## Code scaffolding
 
-# BUILDING
-- checkout the project
-- run the following command from the project root: ```npm install```
-- run the following command from the project root: ```grunt```
-- a ```dist```directory will be generated containing the following:
-  - jsvts.min.js ```a minified version of the framework that does not contain dependencies```
-  - jsvts.min.js.map
+Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-# EXTERNAL DEPENDENCIES
-- [three.js](http://github.com/mrdoob/three.js/)
-- [three.js OrbitControls](http://threejs.org/examples/js/controls/OrbitControls.js)
-- [Helvetiker Typeface](http://typeface.neocracy.org/)
+## Build
+
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+
+## Running unit tests
+
+Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+
+## Running end-to-end tests
+
+Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+
+## Further help
+
+To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.

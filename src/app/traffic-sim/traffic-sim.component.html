@@ -1,0 +1,13 @@
+<div class="container-fluid simulation-controls">
+    <div class="input-group">
+        <button class="btn btn-secondary" (click)="loadMap('assets/maps/intersection.json')">Intersection</button>
+        <button class="btn btn-secondary" (click)="loadMap('assets/maps/merge_loop.json')">Merge Loop</button>
+        <input #customMapInput type="text" class="form-control" placeholder="input custom map JSON url" aria-describedby="btnGroupAddon2" />
+        <button class="btn btn-secondary" id="btnGroupAddon2" (click)="loadMap(customMapInput.value)">Load Custom Map</button>
+    </div>
+    <div class="input-group">
+        <button class="btn btn-primary" id="btnGroupAddon1" (click)="toggleAnimationState()">{{(isRunning()) ? 'Pause' : 'Resume'}} <i class="bi bi-{{(isRunning()) ? 'pause' : 'play'}}"> </i></button>
+        <input disabled type="text" class="form-control" placeholder="Simulation Time" aria-label="Elapsed time in Simulation" aria-describedby="btnGroupAddon1" [value]="getSimulationTimeElapsed()" />
+    </div>
+</div>
+<canvas id="traffic-sim"></canvas>
