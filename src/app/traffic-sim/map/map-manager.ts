@@ -1,4 +1,4 @@
-import { Box3, BoxGeometry, Line3, Mesh, Quaternion, Vector3 } from 'three';
+import { Box3, Line3, Vector3 } from 'three';
 import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { ShouldStopResponse } from '../objects/vehicles/should-stop-response';
@@ -25,6 +25,13 @@ export class MapManager {
 
     reset(): void {
         this._segments = new Map<number, RoadSegment>();
+    }
+
+    destroy(): void {
+        this.getSegments().forEach((seg) => {
+            this.removeSegment(seg.id);
+        });
+        this._segments = null;
     }
 
     getVehicles(): Vehicle[] {

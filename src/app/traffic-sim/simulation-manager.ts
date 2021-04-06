@@ -27,6 +27,7 @@ export class SimulationManager {
      * defaults to 10
      */
     private _timeStep: number;
+    private _frameId: number;
 
     private _mapManager: MapManager;
     private _viewMgr: ViewManager;
@@ -48,7 +49,6 @@ export class SimulationManager {
 	init(canvasId: string): void {
         this._canvasId = canvasId;
         this._initObjects();
-        this.update();
     }
 
     reset(): void {
@@ -56,6 +56,13 @@ export class SimulationManager {
         this._mapManager.reset();
         this._totalElapsedTime = 0;
         this.init(this._canvasId);
+    }
+
+    destroy(): void {
+        cancelAnimationFrame(this._frameId);
+        this.stop();
+        this._viewMgr.destroy();
+        this._mapManager.destroy();
     }
 
     private _initObjects(): void {
@@ -82,6 +89,7 @@ export class SimulationManager {
     start(): void {
         this._startTime = (this._realtime) ? new Date().getTime() : 0;
         this._isRunning = true;
+        this.update();
     }
 
     stop(): void {
@@ -96,12 +104,12 @@ export class SimulationManager {
             this._mapManager.update(elapsed);
 
             this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
+
+            this._frameId = requestAnimationFrame(() => this.update());
         }
         
         // console.debug(`updating view...`);
         this._viewMgr.update();
-
-        requestAnimationFrame(() => this.update());
     }
 
     /**

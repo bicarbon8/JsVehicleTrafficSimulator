@@ -21,7 +21,7 @@ export class ViewManager {
     }
 
     private _initRenderer(canvasId: string): void {
-        this._canvas = document.querySelector(canvasId);
+        this._canvas = document.querySelector<HTMLCanvasElement>(canvasId);
         this._renderer = new WebGLRenderer({canvas: this._canvas});
         this._renderer.setSize(this.getWidth(), this.getHeight());
         window.addEventListener('resize', () => {
@@ -63,10 +63,19 @@ export class ViewManager {
         this._renderer?.render(this._scene, this._camera);
     }
 
-    reset(){
+    reset(): void {
         this._renderer = null;
         this._scene = null;
         this._camera = null;
+        this._controls = null;
+    }
+
+    destroy(): void {
+        this._renderer.dispose();
+        this._controls.dispose();
+        this._scene = null;
+        this._camera = null;
+        this._renderer = null;
         this._controls = null;
     }
 
@@ -89,11 +98,11 @@ export class ViewManager {
     }
 
     getWidth(): number {
-        return window.innerWidth;
+        return this._canvas?.clientWidth || window.innerWidth;
     }
 
     getHeight(): number {
-        return window.innerHeight;
+        return this._canvas?.clientHeight || window.innerHeight;
     }
 }
 

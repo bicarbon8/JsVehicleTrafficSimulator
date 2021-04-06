@@ -10,7 +10,7 @@
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Utils", function() { return Utils; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
 
 var Utils;
 (function (Utils) {
@@ -128,7 +128,7 @@ var Utils;
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "RoadSegment", function() { return RoadSegment; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
 /* harmony import */ var _objects_traffic_object__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../objects/traffic-object */ "zEDA");
 
 
@@ -324,634 +324,10 @@ class TrafficFlowControl extends _traffic_object__WEBPACK_IMPORTED_MODULE_0__["T
 
 /***/ }),
 
-/***/ "EAKZ":
-/*!*******************************************************************!*\
-  !*** ./src/app/traffic-sim/objects/traffic-controls/tfc-state.ts ***!
-  \*******************************************************************/
-/*! exports provided: TfcState */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TfcState", function() { return TfcState; });
-var TfcState;
-(function (TfcState) {
-    TfcState[TfcState["proceed"] = 0] = "proceed";
-    TfcState[TfcState["caution"] = 1] = "caution";
-    TfcState[TfcState["stop"] = 2] = "stop";
-})(TfcState || (TfcState = {}));
-
-
-/***/ }),
-
-/***/ "GBxy":
-/*!***************************************************!*\
-  !*** ./src/app/traffic-sim/simulation-manager.ts ***!
-  \***************************************************/
-/*! exports provided: SimulationManager */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SimulationManager", function() { return SimulationManager; });
-/* harmony import */ var _map_map_manager__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./map/map-manager */ "Ndy9");
-/* harmony import */ var _map_road_segment__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./map/road-segment */ "6RYJ");
-/* harmony import */ var _objects_traffic_controls_stop_light__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./objects/traffic-controls/stop-light */ "ZKvx");
-/* harmony import */ var _objects_vehicles_vehicle_generator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./objects/vehicles/vehicle-generator */ "NSgd");
-/* harmony import */ var _view_view_manager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./view/view-manager */ "s0T7");
-
-
-
-
-
-class SimulationManager {
-    constructor(mapMgr, viewMgr) {
-        this._realtime = false;
-        this._isRunning = false;
-        this._totalElapsedTime = 0;
-        this._timeStep = 10;
-        this._mapManager = mapMgr || _map_map_manager__WEBPACK_IMPORTED_MODULE_0__["MapManager"].inst;
-        this._viewMgr = viewMgr || _view_view_manager__WEBPACK_IMPORTED_MODULE_4__["ViewManager"].inst;
-        this._lastUpdate = 0;
-        document.addEventListener("visibilitychange", () => this._handleBrowserVisibilityChange(), false);
-    }
-    init(canvasId) {
-        this._canvasId = canvasId;
-        this._initObjects();
-        this.update();
-    }
-    reset() {
-        this._viewMgr.reset();
-        this._mapManager.reset();
-        this._totalElapsedTime = 0;
-        this.init(this._canvasId);
-    }
-    _initObjects() {
-        this._viewMgr.init(this._canvasId);
-        this._viewMgr.update();
-    }
-    isRunning() {
-        return this._isRunning;
-    }
-    toggleAnimationState() {
-        if (this.isRunning()) {
-            this.stop();
-        }
-        else {
-            this.start();
-        }
-    }
-    setRealtime(realtime) {
-        this._realtime = realtime;
-    }
-    start() {
-        this._startTime = (this._realtime) ? new Date().getTime() : 0;
-        this._isRunning = true;
-    }
-    stop() {
-        this._isRunning = false;
-        this._lastUpdate = null;
-    }
-    update() {
-        if (this._isRunning) {
-            let elapsed = this.getElapsed();
-            this._totalElapsedTime += elapsed;
-            this._mapManager.update(elapsed);
-            this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
-        }
-        // console.debug(`updating view...`);
-        this._viewMgr.update();
-        requestAnimationFrame(() => this.update());
-    }
-    /**
-     * provides the number of milliseconds elapsed since last {update}
-     * @returns number of milliseconds elapsed
-     */
-    getElapsed() {
-        if (this._realtime) {
-            let now = new Date().getTime();
-            if (!this._lastUpdate) {
-                this._lastUpdate = this._startTime;
-            }
-            let elapsed = now - this._lastUpdate;
-            return elapsed;
-        }
-        return this.getTimestep();
-    }
-    setTimestep(timestep) {
-        this._timeStep = timestep;
-    }
-    getTimestep() {
-        return this._timeStep;
-    }
-    getTotalElapsed() {
-        return this._totalElapsedTime;
-    }
-    getMapManager() {
-        return this._mapManager;
-    }
-    getViewManager() {
-        return this._viewMgr;
-    }
-    loadMap(map) {
-        var _a, _b, _c;
-        if (map) {
-            this.reset();
-            // add segments
-            for (var i = 0; i < ((_a = map.segments) === null || _a === void 0 ? void 0 : _a.length); i++) {
-                let opts = map.segments[i];
-                let s = new _map_road_segment__WEBPACK_IMPORTED_MODULE_1__["RoadSegment"](opts);
-                this.getMapManager().addSegment(s);
-                this.getViewManager().addRenderable(s);
-            }
-            // add TFCs
-            for (var i = 0; i < ((_b = map.tfcs) === null || _b === void 0 ? void 0 : _b.length); i++) {
-                let opts = map.tfcs[i];
-                let tfc;
-                switch (opts.type.toLowerCase()) {
-                    case 'stoplight':
-                        // console.debug(`tfc.startState: ${opts.startState}`);
-                        tfc = new _objects_traffic_controls_stop_light__WEBPACK_IMPORTED_MODULE_2__["StopLight"](opts);
-                        break;
-                }
-                if (tfc) {
-                    let segment = this.getMapManager().getSegmentsEndingAt(opts.location).find((seg) => {
-                        return seg.roadName.toLowerCase() == tfc.roadName.toLowerCase();
-                    });
-                    if (segment) {
-                        segment.addTfc(tfc);
-                        this.getViewManager().addRenderable(tfc);
-                    }
-                }
-            }
-            // add vehicle generators
-            for (var i = 0; i < ((_c = map.generators) === null || _c === void 0 ? void 0 : _c.length); i++) {
-                let opts = map.generators[i];
-                let g = new _objects_vehicles_vehicle_generator__WEBPACK_IMPORTED_MODULE_3__["VehicleGenerator"](opts);
-                let segment = this.getMapManager().getSegmentsStartingAt(opts.location).find((seg) => {
-                    return seg.roadName.toLowerCase() == g.roadName.toLowerCase();
-                });
-                if (segment) {
-                    segment.setVehicleGenerator(g);
-                }
-            }
-        }
-    }
-    removeVehicle(vehicle) {
-        this._viewMgr.removeRenderable(vehicle);
-        vehicle.getSegment().removeVehicle(vehicle.id);
-        vehicle.disposeGeometry();
-    }
-    _handleBrowserVisibilityChange() {
-        if (document.visibilityState == 'hidden') {
-            if (this.isRunning()) {
-                this._previousState = true;
-                this.stop();
-            }
-        }
-        if (document.visibilityState == 'visible') {
-            if (this._previousState) {
-                this._previousState = false;
-                this.start();
-            }
-        }
-    }
-}
-(function (SimulationManager) {
-    SimulationManager.inst = new SimulationManager();
-})(SimulationManager || (SimulationManager = {}));
-
-
-/***/ }),
-
-/***/ "NSgd":
-/*!*******************************************************************!*\
-  !*** ./src/app/traffic-sim/objects/vehicles/vehicle-generator.ts ***!
-  \*******************************************************************/
-/*! exports provided: VehicleGenerator */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VehicleGenerator", function() { return VehicleGenerator; });
-/* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../helpers/utils */ "1iqU");
-/* harmony import */ var _vehicle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./vehicle */ "UaTk");
-/* harmony import */ var _traffic_object__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../traffic-object */ "zEDA");
-
-
-
-class VehicleGenerator extends _traffic_object__WEBPACK_IMPORTED_MODULE_2__["TrafficObject"] {
-    constructor(options, simMgr) {
-        super(options, simMgr);
-        this.delay = (options === null || options === void 0 ? void 0 : options.delay) || 0;
-        this.roadName = options === null || options === void 0 ? void 0 : options.roadName;
-        this.max = (options === null || options === void 0 ? void 0 : options.max) || Infinity;
-        this.startSpeedMax = (options === null || options === void 0 ? void 0 : options.startSpeedMax) || 0;
-        this.startSpeedMin = (options === null || options === void 0 ? void 0 : options.startSpeedMin) || 0;
-        this._elapsed = 0;
-        this._count = 0;
-        this._nextVehicle = null;
-    }
-    update(elapsedMs) {
-        this._elapsed += elapsedMs;
-        if (this._nextVehicle && this._canAddToSegment(this._nextVehicle)) {
-            this._addToSegment(this._nextVehicle);
-            this._elapsed = 0;
-        }
-        if (this._shouldGenerate()) {
-            this._nextVehicle = this.generate();
-        }
-    }
-    /**
-     * the number of vehicles added to the simulation
-     * @returns the number of vehicles generated
-     */
-    getCount() {
-        return this._count;
-    }
-    generate() {
-        this._count++;
-        var v = new _vehicle__WEBPACK_IMPORTED_MODULE_1__["Vehicle"]({
-            width: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(2, 3),
-            height: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(1, 1.5),
-            length: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(3, 5),
-            acceleration: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(2.78, 6.95),
-            deceleration: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(6.94, 10.15),
-            reactionTime: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(2500, 3500),
-            changeLaneDelay: Math.floor(_helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(30000, 60000)),
-            maxSpeed: Math.floor(_helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(200, 260)),
-            startingVelocity: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(this.startSpeedMin, this.startSpeedMax)
-        });
-        let seg = this.getSegment();
-        let line = seg.getLine();
-        v.setPosition(line.start);
-        v.lookAt(line.end);
-        return v;
-    }
-    reset() {
-        this._elapsed = 0;
-        this._count = 0;
-    }
-    _shouldGenerate() {
-        return (!this._nextVehicle
-            && this.getCount() < this.max
-            && this._elapsed >= this.delay);
-    }
-    _canAddToSegment(vehicle) {
-        let segment = this.getSegment();
-        let vehicles = this._simMgr.getMapManager().getVehiclesWithinRadiusAhead(segment.getLine().start, segment, vehicle.length * 3);
-        for (var i = 0; i < vehicles.length; i++) {
-            let v = vehicles[i];
-            if (_helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].isCollidingWith(vehicle, v)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    _addToSegment(vehicle) {
-        this.getSegment().addVehicle(this._nextVehicle);
-        this._simMgr.getViewManager().addRenderable(this._nextVehicle);
-        console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.getSegment().id}'`);
-        this._nextVehicle = null;
-    }
-    generateMesh() {
-        /* Vehicle Generator has no mesh */
-        return null;
-    }
-}
-
-
-/***/ }),
-
-/***/ "Ndy9":
-/*!************************************************!*\
-  !*** ./src/app/traffic-sim/map/map-manager.ts ***!
-  \************************************************/
-/*! exports provided: MapManager */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MapManager", function() { return MapManager; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
-/* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../helpers/utils */ "1iqU");
-/* harmony import */ var _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../objects/vehicles/should-stop-type */ "Qtx3");
-/* harmony import */ var _road_segment__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./road-segment */ "6RYJ");
-
-
-
-
-class MapManager {
-    constructor() {
-        this._segments = new Map();
-        this._up = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 1, 0);
-    }
-    update(elapsedMs) {
-        this.getSegments().forEach((seg) => seg.update(elapsedMs));
-    }
-    getUp() {
-        return this._up.clone();
-    }
-    reset() {
-        this._segments = new Map();
-    }
-    getVehicles() {
-        let allVehicles = [];
-        let segments = this.getSegments();
-        for (var i = 0; i < segments.length; i++) {
-            let segment = segments[i];
-            let vehicles = segment.getVehicles();
-            allVehicles.splice(0, 0, ...vehicles);
-        }
-        return allVehicles;
-    }
-    getVehicleById(vehicleId) {
-        let segments = this.getSegments();
-        for (var i = 0; i < segments.length; i++) {
-            let seg = segments[i];
-            let v = seg.getVehicleById(vehicleId);
-            if (v) {
-                return v;
-            }
-        }
-        return null;
-    }
-    getVehiclesWithinRadius(vehicle, distance) {
-        return this.getVehicles().filter((v) => {
-            return v.id != vehicle.id && (_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(vehicle.getLocation(), v.getLocation()) <= distance);
-        });
-    }
-    getVehiclesWithinRadiusAhead(location, segment, distance) {
-        let distanceToEnd = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, segment.getEnd());
-        let vehicles = segment.getVehicles().filter((v) => {
-            let distToVeh = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, v.getLocation());
-            if (distToVeh <= distance) {
-                return (_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(v.getLocation(), segment.getEnd()) <= distanceToEnd);
-            }
-            return false;
-        });
-        if (distanceToEnd < distance) {
-            let segments = this.getSegmentsStartingAt(segment.getEnd());
-            segments.forEach((seg) => {
-                vehicles.splice(0, 0, ...this.getVehiclesWithinRadiusAhead(segment.getEnd(), seg, distance - distanceToEnd));
-            });
-        }
-        return vehicles;
-    }
-    getIntersectingVehicles(vehicle) {
-        let intersects = [];
-        let dist = vehicle.getLookAheadDistance();
-        let vehicles = this.getVehiclesWithinRadius(vehicle, dist);
-        let vehicleBox = vehicle.getLookAheadCollisionBox();
-        for (var i = 0; i < vehicles.length; i++) {
-            let v = vehicles[i];
-            let vBox = v.getLookAheadCollisionBox();
-            if (vehicleBox.intersectsBox(vBox)) {
-                intersects.push(v);
-            }
-        }
-        return intersects;
-    }
-    getTfcs() {
-        let allTfcs = [];
-        let segments = this.getSegments();
-        for (var i = 0; i < segments.length; i++) {
-            let segment = segments[i];
-            let tfcs = segment.getTfcs();
-            allTfcs.splice(0, 0, ...tfcs);
-        }
-        return allTfcs;
-    }
-    getTfcsWithinRadiusAhead(location, segment, distance) {
-        let distanceToEnd = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, segment.getEnd());
-        let tfcs = segment.getTfcs().filter((tfc) => {
-            let distToTfc = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, tfc.getLocation());
-            if (distToTfc <= distance) {
-                return (_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(tfc.getLocation(), segment.getLine().end) <= distanceToEnd);
-            }
-            return false;
-        });
-        if (distanceToEnd < distance) {
-            let segments = this.getSegmentsStartingAt(segment.getEnd());
-            segments.forEach((seg) => {
-                tfcs.splice(0, 0, ...this.getTfcsWithinRadiusAhead(segment.getEnd(), seg, distance - distanceToEnd));
-            });
-        }
-        return tfcs;
-    }
-    addSegment(segment) {
-        // console.debug(`adding segment '${segment.id}' from '${JSON.stringify(segment.getStart())}' to '${JSON.stringify(segment.getEnd())}'`);
-        this._segments.set(segment.id, segment);
-    }
-    removeSegment(segmentId) {
-        // remove segment from map
-        this._segments.delete(segmentId);
-    }
-    getSegments() {
-        return Array.from(this._segments.values());
-    }
-    getSegmentById(segmentId) {
-        return this._segments.get(segmentId);
-    }
-    getSegmentsStartingAt(location) {
-        if (location) {
-            return this.getSegments().filter((seg) => {
-                let start = seg.getStart();
-                return start.x == location.x &&
-                    start.y == location.y &&
-                    start.z == location.z;
-            });
-        }
-    }
-    getSegmentsEndingAt(location) {
-        if (location) {
-            return this.getSegments().filter((seg) => {
-                let end = seg.getEnd();
-                return end.x == location.x &&
-                    end.y == location.y &&
-                    end.z == location.z;
-            });
-        }
-    }
-    getSegmentsInRoad(roadName) {
-        return this.getSegments().filter((seg) => seg.roadName == roadName);
-    }
-    getSegmentsContainingPoint(point) {
-        var segments = [];
-        var allSegments = this.getSegments();
-        for (var i = 0; i < allSegments.length; i++) {
-            var segment = allSegments[i];
-            if (segment.getStart().x === point.x && segment.getStart().y === point.y && segment.getStart().z === point.z ||
-                segment.getEnd().x === point.x && segment.getEnd().y === point.y && segment.getEnd().z === point.z) {
-                segments.push(segment);
-            }
-            else {
-                let points = segment.getLaneChangePoints();
-                for (var j = 0; j < points.length; j++) {
-                    var changePoint = points[j];
-                    if (changePoint.x === point.x && changePoint.y === point.y && changePoint.z === point.z) {
-                        segments.push(segment);
-                        break;
-                    }
-                }
-            }
-        }
-        return segments;
-    }
-    getSimilarSegmentsInRoad(currentSegment) {
-        return this.getSegmentsInRoad(currentSegment.roadName).filter((seg) => {
-            // if less than 5 degrees variance in lines they're similar so return true
-            return currentSegment.id != seg.id && (Math.abs(_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].angleFormedBy(seg.getLine(), currentSegment.getLine())) < 5);
-        });
-    }
-    shouldStopForVehicles(vehicle) {
-        var intersecting = this.getIntersectingVehicles(vehicle);
-        for (var i = 0; i < intersecting.length; i++) {
-            let v = intersecting[i];
-            if (vehicle.hasInView(v)) {
-                return { stop: true, type: _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__["ShouldStopType"].vehicle, segmentId: v.getSegmentId(), id: v.id };
-            }
-        }
-        return { stop: false };
-    }
-    shouldStopForTfcs(vehicle) {
-        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), vehicle.getLookAheadDistance());
-        for (var i = 0; i < tfcs.length; i++) {
-            var tfc = tfcs[i];
-            if (tfc.shouldStop(vehicle)) {
-                return { stop: true, type: _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__["ShouldStopType"].tfc, segmentId: tfc.getSegmentId(), id: tfc.id };
-            }
-        }
-        return { stop: false };
-    }
-    shouldSlowForCorner(vehicle) {
-        // slow down when the next segment is in range and has a different heading
-        let distance = vehicle.getLookAheadDistance();
-        let segEnd = vehicle.getSegment().getEnd();
-        var distanceToSegEnd = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(vehicle.getLocation(), segEnd);
-        if (distanceToSegEnd < distance) {
-            // base the amount on how different the heading is
-            var headingDiff = 0;
-            var line1 = vehicle.getSegment().getLine();
-            var nextSegments = this.getSegmentsStartingAt(segEnd);
-            // TODO: only calculate for next segment on choosen path
-            for (var i in nextSegments) {
-                var nextSegment = nextSegments[i];
-                var line2 = nextSegment.getLine();
-                var angle = Math.abs(_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].angleFormedBy(line1, line2));
-                if (angle > headingDiff) {
-                    headingDiff = angle;
-                }
-            }
-            var corneringSpeed = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].corneringSpeedCalculator(headingDiff);
-            // begin slowing down
-            if (vehicle.getVelocity() > corneringSpeed) {
-                return { stop: true, type: _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__["ShouldStopType"].cornering, headingDifference: headingDiff };
-            }
-        }
-        return { stop: false };
-    }
-    createChangeLaneSegment(location, newSegment) {
-        let changeLaneSegment;
-        let closestPoint;
-        let points = newSegment.getLaneChangePoints();
-        for (var j = 0; j < points.length; j++) {
-            var point = points[j];
-            var line1 = new three__WEBPACK_IMPORTED_MODULE_0__["Line3"](location, point);
-            var line2 = newSegment.getLine();
-            var angle = Math.abs(_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].angleFormedBy(line1, line2));
-            // TODO: base angle on speed where greater angles allowed at lower speeds
-            if (angle <= 25 && angle > 5) {
-                if (!closestPoint) {
-                    closestPoint = point;
-                }
-                else {
-                    if (line1.distance() < _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(closestPoint, location)) {
-                        closestPoint = point;
-                    }
-                }
-            }
-        }
-        if (closestPoint) {
-            // create tmp segment to new lane
-            changeLaneSegment = new _road_segment__WEBPACK_IMPORTED_MODULE_3__["RoadSegment"]({
-                start: location,
-                end: closestPoint,
-                speedLimit: newSegment.speedLimit,
-                isInlet: true
-            });
-            this.addSegment(changeLaneSegment);
-        }
-        return changeLaneSegment;
-    }
-}
-(function (MapManager) {
-    MapManager.inst = new MapManager();
-})(MapManager || (MapManager = {}));
-
-
-/***/ }),
-
-/***/ "QSF+":
-/*!***************************************************!*\
-  !*** ./src/app/traffic-sim/traffic-sim.module.ts ***!
-  \***************************************************/
-/*! exports provided: TrafficSimModule */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrafficSimModule", function() { return TrafficSimModule; });
-/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/common */ "ofXK");
-/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "tk/3");
-/* harmony import */ var _traffic_sim_routing_module__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./traffic-sim-routing.module */ "g93T");
-/* harmony import */ var _traffic_sim_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./traffic-sim.component */ "UPaR");
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/core */ "fXoL");
-
-
-
-
-
-class TrafficSimModule {
-}
-TrafficSimModule.ɵfac = function TrafficSimModule_Factory(t) { return new (t || TrafficSimModule)(); };
-TrafficSimModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_4__["ɵɵdefineNgModule"]({ type: TrafficSimModule });
-TrafficSimModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_4__["ɵɵdefineInjector"]({ imports: [[
-            _angular_common__WEBPACK_IMPORTED_MODULE_0__["CommonModule"],
-            _traffic_sim_routing_module__WEBPACK_IMPORTED_MODULE_2__["TrafficSimRoutingModule"],
-            _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClientModule"]
-        ]] });
-(function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_4__["ɵɵsetNgModuleScope"](TrafficSimModule, { declarations: [_traffic_sim_component__WEBPACK_IMPORTED_MODULE_3__["TrafficSimComponent"]], imports: [_angular_common__WEBPACK_IMPORTED_MODULE_0__["CommonModule"],
-        _traffic_sim_routing_module__WEBPACK_IMPORTED_MODULE_2__["TrafficSimRoutingModule"],
-        _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClientModule"]] }); })();
-
-
-/***/ }),
-
-/***/ "Qtx3":
-/*!******************************************************************!*\
-  !*** ./src/app/traffic-sim/objects/vehicles/should-stop-type.ts ***!
-  \******************************************************************/
-/*! exports provided: ShouldStopType */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ShouldStopType", function() { return ShouldStopType; });
-var ShouldStopType;
-(function (ShouldStopType) {
-    ShouldStopType[ShouldStopType["vehicle"] = 0] = "vehicle";
-    ShouldStopType[ShouldStopType["tfc"] = 1] = "tfc";
-    ShouldStopType[ShouldStopType["cornering"] = 2] = "cornering";
-})(ShouldStopType || (ShouldStopType = {}));
-
-
-/***/ }),
-
-/***/ "RyHr":
-/*!*******************************************************************!*\
-  !*** ./node_modules/three/examples/jsm/controls/OrbitControls.js ***!
-  \*******************************************************************/
+/***/ "CRHq":
+/*!********************************************************************!*\
+  !*** ../node_modules/three/examples/jsm/controls/OrbitControls.js ***!
+  \********************************************************************/
 /*! exports provided: OrbitControls, MapControls */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -959,7 +335,7 @@ var ShouldStopType;
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "OrbitControls", function() { return OrbitControls; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MapControls", function() { return MapControls; });
-/* harmony import */ var _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../build/three.module.js */ "Womt");
+/* harmony import */ var _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../build/three.module.js */ "YmrP");
 
 
 // This set of controls performs orbiting, dollying (zooming), and panning.
@@ -1027,7 +403,7 @@ var OrbitControls = function ( object, domElement ) {
 	this.autoRotateSpeed = 2.0; // 30 seconds per orbit when fps is 60
 
 	// The four arrow keys
-	this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+	this.keys = { LEFT: 'ArrowLeft', UP: 'ArrowUp', RIGHT: 'ArrowRight', BOTTOM: 'ArrowDown' };
 
 	// Mouse buttons
 	this.mouseButtons = { LEFT: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MOUSE"].ROTATE, MIDDLE: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MOUSE"].DOLLY, RIGHT: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MOUSE"].PAN };
@@ -1550,7 +926,7 @@ var OrbitControls = function ( object, domElement ) {
 
 		var needsUpdate = false;
 
-		switch ( event.keyCode ) {
+		switch ( event.code ) {
 
 			case scope.keys.UP:
 				pan( 0, scope.keyPanSpeed );
@@ -1953,7 +1329,6 @@ var OrbitControls = function ( object, domElement ) {
 		if ( scope.enabled === false || scope.enableZoom === false || ( state !== STATE.NONE && state !== STATE.ROTATE ) ) return;
 
 		event.preventDefault();
-		event.stopPropagation();
 
 		scope.dispatchEvent( startEvent );
 
@@ -2062,7 +1437,6 @@ var OrbitControls = function ( object, domElement ) {
 		if ( scope.enabled === false ) return;
 
 		event.preventDefault(); // prevent scrolling
-		event.stopPropagation();
 
 		switch ( state ) {
 
@@ -2185,6 +1559,2865 @@ MapControls.prototype.constructor = MapControls;
 
 /***/ }),
 
+/***/ "EAKZ":
+/*!*******************************************************************!*\
+  !*** ./src/app/traffic-sim/objects/traffic-controls/tfc-state.ts ***!
+  \*******************************************************************/
+/*! exports provided: TfcState */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TfcState", function() { return TfcState; });
+var TfcState;
+(function (TfcState) {
+    TfcState[TfcState["proceed"] = 0] = "proceed";
+    TfcState[TfcState["caution"] = 1] = "caution";
+    TfcState[TfcState["stop"] = 2] = "stop";
+})(TfcState || (TfcState = {}));
+
+
+/***/ }),
+
+/***/ "FBrc":
+/*!*********************************************************************!*\
+  !*** ../node_modules/@angular/common/__ivy_ngcc__/fesm2015/http.js ***!
+  \*********************************************************************/
+/*! exports provided: HTTP_INTERCEPTORS, HttpBackend, HttpClient, HttpClientJsonpModule, HttpClientModule, HttpClientXsrfModule, HttpErrorResponse, HttpEventType, HttpHandler, HttpHeaderResponse, HttpHeaders, HttpParams, HttpRequest, HttpResponse, HttpResponseBase, HttpUrlEncodingCodec, HttpXhrBackend, HttpXsrfTokenExtractor, JsonpClientBackend, JsonpInterceptor, XhrFactory, ɵHttpInterceptingHandler, ɵangular_packages_common_http_http_a, ɵangular_packages_common_http_http_b, ɵangular_packages_common_http_http_c, ɵangular_packages_common_http_http_d, ɵangular_packages_common_http_http_e, ɵangular_packages_common_http_http_f, ɵangular_packages_common_http_http_g, ɵangular_packages_common_http_http_h */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HTTP_INTERCEPTORS", function() { return HTTP_INTERCEPTORS; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpBackend", function() { return HttpBackend; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClient", function() { return HttpClient; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClientJsonpModule", function() { return HttpClientJsonpModule; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClientModule", function() { return HttpClientModule; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClientXsrfModule", function() { return HttpClientXsrfModule; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpErrorResponse", function() { return HttpErrorResponse; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpEventType", function() { return HttpEventType; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpHandler", function() { return HttpHandler; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpHeaderResponse", function() { return HttpHeaderResponse; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpHeaders", function() { return HttpHeaders; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpParams", function() { return HttpParams; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpRequest", function() { return HttpRequest; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpResponse", function() { return HttpResponse; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpResponseBase", function() { return HttpResponseBase; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpUrlEncodingCodec", function() { return HttpUrlEncodingCodec; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpXhrBackend", function() { return HttpXhrBackend; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpXsrfTokenExtractor", function() { return HttpXsrfTokenExtractor; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "JsonpClientBackend", function() { return JsonpClientBackend; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "JsonpInterceptor", function() { return JsonpInterceptor; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "XhrFactory", function() { return XhrFactory; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵHttpInterceptingHandler", function() { return HttpInterceptingHandler; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_a", function() { return NoopInterceptor; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_b", function() { return JsonpCallbackContext; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_c", function() { return jsonpCallbackContext; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_d", function() { return BrowserXhr; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_e", function() { return XSRF_COOKIE_NAME; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_f", function() { return XSRF_HEADER_NAME; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_g", function() { return HttpXsrfCookieExtractor; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_h", function() { return HttpXsrfInterceptor; });
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "Ub9n");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! rxjs */ "MyqM");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs/operators */ "ycIs");
+/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/common */ "Yvf7");
+/**
+ * @license Angular v11.2.3
+ * (c) 2010-2021 Google LLC. https://angular.io/
+ * License: MIT
+ */
+
+
+
+
+
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Transforms an `HttpRequest` into a stream of `HttpEvent`s, one of which will likely be a
+ * `HttpResponse`.
+ *
+ * `HttpHandler` is injectable. When injected, the handler instance dispatches requests to the
+ * first interceptor in the chain, which dispatches to the second, etc, eventually reaching the
+ * `HttpBackend`.
+ *
+ * In an `HttpInterceptor`, the `HttpHandler` parameter is the next interceptor in the chain.
+ *
+ * @publicApi
+ */
+
+class HttpHandler {
+}
+/**
+ * A final `HttpHandler` which will dispatch the request via browser HTTP APIs to a backend.
+ *
+ * Interceptors sit between the `HttpClient` interface and the `HttpBackend`.
+ *
+ * When injected, `HttpBackend` dispatches requests directly to the backend, without going
+ * through the interceptor chain.
+ *
+ * @publicApi
+ */
+class HttpBackend {
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Represents the header configuration options for an HTTP request.
+ * Instances are immutable. Modifying methods return a cloned
+ * instance with the change. The original object is never changed.
+ *
+ * @publicApi
+ */
+class HttpHeaders {
+    /**  Constructs a new HTTP header object with the given values.*/
+    constructor(headers) {
+        /**
+         * Internal map of lowercased header names to the normalized
+         * form of the name (the form seen first).
+         */
+        this.normalizedNames = new Map();
+        /**
+         * Queued updates to be materialized the next initialization.
+         */
+        this.lazyUpdate = null;
+        if (!headers) {
+            this.headers = new Map();
+        }
+        else if (typeof headers === 'string') {
+            this.lazyInit = () => {
+                this.headers = new Map();
+                headers.split('\n').forEach(line => {
+                    const index = line.indexOf(':');
+                    if (index > 0) {
+                        const name = line.slice(0, index);
+                        const key = name.toLowerCase();
+                        const value = line.slice(index + 1).trim();
+                        this.maybeSetNormalizedName(name, key);
+                        if (this.headers.has(key)) {
+                            this.headers.get(key).push(value);
+                        }
+                        else {
+                            this.headers.set(key, [value]);
+                        }
+                    }
+                });
+            };
+        }
+        else {
+            this.lazyInit = () => {
+                this.headers = new Map();
+                Object.keys(headers).forEach(name => {
+                    let values = headers[name];
+                    const key = name.toLowerCase();
+                    if (typeof values === 'string') {
+                        values = [values];
+                    }
+                    if (values.length > 0) {
+                        this.headers.set(key, values);
+                        this.maybeSetNormalizedName(name, key);
+                    }
+                });
+            };
+        }
+    }
+    /**
+     * Checks for existence of a given header.
+     *
+     * @param name The header name to check for existence.
+     *
+     * @returns True if the header exists, false otherwise.
+     */
+    has(name) {
+        this.init();
+        return this.headers.has(name.toLowerCase());
+    }
+    /**
+     * Retrieves the first value of a given header.
+     *
+     * @param name The header name.
+     *
+     * @returns The value string if the header exists, null otherwise
+     */
+    get(name) {
+        this.init();
+        const values = this.headers.get(name.toLowerCase());
+        return values && values.length > 0 ? values[0] : null;
+    }
+    /**
+     * Retrieves the names of the headers.
+     *
+     * @returns A list of header names.
+     */
+    keys() {
+        this.init();
+        return Array.from(this.normalizedNames.values());
+    }
+    /**
+     * Retrieves a list of values for a given header.
+     *
+     * @param name The header name from which to retrieve values.
+     *
+     * @returns A string of values if the header exists, null otherwise.
+     */
+    getAll(name) {
+        this.init();
+        return this.headers.get(name.toLowerCase()) || null;
+    }
+    /**
+     * Appends a new value to the existing set of values for a header
+     * and returns them in a clone of the original instance.
+     *
+     * @param name The header name for which to append the values.
+     * @param value The value to append.
+     *
+     * @returns A clone of the HTTP headers object with the value appended to the given header.
+     */
+    append(name, value) {
+        return this.clone({ name, value, op: 'a' });
+    }
+    /**
+     * Sets or modifies a value for a given header in a clone of the original instance.
+     * If the header already exists, its value is replaced with the given value
+     * in the returned object.
+     *
+     * @param name The header name.
+     * @param value The value or values to set or overide for the given header.
+     *
+     * @returns A clone of the HTTP headers object with the newly set header value.
+     */
+    set(name, value) {
+        return this.clone({ name, value, op: 's' });
+    }
+    /**
+     * Deletes values for a given header in a clone of the original instance.
+     *
+     * @param name The header name.
+     * @param value The value or values to delete for the given header.
+     *
+     * @returns A clone of the HTTP headers object with the given value deleted.
+     */
+    delete(name, value) {
+        return this.clone({ name, value, op: 'd' });
+    }
+    maybeSetNormalizedName(name, lcName) {
+        if (!this.normalizedNames.has(lcName)) {
+            this.normalizedNames.set(lcName, name);
+        }
+    }
+    init() {
+        if (!!this.lazyInit) {
+            if (this.lazyInit instanceof HttpHeaders) {
+                this.copyFrom(this.lazyInit);
+            }
+            else {
+                this.lazyInit();
+            }
+            this.lazyInit = null;
+            if (!!this.lazyUpdate) {
+                this.lazyUpdate.forEach(update => this.applyUpdate(update));
+                this.lazyUpdate = null;
+            }
+        }
+    }
+    copyFrom(other) {
+        other.init();
+        Array.from(other.headers.keys()).forEach(key => {
+            this.headers.set(key, other.headers.get(key));
+            this.normalizedNames.set(key, other.normalizedNames.get(key));
+        });
+    }
+    clone(update) {
+        const clone = new HttpHeaders();
+        clone.lazyInit =
+            (!!this.lazyInit && this.lazyInit instanceof HttpHeaders) ? this.lazyInit : this;
+        clone.lazyUpdate = (this.lazyUpdate || []).concat([update]);
+        return clone;
+    }
+    applyUpdate(update) {
+        const key = update.name.toLowerCase();
+        switch (update.op) {
+            case 'a':
+            case 's':
+                let value = update.value;
+                if (typeof value === 'string') {
+                    value = [value];
+                }
+                if (value.length === 0) {
+                    return;
+                }
+                this.maybeSetNormalizedName(update.name, key);
+                const base = (update.op === 'a' ? this.headers.get(key) : undefined) || [];
+                base.push(...value);
+                this.headers.set(key, base);
+                break;
+            case 'd':
+                const toDelete = update.value;
+                if (!toDelete) {
+                    this.headers.delete(key);
+                    this.normalizedNames.delete(key);
+                }
+                else {
+                    let existing = this.headers.get(key);
+                    if (!existing) {
+                        return;
+                    }
+                    existing = existing.filter(value => toDelete.indexOf(value) === -1);
+                    if (existing.length === 0) {
+                        this.headers.delete(key);
+                        this.normalizedNames.delete(key);
+                    }
+                    else {
+                        this.headers.set(key, existing);
+                    }
+                }
+                break;
+        }
+    }
+    /**
+     * @internal
+     */
+    forEach(fn) {
+        this.init();
+        Array.from(this.normalizedNames.keys())
+            .forEach(key => fn(this.normalizedNames.get(key), this.headers.get(key)));
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Provides encoding and decoding of URL parameter and query-string values.
+ *
+ * Serializes and parses URL parameter keys and values to encode and decode them.
+ * If you pass URL query parameters without encoding,
+ * the query parameters can be misinterpreted at the receiving end.
+ *
+ *
+ * @publicApi
+ */
+class HttpUrlEncodingCodec {
+    /**
+     * Encodes a key name for a URL parameter or query-string.
+     * @param key The key name.
+     * @returns The encoded key name.
+     */
+    encodeKey(key) {
+        return standardEncoding(key);
+    }
+    /**
+     * Encodes the value of a URL parameter or query-string.
+     * @param value The value.
+     * @returns The encoded value.
+     */
+    encodeValue(value) {
+        return standardEncoding(value);
+    }
+    /**
+     * Decodes an encoded URL parameter or query-string key.
+     * @param key The encoded key name.
+     * @returns The decoded key name.
+     */
+    decodeKey(key) {
+        return decodeURIComponent(key);
+    }
+    /**
+     * Decodes an encoded URL parameter or query-string value.
+     * @param value The encoded value.
+     * @returns The decoded value.
+     */
+    decodeValue(value) {
+        return decodeURIComponent(value);
+    }
+}
+function paramParser(rawParams, codec) {
+    const map = new Map();
+    if (rawParams.length > 0) {
+        // The `window.location.search` can be used while creating an instance of the `HttpParams` class
+        // (e.g. `new HttpParams({ fromString: window.location.search })`). The `window.location.search`
+        // may start with the `?` char, so we strip it if it's present.
+        const params = rawParams.replace(/^\?/, '').split('&');
+        params.forEach((param) => {
+            const eqIdx = param.indexOf('=');
+            const [key, val] = eqIdx == -1 ?
+                [codec.decodeKey(param), ''] :
+                [codec.decodeKey(param.slice(0, eqIdx)), codec.decodeValue(param.slice(eqIdx + 1))];
+            const list = map.get(key) || [];
+            list.push(val);
+            map.set(key, list);
+        });
+    }
+    return map;
+}
+function standardEncoding(v) {
+    return encodeURIComponent(v)
+        .replace(/%40/gi, '@')
+        .replace(/%3A/gi, ':')
+        .replace(/%24/gi, '$')
+        .replace(/%2C/gi, ',')
+        .replace(/%3B/gi, ';')
+        .replace(/%2B/gi, '+')
+        .replace(/%3D/gi, '=')
+        .replace(/%3F/gi, '?')
+        .replace(/%2F/gi, '/');
+}
+/**
+ * An HTTP request/response body that represents serialized parameters,
+ * per the MIME type `application/x-www-form-urlencoded`.
+ *
+ * This class is immutable; all mutation operations return a new instance.
+ *
+ * @publicApi
+ */
+class HttpParams {
+    constructor(options = {}) {
+        this.updates = null;
+        this.cloneFrom = null;
+        this.encoder = options.encoder || new HttpUrlEncodingCodec();
+        if (!!options.fromString) {
+            if (!!options.fromObject) {
+                throw new Error(`Cannot specify both fromString and fromObject.`);
+            }
+            this.map = paramParser(options.fromString, this.encoder);
+        }
+        else if (!!options.fromObject) {
+            this.map = new Map();
+            Object.keys(options.fromObject).forEach(key => {
+                const value = options.fromObject[key];
+                this.map.set(key, Array.isArray(value) ? value : [value]);
+            });
+        }
+        else {
+            this.map = null;
+        }
+    }
+    /**
+     * Reports whether the body includes one or more values for a given parameter.
+     * @param param The parameter name.
+     * @returns True if the parameter has one or more values,
+     * false if it has no value or is not present.
+     */
+    has(param) {
+        this.init();
+        return this.map.has(param);
+    }
+    /**
+     * Retrieves the first value for a parameter.
+     * @param param The parameter name.
+     * @returns The first value of the given parameter,
+     * or `null` if the parameter is not present.
+     */
+    get(param) {
+        this.init();
+        const res = this.map.get(param);
+        return !!res ? res[0] : null;
+    }
+    /**
+     * Retrieves all values for a  parameter.
+     * @param param The parameter name.
+     * @returns All values in a string array,
+     * or `null` if the parameter not present.
+     */
+    getAll(param) {
+        this.init();
+        return this.map.get(param) || null;
+    }
+    /**
+     * Retrieves all the parameters for this body.
+     * @returns The parameter names in a string array.
+     */
+    keys() {
+        this.init();
+        return Array.from(this.map.keys());
+    }
+    /**
+     * Appends a new value to existing values for a parameter.
+     * @param param The parameter name.
+     * @param value The new value to add.
+     * @return A new body with the appended value.
+     */
+    append(param, value) {
+        return this.clone({ param, value, op: 'a' });
+    }
+    /**
+     * Constructs a new body with appended values for the given parameter name.
+     * @param params parameters and values
+     * @return A new body with the new value.
+     */
+    appendAll(params) {
+        const updates = [];
+        Object.keys(params).forEach(param => {
+            const value = params[param];
+            if (Array.isArray(value)) {
+                value.forEach(_value => {
+                    updates.push({ param, value: _value, op: 'a' });
+                });
+            }
+            else {
+                updates.push({ param, value, op: 'a' });
+            }
+        });
+        return this.clone(updates);
+    }
+    /**
+     * Replaces the value for a parameter.
+     * @param param The parameter name.
+     * @param value The new value.
+     * @return A new body with the new value.
+     */
+    set(param, value) {
+        return this.clone({ param, value, op: 's' });
+    }
+    /**
+     * Removes a given value or all values from a parameter.
+     * @param param The parameter name.
+     * @param value The value to remove, if provided.
+     * @return A new body with the given value removed, or with all values
+     * removed if no value is specified.
+     */
+    delete(param, value) {
+        return this.clone({ param, value, op: 'd' });
+    }
+    /**
+     * Serializes the body to an encoded string, where key-value pairs (separated by `=`) are
+     * separated by `&`s.
+     */
+    toString() {
+        this.init();
+        return this.keys()
+            .map(key => {
+            const eKey = this.encoder.encodeKey(key);
+            // `a: ['1']` produces `'a=1'`
+            // `b: []` produces `''`
+            // `c: ['1', '2']` produces `'c=1&c=2'`
+            return this.map.get(key).map(value => eKey + '=' + this.encoder.encodeValue(value))
+                .join('&');
+        })
+            // filter out empty values because `b: []` produces `''`
+            // which results in `a=1&&c=1&c=2` instead of `a=1&c=1&c=2` if we don't
+            .filter(param => param !== '')
+            .join('&');
+    }
+    clone(update) {
+        const clone = new HttpParams({ encoder: this.encoder });
+        clone.cloneFrom = this.cloneFrom || this;
+        clone.updates = (this.updates || []).concat(update);
+        return clone;
+    }
+    init() {
+        if (this.map === null) {
+            this.map = new Map();
+        }
+        if (this.cloneFrom !== null) {
+            this.cloneFrom.init();
+            this.cloneFrom.keys().forEach(key => this.map.set(key, this.cloneFrom.map.get(key)));
+            this.updates.forEach(update => {
+                switch (update.op) {
+                    case 'a':
+                    case 's':
+                        const base = (update.op === 'a' ? this.map.get(update.param) : undefined) || [];
+                        base.push(update.value);
+                        this.map.set(update.param, base);
+                        break;
+                    case 'd':
+                        if (update.value !== undefined) {
+                            let base = this.map.get(update.param) || [];
+                            const idx = base.indexOf(update.value);
+                            if (idx !== -1) {
+                                base.splice(idx, 1);
+                            }
+                            if (base.length > 0) {
+                                this.map.set(update.param, base);
+                            }
+                            else {
+                                this.map.delete(update.param);
+                            }
+                        }
+                        else {
+                            this.map.delete(update.param);
+                            break;
+                        }
+                }
+            });
+            this.cloneFrom = this.updates = null;
+        }
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Determine whether the given HTTP method may include a body.
+ */
+function mightHaveBody(method) {
+    switch (method) {
+        case 'DELETE':
+        case 'GET':
+        case 'HEAD':
+        case 'OPTIONS':
+        case 'JSONP':
+            return false;
+        default:
+            return true;
+    }
+}
+/**
+ * Safely assert whether the given value is an ArrayBuffer.
+ *
+ * In some execution environments ArrayBuffer is not defined.
+ */
+function isArrayBuffer(value) {
+    return typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer;
+}
+/**
+ * Safely assert whether the given value is a Blob.
+ *
+ * In some execution environments Blob is not defined.
+ */
+function isBlob(value) {
+    return typeof Blob !== 'undefined' && value instanceof Blob;
+}
+/**
+ * Safely assert whether the given value is a FormData instance.
+ *
+ * In some execution environments FormData is not defined.
+ */
+function isFormData(value) {
+    return typeof FormData !== 'undefined' && value instanceof FormData;
+}
+/**
+ * An outgoing HTTP request with an optional typed body.
+ *
+ * `HttpRequest` represents an outgoing request, including URL, method,
+ * headers, body, and other request configuration options. Instances should be
+ * assumed to be immutable. To modify a `HttpRequest`, the `clone`
+ * method should be used.
+ *
+ * @publicApi
+ */
+class HttpRequest {
+    constructor(method, url, third, fourth) {
+        this.url = url;
+        /**
+         * The request body, or `null` if one isn't set.
+         *
+         * Bodies are not enforced to be immutable, as they can include a reference to any
+         * user-defined data type. However, interceptors should take care to preserve
+         * idempotence by treating them as such.
+         */
+        this.body = null;
+        /**
+         * Whether this request should be made in a way that exposes progress events.
+         *
+         * Progress events are expensive (change detection runs on each event) and so
+         * they should only be requested if the consumer intends to monitor them.
+         */
+        this.reportProgress = false;
+        /**
+         * Whether this request should be sent with outgoing credentials (cookies).
+         */
+        this.withCredentials = false;
+        /**
+         * The expected response type of the server.
+         *
+         * This is used to parse the response appropriately before returning it to
+         * the requestee.
+         */
+        this.responseType = 'json';
+        this.method = method.toUpperCase();
+        // Next, need to figure out which argument holds the HttpRequestInit
+        // options, if any.
+        let options;
+        // Check whether a body argument is expected. The only valid way to omit
+        // the body argument is to use a known no-body method like GET.
+        if (mightHaveBody(this.method) || !!fourth) {
+            // Body is the third argument, options are the fourth.
+            this.body = (third !== undefined) ? third : null;
+            options = fourth;
+        }
+        else {
+            // No body required, options are the third argument. The body stays null.
+            options = third;
+        }
+        // If options have been passed, interpret them.
+        if (options) {
+            // Normalize reportProgress and withCredentials.
+            this.reportProgress = !!options.reportProgress;
+            this.withCredentials = !!options.withCredentials;
+            // Override default response type of 'json' if one is provided.
+            if (!!options.responseType) {
+                this.responseType = options.responseType;
+            }
+            // Override headers if they're provided.
+            if (!!options.headers) {
+                this.headers = options.headers;
+            }
+            if (!!options.params) {
+                this.params = options.params;
+            }
+        }
+        // If no headers have been passed in, construct a new HttpHeaders instance.
+        if (!this.headers) {
+            this.headers = new HttpHeaders();
+        }
+        // If no parameters have been passed in, construct a new HttpUrlEncodedParams instance.
+        if (!this.params) {
+            this.params = new HttpParams();
+            this.urlWithParams = url;
+        }
+        else {
+            // Encode the parameters to a string in preparation for inclusion in the URL.
+            const params = this.params.toString();
+            if (params.length === 0) {
+                // No parameters, the visible URL is just the URL given at creation time.
+                this.urlWithParams = url;
+            }
+            else {
+                // Does the URL already have query parameters? Look for '?'.
+                const qIdx = url.indexOf('?');
+                // There are 3 cases to handle:
+                // 1) No existing parameters -> append '?' followed by params.
+                // 2) '?' exists and is followed by existing query string ->
+                //    append '&' followed by params.
+                // 3) '?' exists at the end of the url -> append params directly.
+                // This basically amounts to determining the character, if any, with
+                // which to join the URL and parameters.
+                const sep = qIdx === -1 ? '?' : (qIdx < url.length - 1 ? '&' : '');
+                this.urlWithParams = url + sep + params;
+            }
+        }
+    }
+    /**
+     * Transform the free-form body into a serialized format suitable for
+     * transmission to the server.
+     */
+    serializeBody() {
+        // If no body is present, no need to serialize it.
+        if (this.body === null) {
+            return null;
+        }
+        // Check whether the body is already in a serialized form. If so,
+        // it can just be returned directly.
+        if (isArrayBuffer(this.body) || isBlob(this.body) || isFormData(this.body) ||
+            typeof this.body === 'string') {
+            return this.body;
+        }
+        // Check whether the body is an instance of HttpUrlEncodedParams.
+        if (this.body instanceof HttpParams) {
+            return this.body.toString();
+        }
+        // Check whether the body is an object or array, and serialize with JSON if so.
+        if (typeof this.body === 'object' || typeof this.body === 'boolean' ||
+            Array.isArray(this.body)) {
+            return JSON.stringify(this.body);
+        }
+        // Fall back on toString() for everything else.
+        return this.body.toString();
+    }
+    /**
+     * Examine the body and attempt to infer an appropriate MIME type
+     * for it.
+     *
+     * If no such type can be inferred, this method will return `null`.
+     */
+    detectContentTypeHeader() {
+        // An empty body has no content type.
+        if (this.body === null) {
+            return null;
+        }
+        // FormData bodies rely on the browser's content type assignment.
+        if (isFormData(this.body)) {
+            return null;
+        }
+        // Blobs usually have their own content type. If it doesn't, then
+        // no type can be inferred.
+        if (isBlob(this.body)) {
+            return this.body.type || null;
+        }
+        // Array buffers have unknown contents and thus no type can be inferred.
+        if (isArrayBuffer(this.body)) {
+            return null;
+        }
+        // Technically, strings could be a form of JSON data, but it's safe enough
+        // to assume they're plain strings.
+        if (typeof this.body === 'string') {
+            return 'text/plain';
+        }
+        // `HttpUrlEncodedParams` has its own content-type.
+        if (this.body instanceof HttpParams) {
+            return 'application/x-www-form-urlencoded;charset=UTF-8';
+        }
+        // Arrays, objects, and numbers will be encoded as JSON.
+        if (typeof this.body === 'object' || typeof this.body === 'number' ||
+            Array.isArray(this.body)) {
+            return 'application/json';
+        }
+        // No type could be inferred.
+        return null;
+    }
+    clone(update = {}) {
+        // For method, url, and responseType, take the current value unless
+        // it is overridden in the update hash.
+        const method = update.method || this.method;
+        const url = update.url || this.url;
+        const responseType = update.responseType || this.responseType;
+        // The body is somewhat special - a `null` value in update.body means
+        // whatever current body is present is being overridden with an empty
+        // body, whereas an `undefined` value in update.body implies no
+        // override.
+        const body = (update.body !== undefined) ? update.body : this.body;
+        // Carefully handle the boolean options to differentiate between
+        // `false` and `undefined` in the update args.
+        const withCredentials = (update.withCredentials !== undefined) ? update.withCredentials : this.withCredentials;
+        const reportProgress = (update.reportProgress !== undefined) ? update.reportProgress : this.reportProgress;
+        // Headers and params may be appended to if `setHeaders` or
+        // `setParams` are used.
+        let headers = update.headers || this.headers;
+        let params = update.params || this.params;
+        // Check whether the caller has asked to add headers.
+        if (update.setHeaders !== undefined) {
+            // Set every requested header.
+            headers =
+                Object.keys(update.setHeaders)
+                    .reduce((headers, name) => headers.set(name, update.setHeaders[name]), headers);
+        }
+        // Check whether the caller has asked to set params.
+        if (update.setParams) {
+            // Set every requested param.
+            params = Object.keys(update.setParams)
+                .reduce((params, param) => params.set(param, update.setParams[param]), params);
+        }
+        // Finally, construct the new HttpRequest using the pieces from above.
+        return new HttpRequest(method, url, body, {
+            params,
+            headers,
+            reportProgress,
+            responseType,
+            withCredentials,
+        });
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Type enumeration for the different kinds of `HttpEvent`.
+ *
+ * @publicApi
+ */
+var HttpEventType;
+(function (HttpEventType) {
+    /**
+     * The request was sent out over the wire.
+     */
+    HttpEventType[HttpEventType["Sent"] = 0] = "Sent";
+    /**
+     * An upload progress event was received.
+     */
+    HttpEventType[HttpEventType["UploadProgress"] = 1] = "UploadProgress";
+    /**
+     * The response status code and headers were received.
+     */
+    HttpEventType[HttpEventType["ResponseHeader"] = 2] = "ResponseHeader";
+    /**
+     * A download progress event was received.
+     */
+    HttpEventType[HttpEventType["DownloadProgress"] = 3] = "DownloadProgress";
+    /**
+     * The full response including the body was received.
+     */
+    HttpEventType[HttpEventType["Response"] = 4] = "Response";
+    /**
+     * A custom event from an interceptor or a backend.
+     */
+    HttpEventType[HttpEventType["User"] = 5] = "User";
+})(HttpEventType || (HttpEventType = {}));
+/**
+ * Base class for both `HttpResponse` and `HttpHeaderResponse`.
+ *
+ * @publicApi
+ */
+class HttpResponseBase {
+    /**
+     * Super-constructor for all responses.
+     *
+     * The single parameter accepted is an initialization hash. Any properties
+     * of the response passed there will override the default values.
+     */
+    constructor(init, defaultStatus = 200, defaultStatusText = 'OK') {
+        // If the hash has values passed, use them to initialize the response.
+        // Otherwise use the default values.
+        this.headers = init.headers || new HttpHeaders();
+        this.status = init.status !== undefined ? init.status : defaultStatus;
+        this.statusText = init.statusText || defaultStatusText;
+        this.url = init.url || null;
+        // Cache the ok value to avoid defining a getter.
+        this.ok = this.status >= 200 && this.status < 300;
+    }
+}
+/**
+ * A partial HTTP response which only includes the status and header data,
+ * but no response body.
+ *
+ * `HttpHeaderResponse` is a `HttpEvent` available on the response
+ * event stream, only when progress events are requested.
+ *
+ * @publicApi
+ */
+class HttpHeaderResponse extends HttpResponseBase {
+    /**
+     * Create a new `HttpHeaderResponse` with the given parameters.
+     */
+    constructor(init = {}) {
+        super(init);
+        this.type = HttpEventType.ResponseHeader;
+    }
+    /**
+     * Copy this `HttpHeaderResponse`, overriding its contents with the
+     * given parameter hash.
+     */
+    clone(update = {}) {
+        // Perform a straightforward initialization of the new HttpHeaderResponse,
+        // overriding the current parameters with new ones if given.
+        return new HttpHeaderResponse({
+            headers: update.headers || this.headers,
+            status: update.status !== undefined ? update.status : this.status,
+            statusText: update.statusText || this.statusText,
+            url: update.url || this.url || undefined,
+        });
+    }
+}
+/**
+ * A full HTTP response, including a typed response body (which may be `null`
+ * if one was not returned).
+ *
+ * `HttpResponse` is a `HttpEvent` available on the response event
+ * stream.
+ *
+ * @publicApi
+ */
+class HttpResponse extends HttpResponseBase {
+    /**
+     * Construct a new `HttpResponse`.
+     */
+    constructor(init = {}) {
+        super(init);
+        this.type = HttpEventType.Response;
+        this.body = init.body !== undefined ? init.body : null;
+    }
+    clone(update = {}) {
+        return new HttpResponse({
+            body: (update.body !== undefined) ? update.body : this.body,
+            headers: update.headers || this.headers,
+            status: (update.status !== undefined) ? update.status : this.status,
+            statusText: update.statusText || this.statusText,
+            url: update.url || this.url || undefined,
+        });
+    }
+}
+/**
+ * A response that represents an error or failure, either from a
+ * non-successful HTTP status, an error while executing the request,
+ * or some other failure which occurred during the parsing of the response.
+ *
+ * Any error returned on the `Observable` response stream will be
+ * wrapped in an `HttpErrorResponse` to provide additional context about
+ * the state of the HTTP layer when the error occurred. The error property
+ * will contain either a wrapped Error object or the error response returned
+ * from the server.
+ *
+ * @publicApi
+ */
+class HttpErrorResponse extends HttpResponseBase {
+    constructor(init) {
+        // Initialize with a default status of 0 / Unknown Error.
+        super(init, 0, 'Unknown Error');
+        this.name = 'HttpErrorResponse';
+        /**
+         * Errors are never okay, even when the status code is in the 2xx success range.
+         */
+        this.ok = false;
+        // If the response was successful, then this was a parse error. Otherwise, it was
+        // a protocol-level failure of some sort. Either the request failed in transit
+        // or the server returned an unsuccessful status code.
+        if (this.status >= 200 && this.status < 300) {
+            this.message = `Http failure during parsing for ${init.url || '(unknown url)'}`;
+        }
+        else {
+            this.message = `Http failure response for ${init.url || '(unknown url)'}: ${init.status} ${init.statusText}`;
+        }
+        this.error = init.error || null;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Constructs an instance of `HttpRequestOptions<T>` from a source `HttpMethodOptions` and
+ * the given `body`. This function clones the object and adds the body.
+ *
+ * Note that the `responseType` *options* value is a String that identifies the
+ * single data type of the response.
+ * A single overload version of the method handles each response type.
+ * The value of `responseType` cannot be a union, as the combined signature could imply.
+ *
+ */
+function addBody(options, body) {
+    return {
+        body,
+        headers: options.headers,
+        observe: options.observe,
+        params: options.params,
+        reportProgress: options.reportProgress,
+        responseType: options.responseType,
+        withCredentials: options.withCredentials,
+    };
+}
+/**
+ * Performs HTTP requests.
+ * This service is available as an injectable class, with methods to perform HTTP requests.
+ * Each request method has multiple signatures, and the return type varies based on
+ * the signature that is called (mainly the values of `observe` and `responseType`).
+ *
+ * Note that the `responseType` *options* value is a String that identifies the
+ * single data type of the response.
+ * A single overload version of the method handles each response type.
+ * The value of `responseType` cannot be a union, as the combined signature could imply.
+
+ *
+ * @usageNotes
+ * Sample HTTP requests for the [Tour of Heroes](/tutorial/toh-pt0) application.
+ *
+ * ### HTTP Request Example
+ *
+ * ```
+ *  // GET heroes whose name contains search term
+ * searchHeroes(term: string): observable<Hero[]>{
+ *
+ *  const params = new HttpParams({fromString: 'name=term'});
+ *    return this.httpClient.request('GET', this.heroesUrl, {responseType:'json', params});
+ * }
+ * ```
+ * ### JSONP Example
+ * ```
+ * requestJsonp(url, callback = 'callback') {
+ *  return this.httpClient.jsonp(this.heroesURL, callback);
+ * }
+ * ```
+ *
+ * ### PATCH Example
+ * ```
+ * // PATCH one of the heroes' name
+ * patchHero (id: number, heroName: string): Observable<{}> {
+ * const url = `${this.heroesUrl}/${id}`;   // PATCH api/heroes/42
+ *  return this.httpClient.patch(url, {name: heroName}, httpOptions)
+ *    .pipe(catchError(this.handleError('patchHero')));
+ * }
+ * ```
+ *
+ * @see [HTTP Guide](guide/http)
+ *
+ * @publicApi
+ */
+class HttpClient {
+    constructor(handler) {
+        this.handler = handler;
+    }
+    /**
+     * Constructs an observable for a generic HTTP request that, when subscribed,
+     * fires the request through the chain of registered interceptors and on to the
+     * server.
+     *
+     * You can pass an `HttpRequest` directly as the only parameter. In this case,
+     * the call returns an observable of the raw `HttpEvent` stream.
+     *
+     * Alternatively you can pass an HTTP method as the first parameter,
+     * a URL string as the second, and an options hash containing the request body as the third.
+     * See `addBody()`. In this case, the specified `responseType` and `observe` options determine the
+     * type of returned observable.
+     *   * The `responseType` value determines how a successful response body is parsed.
+     *   * If `responseType` is the default `json`, you can pass a type interface for the resulting
+     * object as a type parameter to the call.
+     *
+     * The `observe` value determines the return type, according to what you are interested in
+     * observing.
+     *   * An `observe` value of events returns an observable of the raw `HttpEvent` stream, including
+     * progress events by default.
+     *   * An `observe` value of response returns an observable of `HttpResponse<T>`,
+     * where the `T` parameter depends on the `responseType` and any optionally provided type
+     * parameter.
+     *   * An `observe` value of body returns an observable of `<T>` with the same `T` body type.
+     *
+     */
+    request(first, url, options = {}) {
+        let req;
+        // First, check whether the primary argument is an instance of `HttpRequest`.
+        if (first instanceof HttpRequest) {
+            // It is. The other arguments must be undefined (per the signatures) and can be
+            // ignored.
+            req = first;
+        }
+        else {
+            // It's a string, so it represents a URL. Construct a request based on it,
+            // and incorporate the remaining arguments (assuming `GET` unless a method is
+            // provided.
+            // Figure out the headers.
+            let headers = undefined;
+            if (options.headers instanceof HttpHeaders) {
+                headers = options.headers;
+            }
+            else {
+                headers = new HttpHeaders(options.headers);
+            }
+            // Sort out parameters.
+            let params = undefined;
+            if (!!options.params) {
+                if (options.params instanceof HttpParams) {
+                    params = options.params;
+                }
+                else {
+                    params = new HttpParams({ fromObject: options.params });
+                }
+            }
+            // Construct the request.
+            req = new HttpRequest(first, url, (options.body !== undefined ? options.body : null), {
+                headers,
+                params,
+                reportProgress: options.reportProgress,
+                // By default, JSON is assumed to be returned for all calls.
+                responseType: options.responseType || 'json',
+                withCredentials: options.withCredentials,
+            });
+        }
+        // Start with an Observable.of() the initial request, and run the handler (which
+        // includes all interceptors) inside a concatMap(). This way, the handler runs
+        // inside an Observable chain, which causes interceptors to be re-run on every
+        // subscription (this also makes retries re-run the handler, including interceptors).
+        const events$ = Object(rxjs__WEBPACK_IMPORTED_MODULE_1__["of"])(req).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["concatMap"])((req) => this.handler.handle(req)));
+        // If coming via the API signature which accepts a previously constructed HttpRequest,
+        // the only option is to get the event stream. Otherwise, return the event stream if
+        // that is what was requested.
+        if (first instanceof HttpRequest || options.observe === 'events') {
+            return events$;
+        }
+        // The requested stream contains either the full response or the body. In either
+        // case, the first step is to filter the event stream to extract a stream of
+        // responses(s).
+        const res$ = events$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["filter"])((event) => event instanceof HttpResponse));
+        // Decide which stream to return.
+        switch (options.observe || 'body') {
+            case 'body':
+                // The requested stream is the body. Map the response stream to the response
+                // body. This could be done more simply, but a misbehaving interceptor might
+                // transform the response body into a different format and ignore the requested
+                // responseType. Guard against this by validating that the response is of the
+                // requested type.
+                switch (req.responseType) {
+                    case 'arraybuffer':
+                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => {
+                            // Validate that the body is an ArrayBuffer.
+                            if (res.body !== null && !(res.body instanceof ArrayBuffer)) {
+                                throw new Error('Response is not an ArrayBuffer.');
+                            }
+                            return res.body;
+                        }));
+                    case 'blob':
+                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => {
+                            // Validate that the body is a Blob.
+                            if (res.body !== null && !(res.body instanceof Blob)) {
+                                throw new Error('Response is not a Blob.');
+                            }
+                            return res.body;
+                        }));
+                    case 'text':
+                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => {
+                            // Validate that the body is a string.
+                            if (res.body !== null && typeof res.body !== 'string') {
+                                throw new Error('Response is not a string.');
+                            }
+                            return res.body;
+                        }));
+                    case 'json':
+                    default:
+                        // No validation needed for JSON responses, as they can be of any type.
+                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => res.body));
+                }
+            case 'response':
+                // The response stream was requested directly, so return it.
+                return res$;
+            default:
+                // Guard against new future observe types being added.
+                throw new Error(`Unreachable: unhandled observe type ${options.observe}}`);
+        }
+    }
+    /**
+     * Constructs an observable that, when subscribed, causes the configured
+     * `DELETE` request to execute on the server. See the individual overloads for
+     * details on the return type.
+     *
+     * @param url     The endpoint URL.
+     * @param options The HTTP options to send with the request.
+     *
+     */
+    delete(url, options = {}) {
+        return this.request('DELETE', url, options);
+    }
+    /**
+     * Constructs an observable that, when subscribed, causes the configured
+     * `GET` request to execute on the server. See the individual overloads for
+     * details on the return type.
+     */
+    get(url, options = {}) {
+        return this.request('GET', url, options);
+    }
+    /**
+     * Constructs an observable that, when subscribed, causes the configured
+     * `HEAD` request to execute on the server. The `HEAD` method returns
+     * meta information about the resource without transferring the
+     * resource itself. See the individual overloads for
+     * details on the return type.
+     */
+    head(url, options = {}) {
+        return this.request('HEAD', url, options);
+    }
+    /**
+     * Constructs an `Observable` that, when subscribed, causes a request with the special method
+     * `JSONP` to be dispatched via the interceptor pipeline.
+     * The [JSONP pattern](https://en.wikipedia.org/wiki/JSONP) works around limitations of certain
+     * API endpoints that don't support newer,
+     * and preferable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) protocol.
+     * JSONP treats the endpoint API as a JavaScript file and tricks the browser to process the
+     * requests even if the API endpoint is not located on the same domain (origin) as the client-side
+     * application making the request.
+     * The endpoint API must support JSONP callback for JSONP requests to work.
+     * The resource API returns the JSON response wrapped in a callback function.
+     * You can pass the callback function name as one of the query parameters.
+     * Note that JSONP requests can only be used with `GET` requests.
+     *
+     * @param url The resource URL.
+     * @param callbackParam The callback function name.
+     *
+     */
+    jsonp(url, callbackParam) {
+        return this.request('JSONP', url, {
+            params: new HttpParams().append(callbackParam, 'JSONP_CALLBACK'),
+            observe: 'body',
+            responseType: 'json',
+        });
+    }
+    /**
+     * Constructs an `Observable` that, when subscribed, causes the configured
+     * `OPTIONS` request to execute on the server. This method allows the client
+     * to determine the supported HTTP methods and other capabilites of an endpoint,
+     * without implying a resource action. See the individual overloads for
+     * details on the return type.
+     */
+    options(url, options = {}) {
+        return this.request('OPTIONS', url, options);
+    }
+    /**
+     * Constructs an observable that, when subscribed, causes the configured
+     * `PATCH` request to execute on the server. See the individual overloads for
+     * details on the return type.
+     */
+    patch(url, body, options = {}) {
+        return this.request('PATCH', url, addBody(options, body));
+    }
+    /**
+     * Constructs an observable that, when subscribed, causes the configured
+     * `POST` request to execute on the server. The server responds with the location of
+     * the replaced resource. See the individual overloads for
+     * details on the return type.
+     */
+    post(url, body, options = {}) {
+        return this.request('POST', url, addBody(options, body));
+    }
+    /**
+     * Constructs an observable that, when subscribed, causes the configured
+     * `PUT` request to execute on the server. The `PUT` method replaces an existing resource
+     * with a new set of values.
+     * See the individual overloads for details on the return type.
+     */
+    put(url, body, options = {}) {
+        return this.request('PUT', url, addBody(options, body));
+    }
+}
+HttpClient.ɵfac = function HttpClient_Factory(t) { return new (t || HttpClient)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](HttpHandler)); };
+HttpClient.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpClient, factory: HttpClient.ɵfac });
+HttpClient.ctorParameters = () => [
+    { type: HttpHandler }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClient, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: HttpHandler }]; }, null); })();
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * `HttpHandler` which applies an `HttpInterceptor` to an `HttpRequest`.
+ *
+ *
+ */
+class HttpInterceptorHandler {
+    constructor(next, interceptor) {
+        this.next = next;
+        this.interceptor = interceptor;
+    }
+    handle(req) {
+        return this.interceptor.intercept(req, this.next);
+    }
+}
+/**
+ * A multi-provider token that represents the array of registered
+ * `HttpInterceptor` objects.
+ *
+ * @publicApi
+ */
+const HTTP_INTERCEPTORS = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('HTTP_INTERCEPTORS');
+class NoopInterceptor {
+    intercept(req, next) {
+        return next.handle(req);
+    }
+}
+NoopInterceptor.ɵfac = function NoopInterceptor_Factory(t) { return new (t || NoopInterceptor)(); };
+NoopInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: NoopInterceptor, factory: NoopInterceptor.ɵfac });
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](NoopInterceptor, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], null, null); })();
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+// Every request made through JSONP needs a callback name that's unique across the
+// whole page. Each request is assigned an id and the callback name is constructed
+// from that. The next id to be assigned is tracked in a global variable here that
+// is shared among all applications on the page.
+let nextRequestId = 0;
+// Error text given when a JSONP script is injected, but doesn't invoke the callback
+// passed in its URL.
+const JSONP_ERR_NO_CALLBACK = 'JSONP injected script did not invoke callback.';
+// Error text given when a request is passed to the JsonpClientBackend that doesn't
+// have a request method JSONP.
+const JSONP_ERR_WRONG_METHOD = 'JSONP requests must use JSONP request method.';
+const JSONP_ERR_WRONG_RESPONSE_TYPE = 'JSONP requests must use Json response type.';
+/**
+ * DI token/abstract type representing a map of JSONP callbacks.
+ *
+ * In the browser, this should always be the `window` object.
+ *
+ *
+ */
+class JsonpCallbackContext {
+}
+/**
+ * Processes an `HttpRequest` with the JSONP method,
+ * by performing JSONP style requests.
+ * @see `HttpHandler`
+ * @see `HttpXhrBackend`
+ *
+ * @publicApi
+ */
+class JsonpClientBackend {
+    constructor(callbackMap, document) {
+        this.callbackMap = callbackMap;
+        this.document = document;
+        /**
+         * A resolved promise that can be used to schedule microtasks in the event handlers.
+         */
+        this.resolvedPromise = Promise.resolve();
+    }
+    /**
+     * Get the name of the next callback method, by incrementing the global `nextRequestId`.
+     */
+    nextCallback() {
+        return `ng_jsonp_callback_${nextRequestId++}`;
+    }
+    /**
+     * Processes a JSONP request and returns an event stream of the results.
+     * @param req The request object.
+     * @returns An observable of the response events.
+     *
+     */
+    handle(req) {
+        // Firstly, check both the method and response type. If either doesn't match
+        // then the request was improperly routed here and cannot be handled.
+        if (req.method !== 'JSONP') {
+            throw new Error(JSONP_ERR_WRONG_METHOD);
+        }
+        else if (req.responseType !== 'json') {
+            throw new Error(JSONP_ERR_WRONG_RESPONSE_TYPE);
+        }
+        // Everything else happens inside the Observable boundary.
+        return new rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"]((observer) => {
+            // The first step to make a request is to generate the callback name, and replace the
+            // callback placeholder in the URL with the name. Care has to be taken here to ensure
+            // a trailing &, if matched, gets inserted back into the URL in the correct place.
+            const callback = this.nextCallback();
+            const url = req.urlWithParams.replace(/=JSONP_CALLBACK(&|$)/, `=${callback}$1`);
+            // Construct the <script> tag and point it at the URL.
+            const node = this.document.createElement('script');
+            node.src = url;
+            // A JSONP request requires waiting for multiple callbacks. These variables
+            // are closed over and track state across those callbacks.
+            // The response object, if one has been received, or null otherwise.
+            let body = null;
+            // Whether the response callback has been called.
+            let finished = false;
+            // Whether the request has been cancelled (and thus any other callbacks)
+            // should be ignored.
+            let cancelled = false;
+            // Set the response callback in this.callbackMap (which will be the window
+            // object in the browser. The script being loaded via the <script> tag will
+            // eventually call this callback.
+            this.callbackMap[callback] = (data) => {
+                // Data has been received from the JSONP script. Firstly, delete this callback.
+                delete this.callbackMap[callback];
+                // Next, make sure the request wasn't cancelled in the meantime.
+                if (cancelled) {
+                    return;
+                }
+                // Set state to indicate data was received.
+                body = data;
+                finished = true;
+            };
+            // cleanup() is a utility closure that removes the <script> from the page and
+            // the response callback from the window. This logic is used in both the
+            // success, error, and cancellation paths, so it's extracted out for convenience.
+            const cleanup = () => {
+                // Remove the <script> tag if it's still on the page.
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+                // Remove the response callback from the callbackMap (window object in the
+                // browser).
+                delete this.callbackMap[callback];
+            };
+            // onLoad() is the success callback which runs after the response callback
+            // if the JSONP script loads successfully. The event itself is unimportant.
+            // If something went wrong, onLoad() may run without the response callback
+            // having been invoked.
+            const onLoad = (event) => {
+                // Do nothing if the request has been cancelled.
+                if (cancelled) {
+                    return;
+                }
+                // We wrap it in an extra Promise, to ensure the microtask
+                // is scheduled after the loaded endpoint has executed any potential microtask itself,
+                // which is not guaranteed in Internet Explorer and EdgeHTML. See issue #39496
+                this.resolvedPromise.then(() => {
+                    // Cleanup the page.
+                    cleanup();
+                    // Check whether the response callback has run.
+                    if (!finished) {
+                        // It hasn't, something went wrong with the request. Return an error via
+                        // the Observable error path. All JSONP errors have status 0.
+                        observer.error(new HttpErrorResponse({
+                            url,
+                            status: 0,
+                            statusText: 'JSONP Error',
+                            error: new Error(JSONP_ERR_NO_CALLBACK),
+                        }));
+                        return;
+                    }
+                    // Success. body either contains the response body or null if none was
+                    // returned.
+                    observer.next(new HttpResponse({
+                        body,
+                        status: 200,
+                        statusText: 'OK',
+                        url,
+                    }));
+                    // Complete the stream, the response is over.
+                    observer.complete();
+                });
+            };
+            // onError() is the error callback, which runs if the script returned generates
+            // a Javascript error. It emits the error via the Observable error channel as
+            // a HttpErrorResponse.
+            const onError = (error) => {
+                // If the request was already cancelled, no need to emit anything.
+                if (cancelled) {
+                    return;
+                }
+                cleanup();
+                // Wrap the error in a HttpErrorResponse.
+                observer.error(new HttpErrorResponse({
+                    error,
+                    status: 0,
+                    statusText: 'JSONP Error',
+                    url,
+                }));
+            };
+            // Subscribe to both the success (load) and error events on the <script> tag,
+            // and add it to the page.
+            node.addEventListener('load', onLoad);
+            node.addEventListener('error', onError);
+            this.document.body.appendChild(node);
+            // The request has now been successfully sent.
+            observer.next({ type: HttpEventType.Sent });
+            // Cancellation handler.
+            return () => {
+                // Track the cancellation so event listeners won't do anything even if already scheduled.
+                cancelled = true;
+                // Remove the event listeners so they won't run if the events later fire.
+                node.removeEventListener('load', onLoad);
+                node.removeEventListener('error', onError);
+                // And finally, clean up the page.
+                cleanup();
+            };
+        });
+    }
+}
+JsonpClientBackend.ɵfac = function JsonpClientBackend_Factory(t) { return new (t || JsonpClientBackend)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](JsonpCallbackContext), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"])); };
+JsonpClientBackend.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: JsonpClientBackend, factory: JsonpClientBackend.ɵfac });
+JsonpClientBackend.ctorParameters = () => [
+    { type: JsonpCallbackContext },
+    { type: undefined, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"],] }] }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](JsonpClientBackend, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: JsonpCallbackContext }, { type: undefined, decorators: [{
+                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
+                args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"]]
+            }] }]; }, null); })();
+/**
+ * Identifies requests with the method JSONP and
+ * shifts them to the `JsonpClientBackend`.
+ *
+ * @see `HttpInterceptor`
+ *
+ * @publicApi
+ */
+class JsonpInterceptor {
+    constructor(jsonp) {
+        this.jsonp = jsonp;
+    }
+    /**
+     * Identifies and handles a given JSONP request.
+     * @param req The outgoing request object to handle.
+     * @param next The next interceptor in the chain, or the backend
+     * if no interceptors remain in the chain.
+     * @returns An observable of the event stream.
+     */
+    intercept(req, next) {
+        if (req.method === 'JSONP') {
+            return this.jsonp.handle(req);
+        }
+        // Fall through for normal HTTP requests.
+        return next.handle(req);
+    }
+}
+JsonpInterceptor.ɵfac = function JsonpInterceptor_Factory(t) { return new (t || JsonpInterceptor)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](JsonpClientBackend)); };
+JsonpInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: JsonpInterceptor, factory: JsonpInterceptor.ɵfac });
+JsonpInterceptor.ctorParameters = () => [
+    { type: JsonpClientBackend }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](JsonpInterceptor, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: JsonpClientBackend }]; }, null); })();
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const XSSI_PREFIX = /^\)\]\}',?\n/;
+/**
+ * Determine an appropriate URL for the response, by checking either
+ * XMLHttpRequest.responseURL or the X-Request-URL header.
+ */
+function getResponseUrl(xhr) {
+    if ('responseURL' in xhr && xhr.responseURL) {
+        return xhr.responseURL;
+    }
+    if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
+        return xhr.getResponseHeader('X-Request-URL');
+    }
+    return null;
+}
+/**
+ * A wrapper around the `XMLHttpRequest` constructor.
+ *
+ * @publicApi
+ */
+class XhrFactory {
+}
+/**
+ * A factory for `HttpXhrBackend` that uses the `XMLHttpRequest` browser API.
+ *
+ */
+class BrowserXhr {
+    constructor() { }
+    build() {
+        return (new XMLHttpRequest());
+    }
+}
+BrowserXhr.ɵfac = function BrowserXhr_Factory(t) { return new (t || BrowserXhr)(); };
+BrowserXhr.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: BrowserXhr, factory: BrowserXhr.ɵfac });
+BrowserXhr.ctorParameters = () => [];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](BrowserXhr, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return []; }, null); })();
+/**
+ * Uses `XMLHttpRequest` to send requests to a backend server.
+ * @see `HttpHandler`
+ * @see `JsonpClientBackend`
+ *
+ * @publicApi
+ */
+class HttpXhrBackend {
+    constructor(xhrFactory) {
+        this.xhrFactory = xhrFactory;
+    }
+    /**
+     * Processes a request and returns a stream of response events.
+     * @param req The request object.
+     * @returns An observable of the response events.
+     */
+    handle(req) {
+        // Quick check to give a better error message when a user attempts to use
+        // HttpClient.jsonp() without installing the HttpClientJsonpModule
+        if (req.method === 'JSONP') {
+            throw new Error(`Attempted to construct Jsonp request without HttpClientJsonpModule installed.`);
+        }
+        // Everything happens on Observable subscription.
+        return new rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"]((observer) => {
+            // Start by setting up the XHR object with request method, URL, and withCredentials flag.
+            const xhr = this.xhrFactory.build();
+            xhr.open(req.method, req.urlWithParams);
+            if (!!req.withCredentials) {
+                xhr.withCredentials = true;
+            }
+            // Add all the requested headers.
+            req.headers.forEach((name, values) => xhr.setRequestHeader(name, values.join(',')));
+            // Add an Accept header if one isn't present already.
+            if (!req.headers.has('Accept')) {
+                xhr.setRequestHeader('Accept', 'application/json, text/plain, */*');
+            }
+            // Auto-detect the Content-Type header if one isn't present already.
+            if (!req.headers.has('Content-Type')) {
+                const detectedType = req.detectContentTypeHeader();
+                // Sometimes Content-Type detection fails.
+                if (detectedType !== null) {
+                    xhr.setRequestHeader('Content-Type', detectedType);
+                }
+            }
+            // Set the responseType if one was requested.
+            if (req.responseType) {
+                const responseType = req.responseType.toLowerCase();
+                // JSON responses need to be processed as text. This is because if the server
+                // returns an XSSI-prefixed JSON response, the browser will fail to parse it,
+                // xhr.response will be null, and xhr.responseText cannot be accessed to
+                // retrieve the prefixed JSON data in order to strip the prefix. Thus, all JSON
+                // is parsed by first requesting text and then applying JSON.parse.
+                xhr.responseType = ((responseType !== 'json') ? responseType : 'text');
+            }
+            // Serialize the request body if one is present. If not, this will be set to null.
+            const reqBody = req.serializeBody();
+            // If progress events are enabled, response headers will be delivered
+            // in two events - the HttpHeaderResponse event and the full HttpResponse
+            // event. However, since response headers don't change in between these
+            // two events, it doesn't make sense to parse them twice. So headerResponse
+            // caches the data extracted from the response whenever it's first parsed,
+            // to ensure parsing isn't duplicated.
+            let headerResponse = null;
+            // partialFromXhr extracts the HttpHeaderResponse from the current XMLHttpRequest
+            // state, and memoizes it into headerResponse.
+            const partialFromXhr = () => {
+                if (headerResponse !== null) {
+                    return headerResponse;
+                }
+                // Read status and normalize an IE9 bug (https://bugs.jquery.com/ticket/1450).
+                const status = xhr.status === 1223 ? 204 : xhr.status;
+                const statusText = xhr.statusText || 'OK';
+                // Parse headers from XMLHttpRequest - this step is lazy.
+                const headers = new HttpHeaders(xhr.getAllResponseHeaders());
+                // Read the response URL from the XMLHttpResponse instance and fall back on the
+                // request URL.
+                const url = getResponseUrl(xhr) || req.url;
+                // Construct the HttpHeaderResponse and memoize it.
+                headerResponse = new HttpHeaderResponse({ headers, status, statusText, url });
+                return headerResponse;
+            };
+            // Next, a few closures are defined for the various events which XMLHttpRequest can
+            // emit. This allows them to be unregistered as event listeners later.
+            // First up is the load event, which represents a response being fully available.
+            const onLoad = () => {
+                // Read response state from the memoized partial data.
+                let { headers, status, statusText, url } = partialFromXhr();
+                // The body will be read out if present.
+                let body = null;
+                if (status !== 204) {
+                    // Use XMLHttpRequest.response if set, responseText otherwise.
+                    body = (typeof xhr.response === 'undefined') ? xhr.responseText : xhr.response;
+                }
+                // Normalize another potential bug (this one comes from CORS).
+                if (status === 0) {
+                    status = !!body ? 200 : 0;
+                }
+                // ok determines whether the response will be transmitted on the event or
+                // error channel. Unsuccessful status codes (not 2xx) will always be errors,
+                // but a successful status code can still result in an error if the user
+                // asked for JSON data and the body cannot be parsed as such.
+                let ok = status >= 200 && status < 300;
+                // Check whether the body needs to be parsed as JSON (in many cases the browser
+                // will have done that already).
+                if (req.responseType === 'json' && typeof body === 'string') {
+                    // Save the original body, before attempting XSSI prefix stripping.
+                    const originalBody = body;
+                    body = body.replace(XSSI_PREFIX, '');
+                    try {
+                        // Attempt the parse. If it fails, a parse error should be delivered to the user.
+                        body = body !== '' ? JSON.parse(body) : null;
+                    }
+                    catch (error) {
+                        // Since the JSON.parse failed, it's reasonable to assume this might not have been a
+                        // JSON response. Restore the original body (including any XSSI prefix) to deliver
+                        // a better error response.
+                        body = originalBody;
+                        // If this was an error request to begin with, leave it as a string, it probably
+                        // just isn't JSON. Otherwise, deliver the parsing error to the user.
+                        if (ok) {
+                            // Even though the response status was 2xx, this is still an error.
+                            ok = false;
+                            // The parse error contains the text of the body that failed to parse.
+                            body = { error, text: body };
+                        }
+                    }
+                }
+                if (ok) {
+                    // A successful response is delivered on the event stream.
+                    observer.next(new HttpResponse({
+                        body,
+                        headers,
+                        status,
+                        statusText,
+                        url: url || undefined,
+                    }));
+                    // The full body has been received and delivered, no further events
+                    // are possible. This request is complete.
+                    observer.complete();
+                }
+                else {
+                    // An unsuccessful request is delivered on the error channel.
+                    observer.error(new HttpErrorResponse({
+                        // The error in this case is the response body (error from the server).
+                        error: body,
+                        headers,
+                        status,
+                        statusText,
+                        url: url || undefined,
+                    }));
+                }
+            };
+            // The onError callback is called when something goes wrong at the network level.
+            // Connection timeout, DNS error, offline, etc. These are actual errors, and are
+            // transmitted on the error channel.
+            const onError = (error) => {
+                const { url } = partialFromXhr();
+                const res = new HttpErrorResponse({
+                    error,
+                    status: xhr.status || 0,
+                    statusText: xhr.statusText || 'Unknown Error',
+                    url: url || undefined,
+                });
+                observer.error(res);
+            };
+            // The sentHeaders flag tracks whether the HttpResponseHeaders event
+            // has been sent on the stream. This is necessary to track if progress
+            // is enabled since the event will be sent on only the first download
+            // progerss event.
+            let sentHeaders = false;
+            // The download progress event handler, which is only registered if
+            // progress events are enabled.
+            const onDownProgress = (event) => {
+                // Send the HttpResponseHeaders event if it hasn't been sent already.
+                if (!sentHeaders) {
+                    observer.next(partialFromXhr());
+                    sentHeaders = true;
+                }
+                // Start building the download progress event to deliver on the response
+                // event stream.
+                let progressEvent = {
+                    type: HttpEventType.DownloadProgress,
+                    loaded: event.loaded,
+                };
+                // Set the total number of bytes in the event if it's available.
+                if (event.lengthComputable) {
+                    progressEvent.total = event.total;
+                }
+                // If the request was for text content and a partial response is
+                // available on XMLHttpRequest, include it in the progress event
+                // to allow for streaming reads.
+                if (req.responseType === 'text' && !!xhr.responseText) {
+                    progressEvent.partialText = xhr.responseText;
+                }
+                // Finally, fire the event.
+                observer.next(progressEvent);
+            };
+            // The upload progress event handler, which is only registered if
+            // progress events are enabled.
+            const onUpProgress = (event) => {
+                // Upload progress events are simpler. Begin building the progress
+                // event.
+                let progress = {
+                    type: HttpEventType.UploadProgress,
+                    loaded: event.loaded,
+                };
+                // If the total number of bytes being uploaded is available, include
+                // it.
+                if (event.lengthComputable) {
+                    progress.total = event.total;
+                }
+                // Send the event.
+                observer.next(progress);
+            };
+            // By default, register for load and error events.
+            xhr.addEventListener('load', onLoad);
+            xhr.addEventListener('error', onError);
+            xhr.addEventListener('timeout', onError);
+            xhr.addEventListener('abort', onError);
+            // Progress events are only enabled if requested.
+            if (req.reportProgress) {
+                // Download progress is always enabled if requested.
+                xhr.addEventListener('progress', onDownProgress);
+                // Upload progress depends on whether there is a body to upload.
+                if (reqBody !== null && xhr.upload) {
+                    xhr.upload.addEventListener('progress', onUpProgress);
+                }
+            }
+            // Fire the request, and notify the event stream that it was fired.
+            xhr.send(reqBody);
+            observer.next({ type: HttpEventType.Sent });
+            // This is the return from the Observable function, which is the
+            // request cancellation handler.
+            return () => {
+                // On a cancellation, remove all registered event listeners.
+                xhr.removeEventListener('error', onError);
+                xhr.removeEventListener('abort', onError);
+                xhr.removeEventListener('load', onLoad);
+                xhr.removeEventListener('timeout', onError);
+                if (req.reportProgress) {
+                    xhr.removeEventListener('progress', onDownProgress);
+                    if (reqBody !== null && xhr.upload) {
+                        xhr.upload.removeEventListener('progress', onUpProgress);
+                    }
+                }
+                // Finally, abort the in-flight request.
+                if (xhr.readyState !== xhr.DONE) {
+                    xhr.abort();
+                }
+            };
+        });
+    }
+}
+HttpXhrBackend.ɵfac = function HttpXhrBackend_Factory(t) { return new (t || HttpXhrBackend)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](XhrFactory)); };
+HttpXhrBackend.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpXhrBackend, factory: HttpXhrBackend.ɵfac });
+HttpXhrBackend.ctorParameters = () => [
+    { type: XhrFactory }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpXhrBackend, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: XhrFactory }]; }, null); })();
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const XSRF_COOKIE_NAME = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('XSRF_COOKIE_NAME');
+const XSRF_HEADER_NAME = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('XSRF_HEADER_NAME');
+/**
+ * Retrieves the current XSRF token to use with the next outgoing request.
+ *
+ * @publicApi
+ */
+class HttpXsrfTokenExtractor {
+}
+/**
+ * `HttpXsrfTokenExtractor` which retrieves the token from a cookie.
+ */
+class HttpXsrfCookieExtractor {
+    constructor(doc, platform, cookieName) {
+        this.doc = doc;
+        this.platform = platform;
+        this.cookieName = cookieName;
+        this.lastCookieString = '';
+        this.lastToken = null;
+        /**
+         * @internal for testing
+         */
+        this.parseCount = 0;
+    }
+    getToken() {
+        if (this.platform === 'server') {
+            return null;
+        }
+        const cookieString = this.doc.cookie || '';
+        if (cookieString !== this.lastCookieString) {
+            this.parseCount++;
+            this.lastToken = Object(_angular_common__WEBPACK_IMPORTED_MODULE_3__["ɵparseCookieValue"])(cookieString, this.cookieName);
+            this.lastCookieString = cookieString;
+        }
+        return this.lastToken;
+    }
+}
+HttpXsrfCookieExtractor.ɵfac = function HttpXsrfCookieExtractor_Factory(t) { return new (t || HttpXsrfCookieExtractor)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_core__WEBPACK_IMPORTED_MODULE_0__["PLATFORM_ID"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](XSRF_COOKIE_NAME)); };
+HttpXsrfCookieExtractor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpXsrfCookieExtractor, factory: HttpXsrfCookieExtractor.ɵfac });
+HttpXsrfCookieExtractor.ctorParameters = () => [
+    { type: undefined, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"],] }] },
+    { type: String, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [_angular_core__WEBPACK_IMPORTED_MODULE_0__["PLATFORM_ID"],] }] },
+    { type: String, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [XSRF_COOKIE_NAME,] }] }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpXsrfCookieExtractor, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: undefined, decorators: [{
+                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
+                args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"]]
+            }] }, { type: String, decorators: [{
+                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
+                args: [_angular_core__WEBPACK_IMPORTED_MODULE_0__["PLATFORM_ID"]]
+            }] }, { type: String, decorators: [{
+                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
+                args: [XSRF_COOKIE_NAME]
+            }] }]; }, null); })();
+/**
+ * `HttpInterceptor` which adds an XSRF token to eligible outgoing requests.
+ */
+class HttpXsrfInterceptor {
+    constructor(tokenService, headerName) {
+        this.tokenService = tokenService;
+        this.headerName = headerName;
+    }
+    intercept(req, next) {
+        const lcUrl = req.url.toLowerCase();
+        // Skip both non-mutating requests and absolute URLs.
+        // Non-mutating requests don't require a token, and absolute URLs require special handling
+        // anyway as the cookie set
+        // on our origin is not the same as the token expected by another origin.
+        if (req.method === 'GET' || req.method === 'HEAD' || lcUrl.startsWith('http://') ||
+            lcUrl.startsWith('https://')) {
+            return next.handle(req);
+        }
+        const token = this.tokenService.getToken();
+        // Be careful not to overwrite an existing header of the same name.
+        if (token !== null && !req.headers.has(this.headerName)) {
+            req = req.clone({ headers: req.headers.set(this.headerName, token) });
+        }
+        return next.handle(req);
+    }
+}
+HttpXsrfInterceptor.ɵfac = function HttpXsrfInterceptor_Factory(t) { return new (t || HttpXsrfInterceptor)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](HttpXsrfTokenExtractor), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](XSRF_HEADER_NAME)); };
+HttpXsrfInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpXsrfInterceptor, factory: HttpXsrfInterceptor.ɵfac });
+HttpXsrfInterceptor.ctorParameters = () => [
+    { type: HttpXsrfTokenExtractor },
+    { type: String, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [XSRF_HEADER_NAME,] }] }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpXsrfInterceptor, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: HttpXsrfTokenExtractor }, { type: String, decorators: [{
+                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
+                args: [XSRF_HEADER_NAME]
+            }] }]; }, null); })();
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * An injectable `HttpHandler` that applies multiple interceptors
+ * to a request before passing it to the given `HttpBackend`.
+ *
+ * The interceptors are loaded lazily from the injector, to allow
+ * interceptors to themselves inject classes depending indirectly
+ * on `HttpInterceptingHandler` itself.
+ * @see `HttpInterceptor`
+ */
+class HttpInterceptingHandler {
+    constructor(backend, injector) {
+        this.backend = backend;
+        this.injector = injector;
+        this.chain = null;
+    }
+    handle(req) {
+        if (this.chain === null) {
+            const interceptors = this.injector.get(HTTP_INTERCEPTORS, []);
+            this.chain = interceptors.reduceRight((next, interceptor) => new HttpInterceptorHandler(next, interceptor), this.backend);
+        }
+        return this.chain.handle(req);
+    }
+}
+HttpInterceptingHandler.ɵfac = function HttpInterceptingHandler_Factory(t) { return new (t || HttpInterceptingHandler)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](HttpBackend), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injector"])); };
+HttpInterceptingHandler.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpInterceptingHandler, factory: HttpInterceptingHandler.ɵfac });
+HttpInterceptingHandler.ctorParameters = () => [
+    { type: HttpBackend },
+    { type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injector"] }
+];
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpInterceptingHandler, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
+    }], function () { return [{ type: HttpBackend }, { type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injector"] }]; }, null); })();
+/**
+ * Constructs an `HttpHandler` that applies interceptors
+ * to a request before passing it to the given `HttpBackend`.
+ *
+ * Use as a factory function within `HttpClientModule`.
+ *
+ *
+ */
+function interceptingHandler(backend, interceptors = []) {
+    if (!interceptors) {
+        return backend;
+    }
+    return interceptors.reduceRight((next, interceptor) => new HttpInterceptorHandler(next, interceptor), backend);
+}
+/**
+ * Factory function that determines where to store JSONP callbacks.
+ *
+ * Ordinarily JSONP callbacks are stored on the `window` object, but this may not exist
+ * in test environments. In that case, callbacks are stored on an anonymous object instead.
+ *
+ *
+ */
+function jsonpCallbackContext() {
+    if (typeof window === 'object') {
+        return window;
+    }
+    return {};
+}
+/**
+ * Configures XSRF protection support for outgoing requests.
+ *
+ * For a server that supports a cookie-based XSRF protection system,
+ * use directly to configure XSRF protection with the correct
+ * cookie and header names.
+ *
+ * If no names are supplied, the default cookie name is `XSRF-TOKEN`
+ * and the default header name is `X-XSRF-TOKEN`.
+ *
+ * @publicApi
+ */
+class HttpClientXsrfModule {
+    /**
+     * Disable the default XSRF protection.
+     */
+    static disable() {
+        return {
+            ngModule: HttpClientXsrfModule,
+            providers: [
+                { provide: HttpXsrfInterceptor, useClass: NoopInterceptor },
+            ],
+        };
+    }
+    /**
+     * Configure XSRF protection.
+     * @param options An object that can specify either or both
+     * cookie name or header name.
+     * - Cookie name default is `XSRF-TOKEN`.
+     * - Header name default is `X-XSRF-TOKEN`.
+     *
+     */
+    static withOptions(options = {}) {
+        return {
+            ngModule: HttpClientXsrfModule,
+            providers: [
+                options.cookieName ? { provide: XSRF_COOKIE_NAME, useValue: options.cookieName } : [],
+                options.headerName ? { provide: XSRF_HEADER_NAME, useValue: options.headerName } : [],
+            ],
+        };
+    }
+}
+HttpClientXsrfModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineNgModule"]({ type: HttpClientXsrfModule });
+HttpClientXsrfModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjector"]({ factory: function HttpClientXsrfModule_Factory(t) { return new (t || HttpClientXsrfModule)(); }, providers: [
+        HttpXsrfInterceptor,
+        { provide: HTTP_INTERCEPTORS, useExisting: HttpXsrfInterceptor, multi: true },
+        { provide: HttpXsrfTokenExtractor, useClass: HttpXsrfCookieExtractor },
+        { provide: XSRF_COOKIE_NAME, useValue: 'XSRF-TOKEN' },
+        { provide: XSRF_HEADER_NAME, useValue: 'X-XSRF-TOKEN' },
+    ] });
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClientXsrfModule, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["NgModule"],
+        args: [{
+                providers: [
+                    HttpXsrfInterceptor,
+                    { provide: HTTP_INTERCEPTORS, useExisting: HttpXsrfInterceptor, multi: true },
+                    { provide: HttpXsrfTokenExtractor, useClass: HttpXsrfCookieExtractor },
+                    { provide: XSRF_COOKIE_NAME, useValue: 'XSRF-TOKEN' },
+                    { provide: XSRF_HEADER_NAME, useValue: 'X-XSRF-TOKEN' },
+                ]
+            }]
+    }], null, null); })();
+/**
+ * Configures the [dependency injector](guide/glossary#injector) for `HttpClient`
+ * with supporting services for XSRF. Automatically imported by `HttpClientModule`.
+ *
+ * You can add interceptors to the chain behind `HttpClient` by binding them to the
+ * multiprovider for built-in [DI token](guide/glossary#di-token) `HTTP_INTERCEPTORS`.
+ *
+ * @publicApi
+ */
+class HttpClientModule {
+}
+HttpClientModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineNgModule"]({ type: HttpClientModule });
+HttpClientModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjector"]({ factory: function HttpClientModule_Factory(t) { return new (t || HttpClientModule)(); }, providers: [
+        HttpClient,
+        { provide: HttpHandler, useClass: HttpInterceptingHandler },
+        HttpXhrBackend,
+        { provide: HttpBackend, useExisting: HttpXhrBackend },
+        BrowserXhr,
+        { provide: XhrFactory, useExisting: BrowserXhr },
+    ], imports: [[
+            HttpClientXsrfModule.withOptions({
+                cookieName: 'XSRF-TOKEN',
+                headerName: 'X-XSRF-TOKEN'
+            }),
+        ]] });
+(function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵsetNgModuleScope"](HttpClientModule, { imports: [HttpClientXsrfModule] }); })();
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClientModule, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["NgModule"],
+        args: [{
+                /**
+                 * Optional configuration for XSRF protection.
+                 */
+                imports: [
+                    HttpClientXsrfModule.withOptions({
+                        cookieName: 'XSRF-TOKEN',
+                        headerName: 'X-XSRF-TOKEN'
+                    }),
+                ],
+                /**
+                 * Configures the [dependency injector](guide/glossary#injector) where it is imported
+                 * with supporting services for HTTP communications.
+                 */
+                providers: [
+                    HttpClient,
+                    { provide: HttpHandler, useClass: HttpInterceptingHandler },
+                    HttpXhrBackend,
+                    { provide: HttpBackend, useExisting: HttpXhrBackend },
+                    BrowserXhr,
+                    { provide: XhrFactory, useExisting: BrowserXhr },
+                ]
+            }]
+    }], null, null); })();
+/**
+ * Configures the [dependency injector](guide/glossary#injector) for `HttpClient`
+ * with supporting services for JSONP.
+ * Without this module, Jsonp requests reach the backend
+ * with method JSONP, where they are rejected.
+ *
+ * You can add interceptors to the chain behind `HttpClient` by binding them to the
+ * multiprovider for built-in [DI token](guide/glossary#di-token) `HTTP_INTERCEPTORS`.
+ *
+ * @publicApi
+ */
+class HttpClientJsonpModule {
+}
+HttpClientJsonpModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineNgModule"]({ type: HttpClientJsonpModule });
+HttpClientJsonpModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjector"]({ factory: function HttpClientJsonpModule_Factory(t) { return new (t || HttpClientJsonpModule)(); }, providers: [
+        JsonpClientBackend,
+        { provide: JsonpCallbackContext, useFactory: jsonpCallbackContext },
+        { provide: HTTP_INTERCEPTORS, useClass: JsonpInterceptor, multi: true },
+    ] });
+(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClientJsonpModule, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["NgModule"],
+        args: [{
+                providers: [
+                    JsonpClientBackend,
+                    { provide: JsonpCallbackContext, useFactory: jsonpCallbackContext },
+                    { provide: HTTP_INTERCEPTORS, useClass: JsonpInterceptor, multi: true },
+                ]
+            }]
+    }], null, null); })();
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
+/**
+ * Generated bundle index. Do not edit.
+ */
+
+
+
+//# sourceMappingURL=http.js.map
+
+/***/ }),
+
+/***/ "GBxy":
+/*!***************************************************!*\
+  !*** ./src/app/traffic-sim/simulation-manager.ts ***!
+  \***************************************************/
+/*! exports provided: SimulationManager */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SimulationManager", function() { return SimulationManager; });
+/* harmony import */ var _map_map_manager__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./map/map-manager */ "Ndy9");
+/* harmony import */ var _map_road_segment__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./map/road-segment */ "6RYJ");
+/* harmony import */ var _objects_traffic_controls_stop_light__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./objects/traffic-controls/stop-light */ "ZKvx");
+/* harmony import */ var _objects_vehicles_vehicle_generator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./objects/vehicles/vehicle-generator */ "NSgd");
+/* harmony import */ var _view_view_manager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./view/view-manager */ "s0T7");
+
+
+
+
+
+class SimulationManager {
+    constructor(mapMgr, viewMgr) {
+        this._realtime = false;
+        this._isRunning = false;
+        this._totalElapsedTime = 0;
+        this._timeStep = 10;
+        this._mapManager = mapMgr || _map_map_manager__WEBPACK_IMPORTED_MODULE_0__["MapManager"].inst;
+        this._viewMgr = viewMgr || _view_view_manager__WEBPACK_IMPORTED_MODULE_4__["ViewManager"].inst;
+        this._lastUpdate = 0;
+        document.addEventListener("visibilitychange", () => this._handleBrowserVisibilityChange(), false);
+    }
+    init(canvasId) {
+        this._canvasId = canvasId;
+        this._initObjects();
+    }
+    reset() {
+        this._viewMgr.reset();
+        this._mapManager.reset();
+        this._totalElapsedTime = 0;
+        this.init(this._canvasId);
+    }
+    destroy() {
+        cancelAnimationFrame(this._frameId);
+        this.stop();
+        this._viewMgr.destroy();
+        this._mapManager.destroy();
+    }
+    _initObjects() {
+        this._viewMgr.init(this._canvasId);
+        this._viewMgr.update();
+    }
+    isRunning() {
+        return this._isRunning;
+    }
+    toggleAnimationState() {
+        if (this.isRunning()) {
+            this.stop();
+        }
+        else {
+            this.start();
+        }
+    }
+    setRealtime(realtime) {
+        this._realtime = realtime;
+    }
+    start() {
+        this._startTime = (this._realtime) ? new Date().getTime() : 0;
+        this._isRunning = true;
+        this.update();
+    }
+    stop() {
+        this._isRunning = false;
+        this._lastUpdate = null;
+    }
+    update() {
+        if (this._isRunning) {
+            let elapsed = this.getElapsed();
+            this._totalElapsedTime += elapsed;
+            this._mapManager.update(elapsed);
+            this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
+            this._frameId = requestAnimationFrame(() => this.update());
+        }
+        // console.debug(`updating view...`);
+        this._viewMgr.update();
+    }
+    /**
+     * provides the number of milliseconds elapsed since last {update}
+     * @returns number of milliseconds elapsed
+     */
+    getElapsed() {
+        if (this._realtime) {
+            let now = new Date().getTime();
+            if (!this._lastUpdate) {
+                this._lastUpdate = this._startTime;
+            }
+            let elapsed = now - this._lastUpdate;
+            return elapsed;
+        }
+        return this.getTimestep();
+    }
+    setTimestep(timestep) {
+        this._timeStep = timestep;
+    }
+    getTimestep() {
+        return this._timeStep;
+    }
+    getTotalElapsed() {
+        return this._totalElapsedTime;
+    }
+    getMapManager() {
+        return this._mapManager;
+    }
+    getViewManager() {
+        return this._viewMgr;
+    }
+    loadMap(map) {
+        var _a, _b, _c;
+        if (map) {
+            this.reset();
+            // add segments
+            for (var i = 0; i < ((_a = map.segments) === null || _a === void 0 ? void 0 : _a.length); i++) {
+                let opts = map.segments[i];
+                let s = new _map_road_segment__WEBPACK_IMPORTED_MODULE_1__["RoadSegment"](opts);
+                this.getMapManager().addSegment(s);
+                this.getViewManager().addRenderable(s);
+            }
+            // add TFCs
+            for (var i = 0; i < ((_b = map.tfcs) === null || _b === void 0 ? void 0 : _b.length); i++) {
+                let opts = map.tfcs[i];
+                let tfc;
+                switch (opts.type.toLowerCase()) {
+                    case 'stoplight':
+                        // console.debug(`tfc.startState: ${opts.startState}`);
+                        tfc = new _objects_traffic_controls_stop_light__WEBPACK_IMPORTED_MODULE_2__["StopLight"](opts);
+                        break;
+                }
+                if (tfc) {
+                    let segment = this.getMapManager().getSegmentsEndingAt(opts.location).find((seg) => {
+                        return seg.roadName.toLowerCase() == tfc.roadName.toLowerCase();
+                    });
+                    if (segment) {
+                        segment.addTfc(tfc);
+                        this.getViewManager().addRenderable(tfc);
+                    }
+                }
+            }
+            // add vehicle generators
+            for (var i = 0; i < ((_c = map.generators) === null || _c === void 0 ? void 0 : _c.length); i++) {
+                let opts = map.generators[i];
+                let g = new _objects_vehicles_vehicle_generator__WEBPACK_IMPORTED_MODULE_3__["VehicleGenerator"](opts);
+                let segment = this.getMapManager().getSegmentsStartingAt(opts.location).find((seg) => {
+                    return seg.roadName.toLowerCase() == g.roadName.toLowerCase();
+                });
+                if (segment) {
+                    segment.setVehicleGenerator(g);
+                }
+            }
+        }
+    }
+    removeVehicle(vehicle) {
+        this._viewMgr.removeRenderable(vehicle);
+        vehicle.getSegment().removeVehicle(vehicle.id);
+        vehicle.disposeGeometry();
+    }
+    _handleBrowserVisibilityChange() {
+        if (document.visibilityState == 'hidden') {
+            if (this.isRunning()) {
+                this._previousState = true;
+                this.stop();
+            }
+        }
+        if (document.visibilityState == 'visible') {
+            if (this._previousState) {
+                this._previousState = false;
+                this.start();
+            }
+        }
+    }
+}
+(function (SimulationManager) {
+    SimulationManager.inst = new SimulationManager();
+})(SimulationManager || (SimulationManager = {}));
+
+
+/***/ }),
+
+/***/ "NSgd":
+/*!*******************************************************************!*\
+  !*** ./src/app/traffic-sim/objects/vehicles/vehicle-generator.ts ***!
+  \*******************************************************************/
+/*! exports provided: VehicleGenerator */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VehicleGenerator", function() { return VehicleGenerator; });
+/* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../helpers/utils */ "1iqU");
+/* harmony import */ var _vehicle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./vehicle */ "UaTk");
+/* harmony import */ var _traffic_object__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../traffic-object */ "zEDA");
+
+
+
+class VehicleGenerator extends _traffic_object__WEBPACK_IMPORTED_MODULE_2__["TrafficObject"] {
+    constructor(options, simMgr) {
+        super(options, simMgr);
+        this.delay = (options === null || options === void 0 ? void 0 : options.delay) || 0;
+        this.roadName = options === null || options === void 0 ? void 0 : options.roadName;
+        this.max = (options === null || options === void 0 ? void 0 : options.max) || Infinity;
+        this.startSpeedMax = (options === null || options === void 0 ? void 0 : options.startSpeedMax) || 0;
+        this.startSpeedMin = (options === null || options === void 0 ? void 0 : options.startSpeedMin) || 0;
+        this._elapsed = 0;
+        this._count = 0;
+        this._nextVehicle = null;
+    }
+    update(elapsedMs) {
+        this._elapsed += elapsedMs;
+        if (this._nextVehicle && this._canAddToSegment(this._nextVehicle)) {
+            this._addToSegment(this._nextVehicle);
+            this._elapsed = 0;
+        }
+        if (this._shouldGenerate()) {
+            this._nextVehicle = this.generate();
+        }
+    }
+    /**
+     * the number of vehicles added to the simulation
+     * @returns the number of vehicles generated
+     */
+    getCount() {
+        return this._count;
+    }
+    generate() {
+        this._count++;
+        var v = new _vehicle__WEBPACK_IMPORTED_MODULE_1__["Vehicle"]({
+            width: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(2, 3),
+            height: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(1, 1.5),
+            length: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(3, 5),
+            acceleration: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(2.78, 6.95),
+            deceleration: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(6.94, 10.15),
+            reactionTime: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(2500, 3500),
+            changeLaneDelay: Math.floor(_helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(30000, 60000)),
+            maxSpeed: Math.floor(_helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(200, 260)),
+            startingVelocity: _helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].getRandomBetween(this.startSpeedMin, this.startSpeedMax)
+        });
+        let seg = this.getSegment();
+        let line = seg.getLine();
+        v.setPosition(line.start);
+        v.lookAt(line.end);
+        return v;
+    }
+    reset() {
+        this._elapsed = 0;
+        this._count = 0;
+    }
+    _shouldGenerate() {
+        return (!this._nextVehicle
+            && this.getCount() < this.max
+            && this._elapsed >= this.delay);
+    }
+    _canAddToSegment(vehicle) {
+        let segment = this.getSegment();
+        let vehicles = this._simMgr.getMapManager().getVehiclesWithinRadiusAhead(segment.getLine().start, segment, vehicle.length * 3);
+        for (var i = 0; i < vehicles.length; i++) {
+            let v = vehicles[i];
+            if (_helpers_utils__WEBPACK_IMPORTED_MODULE_0__["Utils"].isCollidingWith(vehicle, v)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    _addToSegment(vehicle) {
+        this.getSegment().addVehicle(this._nextVehicle);
+        this._simMgr.getViewManager().addRenderable(this._nextVehicle);
+        console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.getSegment().id}'`);
+        this._nextVehicle = null;
+    }
+    generateMesh() {
+        /* Vehicle Generator has no mesh */
+        return null;
+    }
+}
+
+
+/***/ }),
+
+/***/ "Ndy9":
+/*!************************************************!*\
+  !*** ./src/app/traffic-sim/map/map-manager.ts ***!
+  \************************************************/
+/*! exports provided: MapManager */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "MapManager", function() { return MapManager; });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
+/* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../helpers/utils */ "1iqU");
+/* harmony import */ var _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../objects/vehicles/should-stop-type */ "Qtx3");
+/* harmony import */ var _road_segment__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./road-segment */ "6RYJ");
+
+
+
+
+class MapManager {
+    constructor() {
+        this._segments = new Map();
+        this._up = new three__WEBPACK_IMPORTED_MODULE_0__["Vector3"](0, 1, 0);
+    }
+    update(elapsedMs) {
+        this.getSegments().forEach((seg) => seg.update(elapsedMs));
+    }
+    getUp() {
+        return this._up.clone();
+    }
+    reset() {
+        this._segments = new Map();
+    }
+    destroy() {
+        this.getSegments().forEach((seg) => {
+            this.removeSegment(seg.id);
+        });
+        this._segments = null;
+    }
+    getVehicles() {
+        let allVehicles = [];
+        let segments = this.getSegments();
+        for (var i = 0; i < segments.length; i++) {
+            let segment = segments[i];
+            let vehicles = segment.getVehicles();
+            allVehicles.splice(0, 0, ...vehicles);
+        }
+        return allVehicles;
+    }
+    getVehicleById(vehicleId) {
+        let segments = this.getSegments();
+        for (var i = 0; i < segments.length; i++) {
+            let seg = segments[i];
+            let v = seg.getVehicleById(vehicleId);
+            if (v) {
+                return v;
+            }
+        }
+        return null;
+    }
+    getVehiclesWithinRadius(vehicle, distance) {
+        return this.getVehicles().filter((v) => {
+            return v.id != vehicle.id && (_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(vehicle.getLocation(), v.getLocation()) <= distance);
+        });
+    }
+    getVehiclesWithinRadiusAhead(location, segment, distance) {
+        let distanceToEnd = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, segment.getEnd());
+        let vehicles = segment.getVehicles().filter((v) => {
+            let distToVeh = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, v.getLocation());
+            if (distToVeh <= distance) {
+                return (_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(v.getLocation(), segment.getEnd()) <= distanceToEnd);
+            }
+            return false;
+        });
+        if (distanceToEnd < distance) {
+            let segments = this.getSegmentsStartingAt(segment.getEnd());
+            segments.forEach((seg) => {
+                vehicles.splice(0, 0, ...this.getVehiclesWithinRadiusAhead(segment.getEnd(), seg, distance - distanceToEnd));
+            });
+        }
+        return vehicles;
+    }
+    getIntersectingVehicles(vehicle) {
+        let intersects = [];
+        let dist = vehicle.getLookAheadDistance();
+        let vehicles = this.getVehiclesWithinRadius(vehicle, dist);
+        let vehicleBox = vehicle.getLookAheadCollisionBox();
+        for (var i = 0; i < vehicles.length; i++) {
+            let v = vehicles[i];
+            let vBox = v.getLookAheadCollisionBox();
+            if (vehicleBox.intersectsBox(vBox)) {
+                intersects.push(v);
+            }
+        }
+        return intersects;
+    }
+    getTfcs() {
+        let allTfcs = [];
+        let segments = this.getSegments();
+        for (var i = 0; i < segments.length; i++) {
+            let segment = segments[i];
+            let tfcs = segment.getTfcs();
+            allTfcs.splice(0, 0, ...tfcs);
+        }
+        return allTfcs;
+    }
+    getTfcsWithinRadiusAhead(location, segment, distance) {
+        let distanceToEnd = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, segment.getEnd());
+        let tfcs = segment.getTfcs().filter((tfc) => {
+            let distToTfc = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(location, tfc.getLocation());
+            if (distToTfc <= distance) {
+                return (_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(tfc.getLocation(), segment.getLine().end) <= distanceToEnd);
+            }
+            return false;
+        });
+        if (distanceToEnd < distance) {
+            let segments = this.getSegmentsStartingAt(segment.getEnd());
+            segments.forEach((seg) => {
+                tfcs.splice(0, 0, ...this.getTfcsWithinRadiusAhead(segment.getEnd(), seg, distance - distanceToEnd));
+            });
+        }
+        return tfcs;
+    }
+    addSegment(segment) {
+        // console.debug(`adding segment '${segment.id}' from '${JSON.stringify(segment.getStart())}' to '${JSON.stringify(segment.getEnd())}'`);
+        this._segments.set(segment.id, segment);
+    }
+    removeSegment(segmentId) {
+        // remove segment from map
+        this._segments.delete(segmentId);
+    }
+    getSegments() {
+        return Array.from(this._segments.values());
+    }
+    getSegmentById(segmentId) {
+        return this._segments.get(segmentId);
+    }
+    getSegmentsStartingAt(location) {
+        if (location) {
+            return this.getSegments().filter((seg) => {
+                let start = seg.getStart();
+                return start.x == location.x &&
+                    start.y == location.y &&
+                    start.z == location.z;
+            });
+        }
+    }
+    getSegmentsEndingAt(location) {
+        if (location) {
+            return this.getSegments().filter((seg) => {
+                let end = seg.getEnd();
+                return end.x == location.x &&
+                    end.y == location.y &&
+                    end.z == location.z;
+            });
+        }
+    }
+    getSegmentsInRoad(roadName) {
+        return this.getSegments().filter((seg) => seg.roadName == roadName);
+    }
+    getSegmentsContainingPoint(point) {
+        var segments = [];
+        var allSegments = this.getSegments();
+        for (var i = 0; i < allSegments.length; i++) {
+            var segment = allSegments[i];
+            if (segment.getStart().x === point.x && segment.getStart().y === point.y && segment.getStart().z === point.z ||
+                segment.getEnd().x === point.x && segment.getEnd().y === point.y && segment.getEnd().z === point.z) {
+                segments.push(segment);
+            }
+            else {
+                let points = segment.getLaneChangePoints();
+                for (var j = 0; j < points.length; j++) {
+                    var changePoint = points[j];
+                    if (changePoint.x === point.x && changePoint.y === point.y && changePoint.z === point.z) {
+                        segments.push(segment);
+                        break;
+                    }
+                }
+            }
+        }
+        return segments;
+    }
+    getSimilarSegmentsInRoad(currentSegment) {
+        return this.getSegmentsInRoad(currentSegment.roadName).filter((seg) => {
+            // if less than 5 degrees variance in lines they're similar so return true
+            return currentSegment.id != seg.id && (Math.abs(_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].angleFormedBy(seg.getLine(), currentSegment.getLine())) < 5);
+        });
+    }
+    shouldStopForVehicles(vehicle) {
+        var intersecting = this.getIntersectingVehicles(vehicle);
+        for (var i = 0; i < intersecting.length; i++) {
+            let v = intersecting[i];
+            if (vehicle.hasInView(v)) {
+                return { stop: true, type: _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__["ShouldStopType"].vehicle, segmentId: v.getSegmentId(), id: v.id };
+            }
+        }
+        return { stop: false };
+    }
+    shouldStopForTfcs(vehicle) {
+        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), vehicle.getLookAheadDistance());
+        for (var i = 0; i < tfcs.length; i++) {
+            var tfc = tfcs[i];
+            if (tfc.shouldStop(vehicle)) {
+                return { stop: true, type: _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__["ShouldStopType"].tfc, segmentId: tfc.getSegmentId(), id: tfc.id };
+            }
+        }
+        return { stop: false };
+    }
+    shouldSlowForCorner(vehicle) {
+        // slow down when the next segment is in range and has a different heading
+        let distance = vehicle.getLookAheadDistance();
+        let segEnd = vehicle.getSegment().getEnd();
+        var distanceToSegEnd = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(vehicle.getLocation(), segEnd);
+        if (distanceToSegEnd < distance) {
+            // base the amount on how different the heading is
+            var headingDiff = 0;
+            var line1 = vehicle.getSegment().getLine();
+            var nextSegments = this.getSegmentsStartingAt(segEnd);
+            // TODO: only calculate for next segment on choosen path
+            for (var i in nextSegments) {
+                var nextSegment = nextSegments[i];
+                var line2 = nextSegment.getLine();
+                var angle = Math.abs(_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].angleFormedBy(line1, line2));
+                if (angle > headingDiff) {
+                    headingDiff = angle;
+                }
+            }
+            var corneringSpeed = _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].corneringSpeedCalculator(headingDiff);
+            // begin slowing down
+            if (vehicle.getVelocity() > corneringSpeed) {
+                return { stop: true, type: _objects_vehicles_should_stop_type__WEBPACK_IMPORTED_MODULE_2__["ShouldStopType"].cornering, headingDifference: headingDiff };
+            }
+        }
+        return { stop: false };
+    }
+    createChangeLaneSegment(location, newSegment) {
+        let changeLaneSegment;
+        let closestPoint;
+        let points = newSegment.getLaneChangePoints();
+        for (var j = 0; j < points.length; j++) {
+            var point = points[j];
+            var line1 = new three__WEBPACK_IMPORTED_MODULE_0__["Line3"](location, point);
+            var line2 = newSegment.getLine();
+            var angle = Math.abs(_helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].angleFormedBy(line1, line2));
+            // TODO: base angle on speed where greater angles allowed at lower speeds
+            if (angle <= 25 && angle > 5) {
+                if (!closestPoint) {
+                    closestPoint = point;
+                }
+                else {
+                    if (line1.distance() < _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].getLength(closestPoint, location)) {
+                        closestPoint = point;
+                    }
+                }
+            }
+        }
+        if (closestPoint) {
+            // create tmp segment to new lane
+            changeLaneSegment = new _road_segment__WEBPACK_IMPORTED_MODULE_3__["RoadSegment"]({
+                start: location,
+                end: closestPoint,
+                speedLimit: newSegment.speedLimit,
+                isInlet: true
+            });
+            this.addSegment(changeLaneSegment);
+        }
+        return changeLaneSegment;
+    }
+}
+(function (MapManager) {
+    MapManager.inst = new MapManager();
+})(MapManager || (MapManager = {}));
+
+
+/***/ }),
+
+/***/ "QSF+":
+/*!***************************************************!*\
+  !*** ./src/app/traffic-sim/traffic-sim.module.ts ***!
+  \***************************************************/
+/*! exports provided: TrafficSimModule */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrafficSimModule", function() { return TrafficSimModule; });
+/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/common */ "Yvf7");
+/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "FBrc");
+/* harmony import */ var _traffic_sim_routing_module__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./traffic-sim-routing.module */ "g93T");
+/* harmony import */ var _traffic_sim_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./traffic-sim.component */ "UPaR");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/core */ "Ub9n");
+
+
+
+
+
+class TrafficSimModule {
+}
+TrafficSimModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_4__["ɵɵdefineNgModule"]({ type: TrafficSimModule });
+TrafficSimModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_4__["ɵɵdefineInjector"]({ factory: function TrafficSimModule_Factory(t) { return new (t || TrafficSimModule)(); }, imports: [[
+            _angular_common__WEBPACK_IMPORTED_MODULE_0__["CommonModule"],
+            _traffic_sim_routing_module__WEBPACK_IMPORTED_MODULE_2__["TrafficSimRoutingModule"],
+            _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClientModule"]
+        ]] });
+(function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_4__["ɵɵsetNgModuleScope"](TrafficSimModule, { declarations: [_traffic_sim_component__WEBPACK_IMPORTED_MODULE_3__["TrafficSimComponent"]], imports: [_angular_common__WEBPACK_IMPORTED_MODULE_0__["CommonModule"],
+        _traffic_sim_routing_module__WEBPACK_IMPORTED_MODULE_2__["TrafficSimRoutingModule"],
+        _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClientModule"]] }); })();
+
+
+/***/ }),
+
+/***/ "Qtx3":
+/*!******************************************************************!*\
+  !*** ./src/app/traffic-sim/objects/vehicles/should-stop-type.ts ***!
+  \******************************************************************/
+/*! exports provided: ShouldStopType */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ShouldStopType", function() { return ShouldStopType; });
+var ShouldStopType;
+(function (ShouldStopType) {
+    ShouldStopType[ShouldStopType["vehicle"] = 0] = "vehicle";
+    ShouldStopType[ShouldStopType["tfc"] = 1] = "tfc";
+    ShouldStopType[ShouldStopType["cornering"] = 2] = "cornering";
+})(ShouldStopType || (ShouldStopType = {}));
+
+
+/***/ }),
+
 /***/ "UPaR":
 /*!******************************************************!*\
   !*** ./src/app/traffic-sim/traffic-sim.component.ts ***!
@@ -2195,30 +4428,35 @@ MapControls.prototype.constructor = MapControls;
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrafficSimComponent", function() { return TrafficSimComponent; });
-/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! tslib */ "mrSG");
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! tslib */ "bb6g");
 /* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./helpers/utils */ "1iqU");
 /* harmony import */ var _simulation_manager__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./simulation-manager */ "GBxy");
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/core */ "fXoL");
-/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/common/http */ "tk/3");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/core */ "Ub9n");
+/* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/common/http */ "FBrc");
 
 
 
 
 
 class TrafficSimComponent {
-    constructor(httpClient) {
+    constructor(httpClient, zone) {
         this.httpClient = httpClient;
+        this.zone = zone;
         this.runningState = 'running';
     }
     ngOnInit() {
         return Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__awaiter"])(this, void 0, void 0, function* () {
             this._simMgr = _simulation_manager__WEBPACK_IMPORTED_MODULE_2__["SimulationManager"].inst;
             this._simMgr.init('#traffic-sim');
-            let path = 'assets/maps/intersection.json';
+            let path = './assets/maps/intersection.json';
             yield this.loadMap(path);
-            // this._simMgr.setRealtime(true);
-            this._simMgr.start();
+            this.zone.runOutsideAngular(() => {
+                this._simMgr.start();
+            });
         });
+    }
+    ngOnDestroy() {
+        this._simMgr.destroy();
     }
     loadMap(path) {
         return Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__awaiter"])(this, void 0, void 0, function* () {
@@ -2246,7 +4484,9 @@ class TrafficSimComponent {
             }
             else {
                 this.runningState = 'running';
-                this._simMgr.start();
+                this.zone.runOutsideAngular(() => {
+                    this._simMgr.start();
+                });
             }
         });
     }
@@ -2261,17 +4501,17 @@ class TrafficSimComponent {
         return _helpers_utils__WEBPACK_IMPORTED_MODULE_1__["Utils"].convertMsToHumanReadable(this._simMgr.getTotalElapsed());
     }
 }
-TrafficSimComponent.ɵfac = function TrafficSimComponent_Factory(t) { return new (t || TrafficSimComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdirectiveInject"](_angular_common_http__WEBPACK_IMPORTED_MODULE_4__["HttpClient"])); };
-TrafficSimComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdefineComponent"]({ type: TrafficSimComponent, selectors: [["app-traffic-sim"]], decls: 16, vars: 5, consts: [[1, "container-fluid", "simulation-controls"], [1, "input-group"], [1, "btn", "btn-secondary", 3, "click"], ["type", "text", "placeholder", "input custom map JSON url", "aria-describedby", "btnGroupAddon2", 1, "form-control"], ["customMapInput", ""], ["id", "btnGroupAddon2", 1, "btn", "btn-secondary", 3, "click"], ["id", "btnGroupAddon1", 1, "btn", "btn-primary", 3, "click"], ["disabled", "", "type", "text", "placeholder", "Simulation Time", "aria-label", "Elapsed time in Simulation", "aria-describedby", "btnGroupAddon1", 1, "form-control", 3, "value"], ["id", "traffic-sim"]], template: function TrafficSimComponent_Template(rf, ctx) { if (rf & 1) {
+TrafficSimComponent.ɵfac = function TrafficSimComponent_Factory(t) { return new (t || TrafficSimComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdirectiveInject"](_angular_common_http__WEBPACK_IMPORTED_MODULE_4__["HttpClient"]), _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdirectiveInject"](_angular_core__WEBPACK_IMPORTED_MODULE_3__["NgZone"])); };
+TrafficSimComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdefineComponent"]({ type: TrafficSimComponent, selectors: [["app-traffic-sim"]], decls: 11, vars: 0, consts: [[1, "d-flex", "flex-column", "simulation-controls"], [1, "input-group"], [1, "btn", "btn-secondary", 3, "click"], ["type", "text", "placeholder", "input custom map JSON url", "aria-describedby", "btnGroupAddon2", 1, "form-control"], ["customMapInput", ""], ["id", "btnGroupAddon2", 1, "btn", "btn-secondary", 3, "click"], ["id", "traffic-sim", 1, "h-90", "w-100"]], template: function TrafficSimComponent_Template(rf, ctx) { if (rf & 1) {
         const _r1 = _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵgetCurrentView"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementStart"](0, "div", 0);
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementStart"](1, "div", 1);
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementStart"](2, "button", 2);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵlistener"]("click", function TrafficSimComponent_Template_button_click_2_listener() { return ctx.loadMap("assets/maps/intersection.json"); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵlistener"]("click", function TrafficSimComponent_Template_button_click_2_listener() { return ctx.loadMap("./assets/maps/intersection.json"); });
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵtext"](3, "Intersection");
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementStart"](4, "button", 2);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵlistener"]("click", function TrafficSimComponent_Template_button_click_4_listener() { return ctx.loadMap("assets/maps/merge_loop.json"); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵlistener"]("click", function TrafficSimComponent_Template_button_click_4_listener() { return ctx.loadMap("./assets/maps/merge_loop.json"); });
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵtext"](5, "Merge Loop");
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelement"](6, "input", 3, 4);
@@ -2280,24 +4520,9 @@ TrafficSimComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdefi
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵtext"](9, "Load Custom Map");
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementStart"](10, "div", 1);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementStart"](11, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵlistener"]("click", function TrafficSimComponent_Template_button_click_11_listener() { return ctx.toggleAnimationState(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵtext"](12);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelement"](13, "i");
+        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelement"](10, "canvas", 6);
         _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelement"](14, "input", 7);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵelement"](15, "canvas", 8);
-    } if (rf & 2) {
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵadvance"](12);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵtextInterpolate1"]("", ctx.isRunning() ? "Pause" : "Resume", " ");
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵadvance"](1);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵclassMapInterpolate1"]("bi bi-", ctx.isRunning() ? "pause" : "play", "");
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵadvance"](1);
-        _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵproperty"]("value", ctx.getSimulationTimeElapsed());
-    } }, styles: ["canvas[_ngcontent-%COMP%] {\r\n    position: absolute;\r\n    top: 0px;\r\n    left: 0px;\r\n    z-index: -100;\r\n}\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInRyYWZmaWMtc2ltLmNvbXBvbmVudC5jc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7SUFDSSxrQkFBa0I7SUFDbEIsUUFBUTtJQUNSLFNBQVM7SUFDVCxhQUFhO0FBQ2pCIiwiZmlsZSI6InRyYWZmaWMtc2ltLmNvbXBvbmVudC5jc3MiLCJzb3VyY2VzQ29udGVudCI6WyJjYW52YXMge1xyXG4gICAgcG9zaXRpb246IGFic29sdXRlO1xyXG4gICAgdG9wOiAwcHg7XHJcbiAgICBsZWZ0OiAwcHg7XHJcbiAgICB6LWluZGV4OiAtMTAwO1xyXG59Il19 */"] });
+    } }, styles: ["\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInRyYWZmaWMtc2ltLmNvbXBvbmVudC5jc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7Ozs7O0dBS0ciLCJmaWxlIjoidHJhZmZpYy1zaW0uY29tcG9uZW50LmNzcyIsInNvdXJjZXNDb250ZW50IjpbIi8qIGNhbnZhcyB7XHJcbiAgICBwb3NpdGlvbjogYWJzb2x1dGU7XHJcbiAgICB0b3A6IDBweDtcclxuICAgIGxlZnQ6IDBweDtcclxuICAgIHotaW5kZXg6IC0xMDA7XHJcbn0gKi8iXX0= */"] });
 
 
 /***/ }),
@@ -2312,7 +4537,7 @@ TrafficSimComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_3__["ɵɵdefi
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Vehicle", function() { return Vehicle; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
 /* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../helpers/utils */ "1iqU");
 /* harmony import */ var _traffic_object__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../traffic-object */ "zEDA");
 
@@ -2617,10 +4842,10 @@ class Vehicle extends _traffic_object__WEBPACK_IMPORTED_MODULE_2__["TrafficObjec
 
 /***/ }),
 
-/***/ "Womt":
-/*!**************************************************!*\
-  !*** ./node_modules/three/build/three.module.js ***!
-  \**************************************************/
+/***/ "YmrP":
+/*!***************************************************!*\
+  !*** ../node_modules/three/build/three.module.js ***!
+  \***************************************************/
 /*! exports provided: ACESFilmicToneMapping, AddEquation, AddOperation, AdditiveAnimationBlendMode, AdditiveBlending, AlphaFormat, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightProbe, AnimationClip, AnimationLoader, AnimationMixer, AnimationObjectGroup, AnimationUtils, ArcCurve, ArrayCamera, ArrowHelper, Audio, AudioAnalyser, AudioContext, AudioListener, AudioLoader, AxesHelper, AxisHelper, BackSide, BasicDepthPacking, BasicShadowMap, BinaryTextureLoader, Bone, BooleanKeyframeTrack, BoundingBoxHelper, Box2, Box3, Box3Helper, BoxBufferGeometry, BoxGeometry, BoxHelper, BufferAttribute, BufferGeometry, BufferGeometryLoader, ByteType, Cache, Camera, CameraHelper, CanvasRenderer, CanvasTexture, CatmullRomCurve3, CineonToneMapping, CircleBufferGeometry, CircleGeometry, ClampToEdgeWrapping, Clock, Color, ColorKeyframeTrack, CompressedTexture, CompressedTextureLoader, ConeBufferGeometry, ConeGeometry, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureLoader, CubeUVReflectionMapping, CubeUVRefractionMapping, CubicBezierCurve, CubicBezierCurve3, CubicInterpolant, CullFaceBack, CullFaceFront, CullFaceFrontBack, CullFaceNone, Curve, CurvePath, CustomBlending, CustomToneMapping, CylinderBufferGeometry, CylinderGeometry, Cylindrical, DataTexture, DataTexture2DArray, DataTexture3D, DataTextureLoader, DataUtils, DecrementStencilOp, DecrementWrapStencilOp, DefaultLoadingManager, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightHelper, DiscreteInterpolant, DodecahedronBufferGeometry, DodecahedronGeometry, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicBufferAttribute, DynamicCopyUsage, DynamicDrawUsage, DynamicReadUsage, EdgesGeometry, EdgesHelper, EllipseCurve, EqualDepth, EqualStencilFunc, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExtrudeBufferGeometry, ExtrudeGeometry, FaceColors, FileLoader, FlatShading, Float16BufferAttribute, Float32Attribute, Float32BufferAttribute, Float64Attribute, Float64BufferAttribute, FloatType, Fog, FogExp2, Font, FontLoader, FrontSide, Frustum, GLBufferAttribute, GLSL1, GLSL3, GammaEncoding, GreaterDepth, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, GridHelper, Group, HalfFloatType, HemisphereLight, HemisphereLightHelper, HemisphereLightProbe, IcosahedronBufferGeometry, IcosahedronGeometry, ImageBitmapLoader, ImageLoader, ImageUtils, ImmediateRenderObject, IncrementStencilOp, IncrementWrapStencilOp, InstancedBufferAttribute, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, Int16Attribute, Int16BufferAttribute, Int32Attribute, Int32BufferAttribute, Int8Attribute, Int8BufferAttribute, IntType, InterleavedBuffer, InterleavedBufferAttribute, Interpolant, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InvertStencilOp, JSONLoader, KeepStencilOp, KeyframeTrack, LOD, LatheBufferGeometry, LatheGeometry, Layers, LensFlare, LessDepth, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, Light, LightProbe, Line, Line3, LineBasicMaterial, LineCurve, LineCurve3, LineDashedMaterial, LineLoop, LinePieces, LineSegments, LineStrip, LinearEncoding, LinearFilter, LinearInterpolant, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearToneMapping, Loader, LoaderUtils, LoadingManager, LogLuvEncoding, LoopOnce, LoopPingPong, LoopRepeat, LuminanceAlphaFormat, LuminanceFormat, MOUSE, Material, MaterialLoader, Math, MathUtils, Matrix3, Matrix4, MaxEquation, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshFaceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, MultiMaterial, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeverDepth, NeverStencilFunc, NoBlending, NoColors, NoToneMapping, NormalAnimationBlendMode, NormalBlending, NotEqualDepth, NotEqualStencilFunc, NumberKeyframeTrack, Object3D, ObjectLoader, ObjectSpaceNormalMap, OctahedronBufferGeometry, OctahedronGeometry, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, PCFShadowMap, PCFSoftShadowMap, PMREMGenerator, ParametricBufferGeometry, ParametricGeometry, Particle, ParticleBasicMaterial, ParticleSystem, ParticleSystemMaterial, Path, PerspectiveCamera, Plane, PlaneBufferGeometry, PlaneGeometry, PlaneHelper, PointCloud, PointCloudMaterial, PointLight, PointLightHelper, Points, PointsMaterial, PolarGridHelper, PolyhedronBufferGeometry, PolyhedronGeometry, PositionalAudio, PropertyBinding, PropertyMixer, QuadraticBezierCurve, QuadraticBezierCurve3, Quaternion, QuaternionKeyframeTrack, QuaternionLinearInterpolant, REVISION, RGBADepthPacking, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGBDEncoding, RGBEEncoding, RGBEFormat, RGBFormat, RGBIntegerFormat, RGBM16Encoding, RGBM7Encoding, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RawShaderMaterial, Ray, Raycaster, RectAreaLight, RedFormat, RedIntegerFormat, ReinhardToneMapping, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RingBufferGeometry, RingGeometry, SRGB8_ALPHA8_ASTC_10x10_Format, SRGB8_ALPHA8_ASTC_10x5_Format, SRGB8_ALPHA8_ASTC_10x6_Format, SRGB8_ALPHA8_ASTC_10x8_Format, SRGB8_ALPHA8_ASTC_12x10_Format, SRGB8_ALPHA8_ASTC_12x12_Format, SRGB8_ALPHA8_ASTC_4x4_Format, SRGB8_ALPHA8_ASTC_5x4_Format, SRGB8_ALPHA8_ASTC_5x5_Format, SRGB8_ALPHA8_ASTC_6x5_Format, SRGB8_ALPHA8_ASTC_6x6_Format, SRGB8_ALPHA8_ASTC_8x5_Format, SRGB8_ALPHA8_ASTC_8x6_Format, SRGB8_ALPHA8_ASTC_8x8_Format, Scene, SceneUtils, ShaderChunk, ShaderLib, ShaderMaterial, ShadowMaterial, Shape, ShapeBufferGeometry, ShapeGeometry, ShapePath, ShapeUtils, ShortType, Skeleton, SkeletonHelper, SkinnedMesh, SmoothShading, Sphere, SphereBufferGeometry, SphereGeometry, Spherical, SphericalHarmonics3, SplineCurve, SpotLight, SpotLightHelper, Sprite, SpriteMaterial, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StaticCopyUsage, StaticDrawUsage, StaticReadUsage, StereoCamera, StreamCopyUsage, StreamDrawUsage, StreamReadUsage, StringKeyframeTrack, SubtractEquation, SubtractiveBlending, TOUCH, TangentSpaceNormalMap, TetrahedronBufferGeometry, TetrahedronGeometry, TextBufferGeometry, TextGeometry, Texture, TextureLoader, TorusBufferGeometry, TorusGeometry, TorusKnotBufferGeometry, TorusKnotGeometry, Triangle, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, TubeBufferGeometry, TubeGeometry, UVMapping, Uint16Attribute, Uint16BufferAttribute, Uint32Attribute, Uint32BufferAttribute, Uint8Attribute, Uint8BufferAttribute, Uint8ClampedAttribute, Uint8ClampedBufferAttribute, Uniform, UniformsLib, UniformsUtils, UnsignedByteType, UnsignedInt248Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShort565Type, UnsignedShortType, VSMShadowMap, Vector2, Vector3, Vector4, VectorKeyframeTrack, Vertex, VertexColors, VideoTexture, WebGL1Renderer, WebGLCubeRenderTarget, WebGLMultisampleRenderTarget, WebGLRenderTarget, WebGLRenderTargetCube, WebGLRenderer, WebGLUtils, WireframeGeometry, WireframeHelper, WrapAroundEnding, XHRLoader, ZeroCurvatureEnding, ZeroFactor, ZeroSlopeEnding, ZeroStencilOp, sRGBEncoding */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -3085,8 +5310,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ZeroSlopeEnding", function() { return ZeroSlopeEnding; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ZeroStencilOp", function() { return ZeroStencilOp; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "sRGBEncoding", function() { return sRGBEncoding; });
-// threejs.org/license
-const REVISION = '126';
+/**
+ * @license
+ * Copyright 2010-2021 Three.js Authors
+ * SPDX-License-Identifier: MIT
+ */
+const REVISION = '127';
 const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
 const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
 const CullFaceNone = 0;
@@ -3366,6 +5595,8 @@ Object.assign( EventDispatcher.prototype, {
 
 			}
 
+			event.target = null;
+
 		}
 
 	}
@@ -3425,6 +5656,22 @@ const MathUtils = {
 	mapLinear: function ( x, a1, a2, b1, b2 ) {
 
 		return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+
+	},
+
+	// https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/inverse-lerp-a-super-useful-yet-often-overlooked-function-r5230/
+
+	inverseLerp: function ( x, y, value ) {
+
+		if ( x !== y ) {
+
+			return ( value - x ) / ( y - x );
+
+		 } else {
+
+			return 0;
+
+		 }
 
 	},
 
@@ -4464,6 +6711,8 @@ const ImageUtils = {
 		}
 
 		if ( canvas.width > 2048 || canvas.height > 2048 ) {
+
+			console.warn( 'THREE.ImageUtils.getDataURL: Image converted to jpg for performance reasons', image );
 
 			return canvas.toDataURL( 'image/jpeg', 0.6 );
 
@@ -5624,7 +7873,8 @@ class Quaternion {
 
 	static slerp( qa, qb, qm, t ) {
 
-		return qm.copy( qa ).slerp( qb, t );
+		console.warn( 'THREE.Quaternion: Static .slerp() has been deprecated. Use qm.slerpQuaternions( qa, qb, t ) instead.' );
+		return qm.slerpQuaternions( qa, qb, t );
 
 	}
 
@@ -5974,11 +8224,11 @@ class Quaternion {
 
 		// assumes direction vectors vFrom and vTo are normalized
 
-		const EPS = 0.000001;
-
 		let r = vFrom.dot( vTo ) + 1;
 
-		if ( r < EPS ) {
+		if ( r < Number.EPSILON ) {
+
+			// vFrom and vTo point in opposite directions
 
 			r = 0;
 
@@ -6209,6 +8459,12 @@ class Quaternion {
 		this._onChangeCallback();
 
 		return this;
+
+	}
+
+	slerpQuaternions( qa, qb, t ) {
+
+		this.copy( qa ).slerp( qb, t );
 
 	}
 
@@ -6496,13 +8752,13 @@ class Vector3 {
 
 		}
 
-		return this.applyQuaternion( _quaternion.setFromEuler( euler ) );
+		return this.applyQuaternion( _quaternion$4.setFromEuler( euler ) );
 
 	}
 
 	applyAxisAngle( axis, angle ) {
 
-		return this.applyQuaternion( _quaternion.setFromAxisAngle( axis, angle ) );
+		return this.applyQuaternion( _quaternion$4.setFromAxisAngle( axis, angle ) );
 
 	}
 
@@ -6804,9 +9060,9 @@ class Vector3 {
 
 	projectOnPlane( planeNormal ) {
 
-		_vector.copy( this ).projectOnVector( planeNormal );
+		_vector$c.copy( this ).projectOnVector( planeNormal );
 
-		return this.sub( _vector );
+		return this.sub( _vector$c );
 
 	}
 
@@ -6815,7 +9071,7 @@ class Vector3 {
 		// reflect incident vector off plane orthogonal to normal
 		// normal is assumed to have unit length
 
-		return this.sub( _vector.copy( normal ).multiplyScalar( 2 * this.dot( normal ) ) );
+		return this.sub( _vector$c.copy( normal ).multiplyScalar( 2 * this.dot( normal ) ) );
 
 	}
 
@@ -6981,8 +9237,8 @@ class Vector3 {
 
 Vector3.prototype.isVector3 = true;
 
-const _vector = /*@__PURE__*/ new Vector3();
-const _quaternion = /*@__PURE__*/ new Quaternion();
+const _vector$c = /*@__PURE__*/ new Vector3();
+const _quaternion$4 = /*@__PURE__*/ new Quaternion();
 
 class Box3 {
 
@@ -7084,7 +9340,7 @@ class Box3 {
 
 	setFromCenterAndSize( center, size ) {
 
-		const halfSize = _vector$1.copy( size ).multiplyScalar( 0.5 );
+		const halfSize = _vector$b.copy( size ).multiplyScalar( 0.5 );
 
 		this.min.copy( center ).sub( halfSize );
 		this.max.copy( center ).add( halfSize );
@@ -7203,10 +9459,10 @@ class Box3 {
 
 			}
 
-			_box.copy( geometry.boundingBox );
-			_box.applyMatrix4( object.matrixWorld );
+			_box$3.copy( geometry.boundingBox );
+			_box$3.applyMatrix4( object.matrixWorld );
 
-			this.union( _box );
+			this.union( _box$3 );
 
 		}
 
@@ -7270,10 +9526,10 @@ class Box3 {
 	intersectsSphere( sphere ) {
 
 		// Find the point on the AABB closest to the sphere center.
-		this.clampPoint( sphere.center, _vector$1 );
+		this.clampPoint( sphere.center, _vector$b );
 
 		// If that point is inside the sphere, the AABB and sphere intersect.
-		return _vector$1.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
+		return _vector$b.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
 
 	}
 
@@ -7337,14 +9593,14 @@ class Box3 {
 		_extents.subVectors( this.max, _center );
 
 		// translate triangle to aabb origin
-		_v0.subVectors( triangle.a, _center );
-		_v1.subVectors( triangle.b, _center );
-		_v2.subVectors( triangle.c, _center );
+		_v0$2.subVectors( triangle.a, _center );
+		_v1$7.subVectors( triangle.b, _center );
+		_v2$3.subVectors( triangle.c, _center );
 
 		// compute edge vectors for triangle
-		_f0.subVectors( _v1, _v0 );
-		_f1.subVectors( _v2, _v1 );
-		_f2.subVectors( _v0, _v2 );
+		_f0.subVectors( _v1$7, _v0$2 );
+		_f1.subVectors( _v2$3, _v1$7 );
+		_f2.subVectors( _v0$2, _v2$3 );
 
 		// test against axes that are given by cross product combinations of the edges of the triangle and the edges of the aabb
 		// make an axis testing of each of the 3 sides of the aabb against each of the 3 sides of the triangle = 9 axis of separation
@@ -7354,7 +9610,7 @@ class Box3 {
 			_f0.z, 0, - _f0.x, _f1.z, 0, - _f1.x, _f2.z, 0, - _f2.x,
 			- _f0.y, _f0.x, 0, - _f1.y, _f1.x, 0, - _f2.y, _f2.x, 0
 		];
-		if ( ! satForAxes( axes, _v0, _v1, _v2, _extents ) ) {
+		if ( ! satForAxes( axes, _v0$2, _v1$7, _v2$3, _extents ) ) {
 
 			return false;
 
@@ -7362,7 +9618,7 @@ class Box3 {
 
 		// test 3 face normals from the aabb
 		axes = [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ];
-		if ( ! satForAxes( axes, _v0, _v1, _v2, _extents ) ) {
+		if ( ! satForAxes( axes, _v0$2, _v1$7, _v2$3, _extents ) ) {
 
 			return false;
 
@@ -7373,7 +9629,7 @@ class Box3 {
 		_triangleNormal.crossVectors( _f0, _f1 );
 		axes = [ _triangleNormal.x, _triangleNormal.y, _triangleNormal.z ];
 
-		return satForAxes( axes, _v0, _v1, _v2, _extents );
+		return satForAxes( axes, _v0$2, _v1$7, _v2$3, _extents );
 
 	}
 
@@ -7392,7 +9648,7 @@ class Box3 {
 
 	distanceToPoint( point ) {
 
-		const clampedPoint = _vector$1.copy( point ).clamp( this.min, this.max );
+		const clampedPoint = _vector$b.copy( point ).clamp( this.min, this.max );
 
 		return clampedPoint.sub( point ).length();
 
@@ -7409,7 +9665,7 @@ class Box3 {
 
 		this.getCenter( target.center );
 
-		target.radius = this.getSize( _vector$1 ).length() * 0.5;
+		target.radius = this.getSize( _vector$b ).length() * 0.5;
 
 		return target;
 
@@ -7487,15 +9743,15 @@ const _points = [
 	/*@__PURE__*/ new Vector3()
 ];
 
-const _vector$1 = /*@__PURE__*/ new Vector3();
+const _vector$b = /*@__PURE__*/ new Vector3();
 
-const _box = /*@__PURE__*/ new Box3();
+const _box$3 = /*@__PURE__*/ new Box3();
 
 // triangle centered vertices
 
-const _v0 = /*@__PURE__*/ new Vector3();
-const _v1 = /*@__PURE__*/ new Vector3();
-const _v2 = /*@__PURE__*/ new Vector3();
+const _v0$2 = /*@__PURE__*/ new Vector3();
+const _v1$7 = /*@__PURE__*/ new Vector3();
+const _v2$3 = /*@__PURE__*/ new Vector3();
 
 // triangle edge vectors
 
@@ -7534,7 +9790,10 @@ function satForAxes( axes, v0, v1, v2, extents ) {
 
 }
 
-const _box$1 = /*@__PURE__*/ new Box3();
+const _box$2 = /*@__PURE__*/ new Box3();
+const _v1$6 = /*@__PURE__*/ new Vector3();
+const _toFarthestPoint = /*@__PURE__*/ new Vector3();
+const _toPoint = /*@__PURE__*/ new Vector3();
 
 class Sphere {
 
@@ -7564,7 +9823,7 @@ class Sphere {
 
 		} else {
 
-			_box$1.setFromPoints( points ).getCenter( center );
+			_box$2.setFromPoints( points ).getCenter( center );
 
 		}
 
@@ -7703,6 +9962,49 @@ class Sphere {
 
 	}
 
+	expandByPoint( point ) {
+
+		// from https://github.com/juj/MathGeoLib/blob/2940b99b99cfe575dd45103ef20f4019dee15b54/src/Geometry/Sphere.cpp#L649-L671
+
+		_toPoint.subVectors( point, this.center );
+
+		const lengthSq = _toPoint.lengthSq();
+
+		if ( lengthSq > ( this.radius * this.radius ) ) {
+
+			const length = Math.sqrt( lengthSq );
+			const missingRadiusHalf = ( length - this.radius ) * 0.5;
+
+			// Nudge this sphere towards the target point. Add half the missing distance to radius,
+			// and the other half to position. This gives a tighter enclosure, instead of if
+			// the whole missing distance were just added to radius.
+
+			this.center.add( _toPoint.multiplyScalar( missingRadiusHalf / length ) );
+			this.radius += missingRadiusHalf;
+
+		}
+
+		return this;
+
+	}
+
+	union( sphere ) {
+
+		// from https://github.com/juj/MathGeoLib/blob/2940b99b99cfe575dd45103ef20f4019dee15b54/src/Geometry/Sphere.cpp#L759-L769
+
+		// To enclose another sphere into this sphere, we only need to enclose two points:
+		// 1) Enclose the farthest point on the other sphere into this sphere.
+		// 2) Enclose the opposite point of the farthest point into this sphere.
+
+		_toFarthestPoint.subVectors( sphere.center, this.center ).normalize().multiplyScalar( sphere.radius );
+
+		this.expandByPoint( _v1$6.copy( sphere.center ).add( _toFarthestPoint ) );
+		this.expandByPoint( _v1$6.copy( sphere.center ).sub( _toFarthestPoint ) );
+
+		return this;
+
+	}
+
 	equals( sphere ) {
 
 		return sphere.center.equals( this.center ) && ( sphere.radius === this.radius );
@@ -7717,14 +10019,14 @@ class Sphere {
 
 }
 
-const _vector$2 = /*@__PURE__*/ new Vector3();
+const _vector$a = /*@__PURE__*/ new Vector3();
 const _segCenter = /*@__PURE__*/ new Vector3();
 const _segDir = /*@__PURE__*/ new Vector3();
 const _diff = /*@__PURE__*/ new Vector3();
 
 const _edge1 = /*@__PURE__*/ new Vector3();
 const _edge2 = /*@__PURE__*/ new Vector3();
-const _normal = /*@__PURE__*/ new Vector3();
+const _normal$1 = /*@__PURE__*/ new Vector3();
 
 class Ray {
 
@@ -7776,7 +10078,7 @@ class Ray {
 
 	recast( t ) {
 
-		this.origin.copy( this.at( t, _vector$2 ) );
+		this.origin.copy( this.at( t, _vector$a ) );
 
 		return this;
 
@@ -7813,7 +10115,7 @@ class Ray {
 
 	distanceSqToPoint( point ) {
 
-		const directionDistance = _vector$2.subVectors( point, this.origin ).dot( this.direction );
+		const directionDistance = _vector$a.subVectors( point, this.origin ).dot( this.direction );
 
 		// point behind the ray
 
@@ -7823,9 +10125,9 @@ class Ray {
 
 		}
 
-		_vector$2.copy( this.direction ).multiplyScalar( directionDistance ).add( this.origin );
+		_vector$a.copy( this.direction ).multiplyScalar( directionDistance ).add( this.origin );
 
-		return _vector$2.distanceToSquared( point );
+		return _vector$a.distanceToSquared( point );
 
 	}
 
@@ -7950,9 +10252,9 @@ class Ray {
 
 	intersectSphere( sphere, target ) {
 
-		_vector$2.subVectors( sphere.center, this.origin );
-		const tca = _vector$2.dot( this.direction );
-		const d2 = _vector$2.dot( _vector$2 ) - tca * tca;
+		_vector$a.subVectors( sphere.center, this.origin );
+		const tca = _vector$a.dot( this.direction );
+		const d2 = _vector$a.dot( _vector$a ) - tca * tca;
 		const radius2 = sphere.radius * sphere.radius;
 
 		if ( d2 > radius2 ) return null;
@@ -8122,7 +10424,7 @@ class Ray {
 
 	intersectsBox( box ) {
 
-		return this.intersectBox( box, _vector$2 ) !== null;
+		return this.intersectBox( box, _vector$a ) !== null;
 
 	}
 
@@ -8134,14 +10436,14 @@ class Ray {
 
 		_edge1.subVectors( b, a );
 		_edge2.subVectors( c, a );
-		_normal.crossVectors( _edge1, _edge2 );
+		_normal$1.crossVectors( _edge1, _edge2 );
 
 		// Solve Q + t*D = b1*E1 + b2*E2 (Q = kDiff, D = ray direction,
 		// E1 = kEdge1, E2 = kEdge2, N = Cross(E1,E2)) by
 		//   |Dot(D,N)|*b1 = sign(Dot(D,N))*Dot(D,Cross(Q,E2))
 		//   |Dot(D,N)|*b2 = sign(Dot(D,N))*Dot(D,Cross(E1,Q))
 		//   |Dot(D,N)|*t = -sign(Dot(D,N))*Dot(Q,N)
-		let DdN = this.direction.dot( _normal );
+		let DdN = this.direction.dot( _normal$1 );
 		let sign;
 
 		if ( DdN > 0 ) {
@@ -8187,7 +10489,7 @@ class Ray {
 		}
 
 		// Line intersects triangle, check if ray does.
-		const QdN = - sign * _diff.dot( _normal );
+		const QdN = - sign * _diff.dot( _normal$1 );
 
 		// t < 0, no intersection
 		if ( QdN < 0 ) {
@@ -8352,9 +10654,9 @@ class Matrix4 {
 		const te = this.elements;
 		const me = m.elements;
 
-		const scaleX = 1 / _v1$1.setFromMatrixColumn( m, 0 ).length();
-		const scaleY = 1 / _v1$1.setFromMatrixColumn( m, 1 ).length();
-		const scaleZ = 1 / _v1$1.setFromMatrixColumn( m, 2 ).length();
+		const scaleX = 1 / _v1$5.setFromMatrixColumn( m, 0 ).length();
+		const scaleY = 1 / _v1$5.setFromMatrixColumn( m, 1 ).length();
+		const scaleZ = 1 / _v1$5.setFromMatrixColumn( m, 2 ).length();
 
 		te[ 0 ] = me[ 0 ] * scaleX;
 		te[ 1 ] = me[ 1 ] * scaleX;
@@ -8952,9 +11254,9 @@ class Matrix4 {
 
 		const te = this.elements;
 
-		let sx = _v1$1.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
-		const sy = _v1$1.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
-		const sz = _v1$1.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
+		let sx = _v1$5.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
+		const sy = _v1$5.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
+		const sz = _v1$5.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
 
 		// if determine is negative, we need to invert one scale
 		const det = this.determinant();
@@ -8965,25 +11267,25 @@ class Matrix4 {
 		position.z = te[ 14 ];
 
 		// scale the rotation part
-		_m1.copy( this );
+		_m1$2.copy( this );
 
 		const invSX = 1 / sx;
 		const invSY = 1 / sy;
 		const invSZ = 1 / sz;
 
-		_m1.elements[ 0 ] *= invSX;
-		_m1.elements[ 1 ] *= invSX;
-		_m1.elements[ 2 ] *= invSX;
+		_m1$2.elements[ 0 ] *= invSX;
+		_m1$2.elements[ 1 ] *= invSX;
+		_m1$2.elements[ 2 ] *= invSX;
 
-		_m1.elements[ 4 ] *= invSY;
-		_m1.elements[ 5 ] *= invSY;
-		_m1.elements[ 6 ] *= invSY;
+		_m1$2.elements[ 4 ] *= invSY;
+		_m1$2.elements[ 5 ] *= invSY;
+		_m1$2.elements[ 6 ] *= invSY;
 
-		_m1.elements[ 8 ] *= invSZ;
-		_m1.elements[ 9 ] *= invSZ;
-		_m1.elements[ 10 ] *= invSZ;
+		_m1$2.elements[ 8 ] *= invSZ;
+		_m1$2.elements[ 9 ] *= invSZ;
+		_m1$2.elements[ 10 ] *= invSZ;
 
-		quaternion.setFromRotationMatrix( _m1 );
+		quaternion.setFromRotationMatrix( _m1$2 );
 
 		scale.x = sx;
 		scale.y = sy;
@@ -9098,16 +11400,16 @@ class Matrix4 {
 
 Matrix4.prototype.isMatrix4 = true;
 
-const _v1$1 = /*@__PURE__*/ new Vector3();
-const _m1 = /*@__PURE__*/ new Matrix4();
+const _v1$5 = /*@__PURE__*/ new Vector3();
+const _m1$2 = /*@__PURE__*/ new Matrix4();
 const _zero = /*@__PURE__*/ new Vector3( 0, 0, 0 );
 const _one = /*@__PURE__*/ new Vector3( 1, 1, 1 );
 const _x = /*@__PURE__*/ new Vector3();
 const _y = /*@__PURE__*/ new Vector3();
 const _z = /*@__PURE__*/ new Vector3();
 
-const _matrix = /*@__PURE__*/ new Matrix4();
-const _quaternion$1 = /*@__PURE__*/ new Quaternion();
+const _matrix$1 = /*@__PURE__*/ new Matrix4();
+const _quaternion$3 = /*@__PURE__*/ new Quaternion();
 
 class Euler {
 
@@ -9343,9 +11645,9 @@ class Euler {
 
 	setFromQuaternion( q, order, update ) {
 
-		_matrix.makeRotationFromQuaternion( q );
+		_matrix$1.makeRotationFromQuaternion( q );
 
-		return this.setFromRotationMatrix( _matrix, order, update );
+		return this.setFromRotationMatrix( _matrix$1, order, update );
 
 	}
 
@@ -9359,9 +11661,9 @@ class Euler {
 
 		// WARNING: this discards revolution information -bhouston
 
-		_quaternion$1.setFromEuler( this );
+		_quaternion$3.setFromEuler( this );
 
-		return this.setFromQuaternion( _quaternion$1, newOrder );
+		return this.setFromQuaternion( _quaternion$3, newOrder );
 
 	}
 
@@ -9480,13 +11782,13 @@ class Layers {
 
 let _object3DId = 0;
 
-const _v1$2 = new Vector3();
+const _v1$4 = new Vector3();
 const _q1 = new Quaternion();
 const _m1$1 = new Matrix4();
 const _target = new Vector3();
 
-const _position = new Vector3();
-const _scale = new Vector3();
+const _position$3 = new Vector3();
+const _scale$2 = new Vector3();
 const _quaternion$2 = new Quaternion();
 
 const _xAxis = new Vector3( 1, 0, 0 );
@@ -9690,9 +11992,9 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		// translate object by distance along axis in object space
 		// axis is assumed to be normalized
 
-		_v1$2.copy( axis ).applyQuaternion( this.quaternion );
+		_v1$4.copy( axis ).applyQuaternion( this.quaternion );
 
-		this.position.add( _v1$2.multiplyScalar( distance ) );
+		this.position.add( _v1$4.multiplyScalar( distance ) );
 
 		return this;
 
@@ -9746,15 +12048,15 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		this.updateWorldMatrix( true, false );
 
-		_position.setFromMatrixPosition( this.matrixWorld );
+		_position$3.setFromMatrixPosition( this.matrixWorld );
 
 		if ( this.isCamera || this.isLight ) {
 
-			_m1$1.lookAt( _position, _target, this.up );
+			_m1$1.lookAt( _position$3, _target, this.up );
 
 		} else {
 
-			_m1$1.lookAt( _target, _position, this.up );
+			_m1$1.lookAt( _target, _position$3, this.up );
 
 		}
 
@@ -9947,7 +12249,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		this.updateWorldMatrix( true, false );
 
-		this.matrixWorld.decompose( _position, target, _scale );
+		this.matrixWorld.decompose( _position$3, target, _scale$2 );
 
 		return target;
 
@@ -9964,7 +12266,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		this.updateWorldMatrix( true, false );
 
-		this.matrixWorld.decompose( _position, _quaternion$2, target );
+		this.matrixWorld.decompose( _position$3, _quaternion$2, target );
 
 		return target;
 
@@ -10171,6 +12473,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			object.type = 'InstancedMesh';
 			object.count = this.count;
 			object.instanceMatrix = this.instanceMatrix.toJSON();
+			if ( this.instanceColor !== null ) object.instanceColor = this.instanceColor.toJSON();
 
 		}
 
@@ -10381,7 +12684,7 @@ Object3D.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 } );
 
 const _vector1 = /*@__PURE__*/ new Vector3();
-const _vector2 = /*@__PURE__*/ new Vector3();
+const _vector2$1 = /*@__PURE__*/ new Vector3();
 const _normalMatrix = /*@__PURE__*/ new Matrix3();
 
 class Plane {
@@ -10424,7 +12727,7 @@ class Plane {
 
 	setFromCoplanarPoints( a, b, c ) {
 
-		const normal = _vector1.subVectors( c, b ).cross( _vector2.subVectors( a, b ) ).normalize();
+		const normal = _vector1.subVectors( c, b ).cross( _vector2$1.subVectors( a, b ) ).normalize();
 
 		// Q: should an error be thrown if normal is zero (e.g. degenerate plane)?
 
@@ -10512,7 +12815,7 @@ class Plane {
 			}
 
 			// Unsure if this is the correct method to handle this case.
-			return undefined;
+			return null;
 
 		}
 
@@ -10520,7 +12823,7 @@ class Plane {
 
 		if ( t < 0 || t > 1 ) {
 
-			return undefined;
+			return null;
 
 		}
 
@@ -10604,8 +12907,8 @@ Plane.prototype.isPlane = true;
 
 const _v0$1 = /*@__PURE__*/ new Vector3();
 const _v1$3 = /*@__PURE__*/ new Vector3();
-const _v2$1 = /*@__PURE__*/ new Vector3();
-const _v3 = /*@__PURE__*/ new Vector3();
+const _v2$2 = /*@__PURE__*/ new Vector3();
+const _v3$1 = /*@__PURE__*/ new Vector3();
 
 const _vab = /*@__PURE__*/ new Vector3();
 const _vac = /*@__PURE__*/ new Vector3();
@@ -10654,13 +12957,13 @@ class Triangle {
 
 		_v0$1.subVectors( c, a );
 		_v1$3.subVectors( b, a );
-		_v2$1.subVectors( point, a );
+		_v2$2.subVectors( point, a );
 
 		const dot00 = _v0$1.dot( _v0$1 );
 		const dot01 = _v0$1.dot( _v1$3 );
-		const dot02 = _v0$1.dot( _v2$1 );
+		const dot02 = _v0$1.dot( _v2$2 );
 		const dot11 = _v1$3.dot( _v1$3 );
-		const dot12 = _v1$3.dot( _v2$1 );
+		const dot12 = _v1$3.dot( _v2$2 );
 
 		const denom = ( dot00 * dot11 - dot01 * dot01 );
 
@@ -10691,20 +12994,20 @@ class Triangle {
 
 	static containsPoint( point, a, b, c ) {
 
-		this.getBarycoord( point, a, b, c, _v3 );
+		this.getBarycoord( point, a, b, c, _v3$1 );
 
-		return ( _v3.x >= 0 ) && ( _v3.y >= 0 ) && ( ( _v3.x + _v3.y ) <= 1 );
+		return ( _v3$1.x >= 0 ) && ( _v3$1.y >= 0 ) && ( ( _v3$1.x + _v3$1.y ) <= 1 );
 
 	}
 
 	static getUV( point, p1, p2, p3, uv1, uv2, uv3, target ) {
 
-		this.getBarycoord( point, p1, p2, p3, _v3 );
+		this.getBarycoord( point, p1, p2, p3, _v3$1 );
 
 		target.set( 0, 0 );
-		target.addScaledVector( uv1, _v3.x );
-		target.addScaledVector( uv2, _v3.y );
-		target.addScaledVector( uv3, _v3.z );
+		target.addScaledVector( uv1, _v3$1.x );
+		target.addScaledVector( uv2, _v3$1.y );
+		target.addScaledVector( uv3, _v3$1.z );
 
 		return target;
 
@@ -10980,6 +13283,7 @@ function Material() {
 	this.dithering = false;
 
 	this.alphaTest = 0;
+	this.alphaToCoverage = false;
 	this.premultipliedAlpha = false;
 
 	this.visible = true;
@@ -11182,6 +13486,7 @@ Material.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		}
 
 		if ( this.size !== undefined ) data.size = this.size;
+		if ( this.shadowSide !== null ) data.shadowSide = this.shadowSide;
 		if ( this.sizeAttenuation !== undefined ) data.sizeAttenuation = this.sizeAttenuation;
 
 		if ( this.blending !== NormalBlending ) data.blending = this.blending;
@@ -11194,6 +13499,7 @@ Material.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		data.depthFunc = this.depthFunc;
 		data.depthTest = this.depthTest;
 		data.depthWrite = this.depthWrite;
+		data.colorWrite = this.colorWrite;
 
 		data.stencilWrite = this.stencilWrite;
 		data.stencilWriteMask = this.stencilWriteMask;
@@ -11219,6 +13525,7 @@ Material.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		if ( this.dithering === true ) data.dithering = true;
 
 		if ( this.alphaTest > 0 ) data.alphaTest = this.alphaTest;
+		if ( this.alphaToCoverage === true ) data.alphaToCoverage = this.alphaToCoverage;
 		if ( this.premultipliedAlpha === true ) data.premultipliedAlpha = this.premultipliedAlpha;
 
 		if ( this.wireframe === true ) data.wireframe = this.wireframe;
@@ -11342,6 +13649,7 @@ Material.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		this.dithering = source.dithering;
 
 		this.alphaTest = source.alphaTest;
+		this.alphaToCoverage = source.alphaToCoverage;
 		this.premultipliedAlpha = source.premultipliedAlpha;
 
 		this.visible = source.visible;
@@ -12090,8 +14398,8 @@ class MeshBasicMaterial extends Material {
 
 MeshBasicMaterial.prototype.isMeshBasicMaterial = true;
 
-const _vector$3 = new Vector3();
-const _vector2$1 = new Vector2();
+const _vector$9 = new Vector3();
+const _vector2 = new Vector2();
 
 function BufferAttribute( array, itemSize, normalized ) {
 
@@ -12286,10 +14594,10 @@ Object.assign( BufferAttribute.prototype, {
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector2$1.fromBufferAttribute( this, i );
-				_vector2$1.applyMatrix3( m );
+				_vector2.fromBufferAttribute( this, i );
+				_vector2.applyMatrix3( m );
 
-				this.setXY( i, _vector2$1.x, _vector2$1.y );
+				this.setXY( i, _vector2.x, _vector2.y );
 
 			}
 
@@ -12297,10 +14605,10 @@ Object.assign( BufferAttribute.prototype, {
 
 			for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-				_vector$3.fromBufferAttribute( this, i );
-				_vector$3.applyMatrix3( m );
+				_vector$9.fromBufferAttribute( this, i );
+				_vector$9.applyMatrix3( m );
 
-				this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
+				this.setXYZ( i, _vector$9.x, _vector$9.y, _vector$9.z );
 
 			}
 
@@ -12314,13 +14622,13 @@ Object.assign( BufferAttribute.prototype, {
 
 		for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-			_vector$3.x = this.getX( i );
-			_vector$3.y = this.getY( i );
-			_vector$3.z = this.getZ( i );
+			_vector$9.x = this.getX( i );
+			_vector$9.y = this.getY( i );
+			_vector$9.z = this.getZ( i );
 
-			_vector$3.applyMatrix4( m );
+			_vector$9.applyMatrix4( m );
 
-			this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
+			this.setXYZ( i, _vector$9.x, _vector$9.y, _vector$9.z );
 
 		}
 
@@ -12332,13 +14640,13 @@ Object.assign( BufferAttribute.prototype, {
 
 		for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-			_vector$3.x = this.getX( i );
-			_vector$3.y = this.getY( i );
-			_vector$3.z = this.getZ( i );
+			_vector$9.x = this.getX( i );
+			_vector$9.y = this.getY( i );
+			_vector$9.z = this.getZ( i );
 
-			_vector$3.applyNormalMatrix( m );
+			_vector$9.applyNormalMatrix( m );
 
-			this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
+			this.setXYZ( i, _vector$9.x, _vector$9.y, _vector$9.z );
 
 		}
 
@@ -12350,13 +14658,13 @@ Object.assign( BufferAttribute.prototype, {
 
 		for ( let i = 0, l = this.count; i < l; i ++ ) {
 
-			_vector$3.x = this.getX( i );
-			_vector$3.y = this.getY( i );
-			_vector$3.z = this.getZ( i );
+			_vector$9.x = this.getX( i );
+			_vector$9.y = this.getY( i );
+			_vector$9.z = this.getZ( i );
 
-			_vector$3.transformDirection( m );
+			_vector$9.transformDirection( m );
 
-			this.setXYZ( i, _vector$3.x, _vector$3.y, _vector$3.z );
+			this.setXYZ( i, _vector$9.x, _vector$9.y, _vector$9.z );
 
 		}
 
@@ -12480,12 +14788,18 @@ Object.assign( BufferAttribute.prototype, {
 
 	toJSON: function () {
 
-		return {
+		const data = {
 			itemSize: this.itemSize,
 			type: this.array.constructor.name,
 			array: Array.prototype.slice.call( this.array ),
 			normalized: this.normalized
 		};
+
+		if ( this.name !== '' ) data.name = this.name;
+		if ( this.usage !== StaticDrawUsage ) data.usage = this.usage;
+		if ( this.updateRange.offset !== 0 || this.updateRange.count !== - 1 ) data.updateRange = this.updateRange;
+
+		return data;
 
 	}
 
@@ -12627,12 +14941,12 @@ function getTypedArray( type, buffer ) {
 
 let _id = 0;
 
-const _m1$2 = new Matrix4();
+const _m1 = new Matrix4();
 const _obj = new Object3D();
 const _offset = new Vector3();
-const _box$2 = new Box3();
+const _box$1 = new Box3();
 const _boxMorphTargets = new Box3();
-const _vector$4 = new Vector3();
+const _vector$8 = new Vector3();
 
 function BufferGeometry() {
 
@@ -12795,9 +15109,9 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		// rotate geometry around world x-axis
 
-		_m1$2.makeRotationX( angle );
+		_m1.makeRotationX( angle );
 
-		this.applyMatrix4( _m1$2 );
+		this.applyMatrix4( _m1 );
 
 		return this;
 
@@ -12807,9 +15121,9 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		// rotate geometry around world y-axis
 
-		_m1$2.makeRotationY( angle );
+		_m1.makeRotationY( angle );
 
-		this.applyMatrix4( _m1$2 );
+		this.applyMatrix4( _m1 );
 
 		return this;
 
@@ -12819,9 +15133,9 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		// rotate geometry around world z-axis
 
-		_m1$2.makeRotationZ( angle );
+		_m1.makeRotationZ( angle );
 
-		this.applyMatrix4( _m1$2 );
+		this.applyMatrix4( _m1 );
 
 		return this;
 
@@ -12831,9 +15145,9 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		// translate geometry
 
-		_m1$2.makeTranslation( x, y, z );
+		_m1.makeTranslation( x, y, z );
 
-		this.applyMatrix4( _m1$2 );
+		this.applyMatrix4( _m1 );
 
 		return this;
 
@@ -12843,9 +15157,9 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		// scale geometry
 
-		_m1$2.makeScale( x, y, z );
+		_m1.makeScale( x, y, z );
 
-		this.applyMatrix4( _m1$2 );
+		this.applyMatrix4( _m1 );
 
 		return this;
 
@@ -12927,20 +15241,20 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 				for ( let i = 0, il = morphAttributesPosition.length; i < il; i ++ ) {
 
 					const morphAttribute = morphAttributesPosition[ i ];
-					_box$2.setFromBufferAttribute( morphAttribute );
+					_box$1.setFromBufferAttribute( morphAttribute );
 
 					if ( this.morphTargetsRelative ) {
 
-						_vector$4.addVectors( this.boundingBox.min, _box$2.min );
-						this.boundingBox.expandByPoint( _vector$4 );
+						_vector$8.addVectors( this.boundingBox.min, _box$1.min );
+						this.boundingBox.expandByPoint( _vector$8 );
 
-						_vector$4.addVectors( this.boundingBox.max, _box$2.max );
-						this.boundingBox.expandByPoint( _vector$4 );
+						_vector$8.addVectors( this.boundingBox.max, _box$1.max );
+						this.boundingBox.expandByPoint( _vector$8 );
 
 					} else {
 
-						this.boundingBox.expandByPoint( _box$2.min );
-						this.boundingBox.expandByPoint( _box$2.max );
+						this.boundingBox.expandByPoint( _box$1.min );
+						this.boundingBox.expandByPoint( _box$1.max );
 
 					}
 
@@ -12989,7 +15303,7 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 			const center = this.boundingSphere.center;
 
-			_box$2.setFromBufferAttribute( position );
+			_box$1.setFromBufferAttribute( position );
 
 			// process morph attributes if present
 
@@ -13002,16 +15316,16 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 					if ( this.morphTargetsRelative ) {
 
-						_vector$4.addVectors( _box$2.min, _boxMorphTargets.min );
-						_box$2.expandByPoint( _vector$4 );
+						_vector$8.addVectors( _box$1.min, _boxMorphTargets.min );
+						_box$1.expandByPoint( _vector$8 );
 
-						_vector$4.addVectors( _box$2.max, _boxMorphTargets.max );
-						_box$2.expandByPoint( _vector$4 );
+						_vector$8.addVectors( _box$1.max, _boxMorphTargets.max );
+						_box$1.expandByPoint( _vector$8 );
 
 					} else {
 
-						_box$2.expandByPoint( _boxMorphTargets.min );
-						_box$2.expandByPoint( _boxMorphTargets.max );
+						_box$1.expandByPoint( _boxMorphTargets.min );
+						_box$1.expandByPoint( _boxMorphTargets.max );
 
 					}
 
@@ -13019,7 +15333,7 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 			}
 
-			_box$2.getCenter( center );
+			_box$1.getCenter( center );
 
 			// second, try to find a boundingSphere with a radius smaller than the
 			// boundingSphere of the boundingBox: sqrt(3) smaller in the best case
@@ -13028,9 +15342,9 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 			for ( let i = 0, il = position.count; i < il; i ++ ) {
 
-				_vector$4.fromBufferAttribute( position, i );
+				_vector$8.fromBufferAttribute( position, i );
 
-				maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$4 ) );
+				maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$8 ) );
 
 			}
 
@@ -13045,16 +15359,16 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 					for ( let j = 0, jl = morphAttribute.count; j < jl; j ++ ) {
 
-						_vector$4.fromBufferAttribute( morphAttribute, j );
+						_vector$8.fromBufferAttribute( morphAttribute, j );
 
 						if ( morphTargetsRelative ) {
 
 							_offset.fromBufferAttribute( position, j );
-							_vector$4.add( _offset );
+							_vector$8.add( _offset );
 
 						}
 
-						maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$4 ) );
+						maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector$8 ) );
 
 					}
 
@@ -13390,11 +15704,11 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		for ( let i = 0, il = normals.count; i < il; i ++ ) {
 
-			_vector$4.fromBufferAttribute( normals, i );
+			_vector$8.fromBufferAttribute( normals, i );
 
-			_vector$4.normalize();
+			_vector$8.normalize();
 
-			normals.setXYZ( i, _vector$4.x, _vector$4.y, _vector$4.z );
+			normals.setXYZ( i, _vector$8.x, _vector$8.y, _vector$8.z );
 
 		}
 
@@ -13525,6 +15839,8 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 		}
 
+		// for simplicity the code assumes attributes are not shared across geometries, see #15811
+
 		data.data = { attributes: {} };
 
 		const index = this.index;
@@ -13544,11 +15860,7 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 			const attribute = attributes[ key ];
 
-			const attributeData = attribute.toJSON( data.data );
-
-			if ( attribute.name !== '' ) attributeData.name = attribute.name;
-
-			data.data.attributes[ key ] = attributeData;
+			data.data.attributes[ key ] = attribute.toJSON( data.data );
 
 		}
 
@@ -13565,11 +15877,7 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 				const attribute = attributeArray[ i ];
 
-				const attributeData = attribute.toJSON( data.data );
-
-				if ( attribute.name !== '' ) attributeData.name = attribute.name;
-
-				array.push( attributeData );
+				array.push( attribute.toJSON( data.data ) );
 
 			}
 
@@ -13756,13 +16064,13 @@ BufferGeometry.prototype = Object.assign( Object.create( EventDispatcher.prototy
 
 } );
 
-const _inverseMatrix = new Matrix4();
-const _ray = new Ray();
-const _sphere = new Sphere();
+const _inverseMatrix$2 = new Matrix4();
+const _ray$2 = new Ray();
+const _sphere$3 = new Sphere();
 
-const _vA = new Vector3();
-const _vB = new Vector3();
-const _vC = new Vector3();
+const _vA$1 = new Vector3();
+const _vB$1 = new Vector3();
+const _vC$1 = new Vector3();
 
 const _tempA = new Vector3();
 const _tempB = new Vector3();
@@ -13772,9 +16080,9 @@ const _morphA = new Vector3();
 const _morphB = new Vector3();
 const _morphC = new Vector3();
 
-const _uvA = new Vector2();
-const _uvB = new Vector2();
-const _uvC = new Vector2();
+const _uvA$1 = new Vector2();
+const _uvB$1 = new Vector2();
+const _uvC$1 = new Vector2();
 
 const _intersectionPoint = new Vector3();
 const _intersectionPointWorld = new Vector3();
@@ -13878,21 +16186,21 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 		if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-		_sphere.copy( geometry.boundingSphere );
-		_sphere.applyMatrix4( matrixWorld );
+		_sphere$3.copy( geometry.boundingSphere );
+		_sphere$3.applyMatrix4( matrixWorld );
 
-		if ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;
+		if ( raycaster.ray.intersectsSphere( _sphere$3 ) === false ) return;
 
 		//
 
-		_inverseMatrix.copy( matrixWorld ).invert();
-		_ray.copy( raycaster.ray ).applyMatrix4( _inverseMatrix );
+		_inverseMatrix$2.copy( matrixWorld ).invert();
+		_ray$2.copy( raycaster.ray ).applyMatrix4( _inverseMatrix$2 );
 
 		// Check boundingBox before continuing
 
 		if ( geometry.boundingBox !== null ) {
 
-			if ( _ray.intersectsBox( geometry.boundingBox ) === false ) return;
+			if ( _ray$2.intersectsBox( geometry.boundingBox ) === false ) return;
 
 		}
 
@@ -13929,7 +16237,7 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 							const b = index.getX( j + 1 );
 							const c = index.getX( j + 2 );
 
-							intersection = checkBufferGeometryIntersection( this, groupMaterial, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
+							intersection = checkBufferGeometryIntersection( this, groupMaterial, raycaster, _ray$2, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
 
 							if ( intersection ) {
 
@@ -13954,7 +16262,7 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 						const b = index.getX( i + 1 );
 						const c = index.getX( i + 2 );
 
-						intersection = checkBufferGeometryIntersection( this, material, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
+						intersection = checkBufferGeometryIntersection( this, material, raycaster, _ray$2, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
 
 						if ( intersection ) {
 
@@ -13987,7 +16295,7 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 							const b = j + 1;
 							const c = j + 2;
 
-							intersection = checkBufferGeometryIntersection( this, groupMaterial, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
+							intersection = checkBufferGeometryIntersection( this, groupMaterial, raycaster, _ray$2, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
 
 							if ( intersection ) {
 
@@ -14012,7 +16320,7 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 						const b = i + 1;
 						const c = i + 2;
 
-						intersection = checkBufferGeometryIntersection( this, material, raycaster, _ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
+						intersection = checkBufferGeometryIntersection( this, material, raycaster, _ray$2, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c );
 
 						if ( intersection ) {
 
@@ -14070,9 +16378,9 @@ function checkIntersection( object, material, raycaster, ray, pA, pB, pC, point 
 
 function checkBufferGeometryIntersection( object, material, raycaster, ray, position, morphPosition, morphTargetsRelative, uv, uv2, a, b, c ) {
 
-	_vA.fromBufferAttribute( position, a );
-	_vB.fromBufferAttribute( position, b );
-	_vC.fromBufferAttribute( position, c );
+	_vA$1.fromBufferAttribute( position, a );
+	_vB$1.fromBufferAttribute( position, b );
+	_vC$1.fromBufferAttribute( position, c );
 
 	const morphInfluences = object.morphTargetInfluences;
 
@@ -14101,49 +16409,49 @@ function checkBufferGeometryIntersection( object, material, raycaster, ray, posi
 
 			} else {
 
-				_morphA.addScaledVector( _tempA.sub( _vA ), influence );
-				_morphB.addScaledVector( _tempB.sub( _vB ), influence );
-				_morphC.addScaledVector( _tempC.sub( _vC ), influence );
+				_morphA.addScaledVector( _tempA.sub( _vA$1 ), influence );
+				_morphB.addScaledVector( _tempB.sub( _vB$1 ), influence );
+				_morphC.addScaledVector( _tempC.sub( _vC$1 ), influence );
 
 			}
 
 		}
 
-		_vA.add( _morphA );
-		_vB.add( _morphB );
-		_vC.add( _morphC );
+		_vA$1.add( _morphA );
+		_vB$1.add( _morphB );
+		_vC$1.add( _morphC );
 
 	}
 
 	if ( object.isSkinnedMesh && material.skinning ) {
 
-		object.boneTransform( a, _vA );
-		object.boneTransform( b, _vB );
-		object.boneTransform( c, _vC );
+		object.boneTransform( a, _vA$1 );
+		object.boneTransform( b, _vB$1 );
+		object.boneTransform( c, _vC$1 );
 
 	}
 
-	const intersection = checkIntersection( object, material, raycaster, ray, _vA, _vB, _vC, _intersectionPoint );
+	const intersection = checkIntersection( object, material, raycaster, ray, _vA$1, _vB$1, _vC$1, _intersectionPoint );
 
 	if ( intersection ) {
 
 		if ( uv ) {
 
-			_uvA.fromBufferAttribute( uv, a );
-			_uvB.fromBufferAttribute( uv, b );
-			_uvC.fromBufferAttribute( uv, c );
+			_uvA$1.fromBufferAttribute( uv, a );
+			_uvB$1.fromBufferAttribute( uv, b );
+			_uvC$1.fromBufferAttribute( uv, c );
 
-			intersection.uv = Triangle.getUV( _intersectionPoint, _vA, _vB, _vC, _uvA, _uvB, _uvC, new Vector2() );
+			intersection.uv = Triangle.getUV( _intersectionPoint, _vA$1, _vB$1, _vC$1, _uvA$1, _uvB$1, _uvC$1, new Vector2() );
 
 		}
 
 		if ( uv2 ) {
 
-			_uvA.fromBufferAttribute( uv2, a );
-			_uvB.fromBufferAttribute( uv2, b );
-			_uvC.fromBufferAttribute( uv2, c );
+			_uvA$1.fromBufferAttribute( uv2, a );
+			_uvB$1.fromBufferAttribute( uv2, b );
+			_uvC$1.fromBufferAttribute( uv2, c );
 
-			intersection.uv2 = Triangle.getUV( _intersectionPoint, _vA, _vB, _vC, _uvA, _uvB, _uvC, new Vector2() );
+			intersection.uv2 = Triangle.getUV( _intersectionPoint, _vA$1, _vB$1, _vC$1, _uvA$1, _uvB$1, _uvC$1, new Vector2() );
 
 		}
 
@@ -14155,7 +16463,7 @@ function checkBufferGeometryIntersection( object, material, raycaster, ray, posi
 			materialIndex: 0
 		};
 
-		Triangle.getNormal( _vA, _vB, _vC, face.normal );
+		Triangle.getNormal( _vA$1, _vB$1, _vC$1, face.normal );
 
 		intersection.face = face;
 
@@ -15205,8 +17513,8 @@ class DataTexture extends Texture {
 
 DataTexture.prototype.isDataTexture = true;
 
-const _sphere$1 = /*@__PURE__*/ new Sphere();
-const _vector$5 = /*@__PURE__*/ new Vector3();
+const _sphere$2 = /*@__PURE__*/ new Sphere();
+const _vector$7 = /*@__PURE__*/ new Vector3();
 
 class Frustum {
 
@@ -15271,19 +17579,19 @@ class Frustum {
 
 		if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-		_sphere$1.copy( geometry.boundingSphere ).applyMatrix4( object.matrixWorld );
+		_sphere$2.copy( geometry.boundingSphere ).applyMatrix4( object.matrixWorld );
 
-		return this.intersectsSphere( _sphere$1 );
+		return this.intersectsSphere( _sphere$2 );
 
 	}
 
 	intersectsSprite( sprite ) {
 
-		_sphere$1.center.set( 0, 0, 0 );
-		_sphere$1.radius = 0.7071067811865476;
-		_sphere$1.applyMatrix4( sprite.matrixWorld );
+		_sphere$2.center.set( 0, 0, 0 );
+		_sphere$2.radius = 0.7071067811865476;
+		_sphere$2.applyMatrix4( sprite.matrixWorld );
 
-		return this.intersectsSphere( _sphere$1 );
+		return this.intersectsSphere( _sphere$2 );
 
 	}
 
@@ -15319,11 +17627,11 @@ class Frustum {
 
 			// corner at max distance
 
-			_vector$5.x = plane.normal.x > 0 ? box.max.x : box.min.x;
-			_vector$5.y = plane.normal.y > 0 ? box.max.y : box.min.y;
-			_vector$5.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+			_vector$7.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+			_vector$7.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+			_vector$7.z = plane.normal.z > 0 ? box.max.z : box.min.z;
 
-			if ( plane.distanceToPoint( _vector$5 ) < 0 ) {
+			if ( plane.distanceToPoint( _vector$7 ) < 0 ) {
 
 				return false;
 
@@ -15703,13 +18011,13 @@ var clipping_planes_pars_vertex = "#if NUM_CLIPPING_PLANES > 0\n\tvarying vec3 v
 
 var clipping_planes_vertex = "#if NUM_CLIPPING_PLANES > 0\n\tvClipPosition = - mvPosition.xyz;\n#endif";
 
-var color_fragment = "#ifdef USE_COLOR\n\tdiffuseColor.rgb *= vColor;\n#endif";
+var color_fragment = "#if defined( USE_COLOR_ALPHA )\n\tdiffuseColor *= vColor;\n#elif defined( USE_COLOR )\n\tdiffuseColor.rgb *= vColor;\n#endif";
 
-var color_pars_fragment = "#ifdef USE_COLOR\n\tvarying vec3 vColor;\n#endif";
+var color_pars_fragment = "#if defined( USE_COLOR_ALPHA )\n\tvarying vec4 vColor;\n#elif defined( USE_COLOR )\n\tvarying vec3 vColor;\n#endif";
 
-var color_pars_vertex = "#if defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )\n\tvarying vec3 vColor;\n#endif";
+var color_pars_vertex = "#if defined( USE_COLOR_ALPHA )\n\tvarying vec4 vColor;\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )\n\tvarying vec3 vColor;\n#endif";
 
-var color_vertex = "#if defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )\n\tvColor = vec3( 1.0 );\n#endif\n#ifdef USE_COLOR\n\tvColor.xyz *= color.xyz;\n#endif\n#ifdef USE_INSTANCING_COLOR\n\tvColor.xyz *= instanceColor.xyz;\n#endif";
+var color_vertex = "#if defined( USE_COLOR_ALPHA )\n\tvColor = vec4( 1.0 );\n#elif defined( USE_COLOR ) || defined( USE_INSTANCING_COLOR )\n\tvColor = vec3( 1.0 );\n#endif\n#ifdef USE_COLOR\n\tvColor *= color;\n#endif\n#ifdef USE_INSTANCING_COLOR\n\tvColor.xyz *= instanceColor.xyz;\n#endif";
 
 var common = "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_PI2 0.15915494309189535\n#define EPSILON 1e-6\n#ifndef saturate\n#define saturate(a) clamp( a, 0.0, 1.0 )\n#endif\n#define whiteComplement(a) ( 1.0 - saturate( a ) )\nfloat pow2( const in float x ) { return x*x; }\nfloat pow3( const in float x ) { return x*x*x; }\nfloat pow4( const in float x ) { float x2 = x*x; return x2*x2; }\nfloat average( const in vec3 color ) { return dot( color, vec3( 0.3333 ) ); }\nhighp float rand( const in vec2 uv ) {\n\tconst highp float a = 12.9898, b = 78.233, c = 43758.5453;\n\thighp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );\n\treturn fract(sin(sn) * c);\n}\n#ifdef HIGH_PRECISION\n\tfloat precisionSafeLength( vec3 v ) { return length( v ); }\n#else\n\tfloat max3( vec3 v ) { return max( max( v.x, v.y ), v.z ); }\n\tfloat precisionSafeLength( vec3 v ) {\n\t\tfloat maxComponent = max3( abs( v ) );\n\t\treturn length( v / maxComponent ) * maxComponent;\n\t}\n#endif\nstruct IncidentLight {\n\tvec3 color;\n\tvec3 direction;\n\tbool visible;\n};\nstruct ReflectedLight {\n\tvec3 directDiffuse;\n\tvec3 directSpecular;\n\tvec3 indirectDiffuse;\n\tvec3 indirectSpecular;\n};\nstruct GeometricContext {\n\tvec3 position;\n\tvec3 normal;\n\tvec3 viewDir;\n#ifdef CLEARCOAT\n\tvec3 clearcoatNormal;\n#endif\n};\nvec3 transformDirection( in vec3 dir, in mat4 matrix ) {\n\treturn normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );\n}\nvec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {\n\treturn normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );\n}\nvec3 projectOnPlane(in vec3 point, in vec3 pointOnPlane, in vec3 planeNormal ) {\n\tfloat distance = dot( planeNormal, point - pointOnPlane );\n\treturn - distance * planeNormal + point;\n}\nfloat sideOfPlane( in vec3 point, in vec3 pointOnPlane, in vec3 planeNormal ) {\n\treturn sign( dot( point - pointOnPlane, planeNormal ) );\n}\nvec3 linePlaneIntersect( in vec3 pointOnLine, in vec3 lineDirection, in vec3 pointOnPlane, in vec3 planeNormal ) {\n\treturn lineDirection * ( dot( planeNormal, pointOnPlane - pointOnLine ) / dot( planeNormal, lineDirection ) ) + pointOnLine;\n}\nmat3 transposeMat3( const in mat3 m ) {\n\tmat3 tmp;\n\ttmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );\n\ttmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );\n\ttmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );\n\treturn tmp;\n}\nfloat linearToRelativeLuminance( const in vec3 color ) {\n\tvec3 weights = vec3( 0.2126, 0.7152, 0.0722 );\n\treturn dot( weights, color.rgb );\n}\nbool isPerspectiveMatrix( mat4 m ) {\n\treturn m[ 2 ][ 3 ] == - 1.0;\n}\nvec2 equirectUv( in vec3 dir ) {\n\tfloat u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;\n\tfloat v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;\n\treturn vec2( u, v );\n}";
 
@@ -16629,7 +18937,7 @@ function WebGLBackground( renderer, cubemaps, state, objects, premultipliedAlpha
 
 		}
 
-		if ( background && ( background.isCubeTexture || background.isWebGLCubeRenderTarget || background.mapping === CubeUVReflectionMapping ) ) {
+		if ( background && ( background.isCubeTexture || background.mapping === CubeUVReflectionMapping ) ) {
 
 			if ( boxMesh === undefined ) {
 
@@ -16668,14 +18976,6 @@ function WebGLBackground( renderer, cubemaps, state, objects, premultipliedAlpha
 				} );
 
 				objects.update( boxMesh );
-
-			}
-
-			if ( background.isWebGLCubeRenderTarget ) {
-
-				// TODO Deprecate
-
-				background = background.texture;
 
 			}
 
@@ -18781,7 +21081,7 @@ function setValueV4f( gl, v ) {
 
 }
 
-// Single matrix (from flat array or MatrixN)
+// Single matrix (from flat array or THREE.MatrixN)
 
 function setValueM2( gl, v ) {
 
@@ -18864,73 +21164,7 @@ function setValueM4( gl, v ) {
 
 }
 
-// Single texture (2D / Cube)
-
-function setValueT1( gl, v, textures ) {
-
-	const cache = this.cache;
-	const unit = textures.allocateTextureUnit();
-
-	if ( cache[ 0 ] !== unit ) {
-
-		gl.uniform1i( this.addr, unit );
-		cache[ 0 ] = unit;
-
-	}
-
-	textures.safeSetTexture2D( v || emptyTexture, unit );
-
-}
-
-function setValueT2DArray1( gl, v, textures ) {
-
-	const cache = this.cache;
-	const unit = textures.allocateTextureUnit();
-
-	if ( cache[ 0 ] !== unit ) {
-
-		gl.uniform1i( this.addr, unit );
-		cache[ 0 ] = unit;
-
-	}
-
-	textures.setTexture2DArray( v || emptyTexture2dArray, unit );
-
-}
-
-function setValueT3D1( gl, v, textures ) {
-
-	const cache = this.cache;
-	const unit = textures.allocateTextureUnit();
-
-	if ( cache[ 0 ] !== unit ) {
-
-		gl.uniform1i( this.addr, unit );
-		cache[ 0 ] = unit;
-
-	}
-
-	textures.setTexture3D( v || emptyTexture3d, unit );
-
-}
-
-function setValueT6( gl, v, textures ) {
-
-	const cache = this.cache;
-	const unit = textures.allocateTextureUnit();
-
-	if ( cache[ 0 ] !== unit ) {
-
-		gl.uniform1i( this.addr, unit );
-		cache[ 0 ] = unit;
-
-	}
-
-	textures.safeSetTextureCube( v || emptyCubeTexture, unit );
-
-}
-
-// Integer / Boolean vectors or arrays thereof (always flat arrays)
+// Single integer / boolean
 
 function setValueV1i( gl, v ) {
 
@@ -18943,6 +21177,8 @@ function setValueV1i( gl, v ) {
 	cache[ 0 ] = v;
 
 }
+
+// Single integer / boolean vector (from flat array)
 
 function setValueV2i( gl, v ) {
 
@@ -18980,7 +21216,7 @@ function setValueV4i( gl, v ) {
 
 }
 
-// uint
+// Single unsigned integer
 
 function setValueV1ui( gl, v ) {
 
@@ -18991,6 +21227,111 @@ function setValueV1ui( gl, v ) {
 	gl.uniform1ui( this.addr, v );
 
 	cache[ 0 ] = v;
+
+}
+
+// Single unsigned integer vector (from flat array)
+
+function setValueV2ui( gl, v ) {
+
+	const cache = this.cache;
+
+	if ( arraysEqual( cache, v ) ) return;
+
+	gl.uniform2uiv( this.addr, v );
+
+	copyArray( cache, v );
+
+}
+
+function setValueV3ui( gl, v ) {
+
+	const cache = this.cache;
+
+	if ( arraysEqual( cache, v ) ) return;
+
+	gl.uniform3uiv( this.addr, v );
+
+	copyArray( cache, v );
+
+}
+
+function setValueV4ui( gl, v ) {
+
+	const cache = this.cache;
+
+	if ( arraysEqual( cache, v ) ) return;
+
+	gl.uniform4uiv( this.addr, v );
+
+	copyArray( cache, v );
+
+}
+
+
+// Single texture (2D / Cube)
+
+function setValueT1( gl, v, textures ) {
+
+	const cache = this.cache;
+	const unit = textures.allocateTextureUnit();
+
+	if ( cache[ 0 ] !== unit ) {
+
+		gl.uniform1i( this.addr, unit );
+		cache[ 0 ] = unit;
+
+	}
+
+	textures.safeSetTexture2D( v || emptyTexture, unit );
+
+}
+
+function setValueT3D1( gl, v, textures ) {
+
+	const cache = this.cache;
+	const unit = textures.allocateTextureUnit();
+
+	if ( cache[ 0 ] !== unit ) {
+
+		gl.uniform1i( this.addr, unit );
+		cache[ 0 ] = unit;
+
+	}
+
+	textures.setTexture3D( v || emptyTexture3d, unit );
+
+}
+
+function setValueT6( gl, v, textures ) {
+
+	const cache = this.cache;
+	const unit = textures.allocateTextureUnit();
+
+	if ( cache[ 0 ] !== unit ) {
+
+		gl.uniform1i( this.addr, unit );
+		cache[ 0 ] = unit;
+
+	}
+
+	textures.safeSetTextureCube( v || emptyCubeTexture, unit );
+
+}
+
+function setValueT2DArray1( gl, v, textures ) {
+
+	const cache = this.cache;
+	const unit = textures.allocateTextureUnit();
+
+	if ( cache[ 0 ] !== unit ) {
+
+		gl.uniform1i( this.addr, unit );
+		cache[ 0 ] = unit;
+
+	}
+
+	textures.setTexture2DArray( v || emptyTexture2dArray, unit );
 
 }
 
@@ -19015,6 +21356,9 @@ function getSingularSetter( type ) {
 		case 0x8b55: case 0x8b59: return setValueV4i; // _VEC4
 
 		case 0x1405: return setValueV1ui; // UINT
+		case 0x8dc6: return setValueV2ui; // _VEC2
+		case 0x8dc7: return setValueV3ui; // _VEC3
+		case 0x8dc8: return setValueV4ui; // _VEC4
 
 		case 0x8b5e: // SAMPLER_2D
 		case 0x8d66: // SAMPLER_EXTERNAL_OES
@@ -19044,40 +21388,16 @@ function getSingularSetter( type ) {
 
 }
 
+
 // Array of scalars
+
 function setValueV1fArray( gl, v ) {
 
 	gl.uniform1fv( this.addr, v );
 
 }
 
-// Integer / Boolean vectors or arrays thereof (always flat arrays)
-function setValueV1iArray( gl, v ) {
-
-	gl.uniform1iv( this.addr, v );
-
-}
-
-function setValueV2iArray( gl, v ) {
-
-	gl.uniform2iv( this.addr, v );
-
-}
-
-function setValueV3iArray( gl, v ) {
-
-	gl.uniform3iv( this.addr, v );
-
-}
-
-function setValueV4iArray( gl, v ) {
-
-	gl.uniform4iv( this.addr, v );
-
-}
-
-
-// Array of vectors (flat or from THREE classes)
+// Array of vectors (from flat array or array of THREE.VectorN)
 
 function setValueV2fArray( gl, v ) {
 
@@ -19103,7 +21423,7 @@ function setValueV4fArray( gl, v ) {
 
 }
 
-// Array of matrices (flat or from THREE clases)
+// Array of matrices (from flat array or array of THREE.MatrixN)
 
 function setValueM2Array( gl, v ) {
 
@@ -19128,6 +21448,63 @@ function setValueM4Array( gl, v ) {
 	gl.uniformMatrix4fv( this.addr, false, data );
 
 }
+
+// Array of integer / boolean
+
+function setValueV1iArray( gl, v ) {
+
+	gl.uniform1iv( this.addr, v );
+
+}
+
+// Array of integer / boolean vectors (from flat array)
+
+function setValueV2iArray( gl, v ) {
+
+	gl.uniform2iv( this.addr, v );
+
+}
+
+function setValueV3iArray( gl, v ) {
+
+	gl.uniform3iv( this.addr, v );
+
+}
+
+function setValueV4iArray( gl, v ) {
+
+	gl.uniform4iv( this.addr, v );
+
+}
+
+// Array of unsigned integer
+
+function setValueV1uiArray( gl, v ) {
+
+	gl.uniform1uiv( this.addr, v );
+
+}
+
+// Array of unsigned integer vectors (from flat array)
+
+function setValueV2uiArray( gl, v ) {
+
+	gl.uniform2uiv( this.addr, v );
+
+}
+
+function setValueV3uiArray( gl, v ) {
+
+	gl.uniform3uiv( this.addr, v );
+
+}
+
+function setValueV4uiArray( gl, v ) {
+
+	gl.uniform4uiv( this.addr, v );
+
+}
+
 
 // Array of textures (2D / Cube)
 
@@ -19182,6 +21559,11 @@ function getPureArraySetter( type ) {
 		case 0x8b53: case 0x8b57: return setValueV2iArray; // _VEC2
 		case 0x8b54: case 0x8b58: return setValueV3iArray; // _VEC3
 		case 0x8b55: case 0x8b59: return setValueV4iArray; // _VEC4
+
+		case 0x1405: return setValueV1uiArray; // UINT
+		case 0x8dc6: return setValueV2uiArray; // _VEC2
+		case 0x8dc7: return setValueV3uiArray; // _VEC3
+		case 0x8dc8: return setValueV4uiArray; // _VEC4
 
 		case 0x8b5e: // SAMPLER_2D
 		case 0x8d66: // SAMPLER_EXTERNAL_OES
@@ -19886,6 +22268,7 @@ function WebGLProgram( renderer, cacheKey, parameters, bindingStates ) {
 
 			parameters.vertexTangents ? '#define USE_TANGENT' : '',
 			parameters.vertexColors ? '#define USE_COLOR' : '',
+			parameters.vertexAlphas ? '#define USE_COLOR_ALPHA' : '',
 			parameters.vertexUvs ? '#define USE_UV' : '',
 			parameters.uvsVertexOnly ? '#define UVS_VERTEX_ONLY' : '',
 
@@ -19937,7 +22320,11 @@ function WebGLProgram( renderer, cacheKey, parameters, bindingStates ) {
 
 			'#endif',
 
-			'#ifdef USE_COLOR',
+			'#if defined( USE_COLOR_ALPHA )',
+
+			'	attribute vec4 color;',
+
+			'#elif defined( USE_COLOR )',
 
 			'	attribute vec3 color;',
 
@@ -20022,6 +22409,7 @@ function WebGLProgram( renderer, cacheKey, parameters, bindingStates ) {
 
 			parameters.vertexTangents ? '#define USE_TANGENT' : '',
 			parameters.vertexColors || parameters.instancingColor ? '#define USE_COLOR' : '',
+			parameters.vertexAlphas ? '#define USE_COLOR_ALPHA' : '',
 			parameters.vertexUvs ? '#define USE_UV' : '',
 			parameters.uvsVertexOnly ? '#define UVS_VERTEX_ONLY' : '',
 
@@ -20296,10 +22684,9 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 		'map', 'mapEncoding', 'matcap', 'matcapEncoding', 'envMap', 'envMapMode', 'envMapEncoding', 'envMapCubeUV',
 		'lightMap', 'lightMapEncoding', 'aoMap', 'emissiveMap', 'emissiveMapEncoding', 'bumpMap', 'normalMap', 'objectSpaceNormalMap', 'tangentSpaceNormalMap', 'clearcoatMap', 'clearcoatRoughnessMap', 'clearcoatNormalMap', 'displacementMap', 'specularMap',
 		'roughnessMap', 'metalnessMap', 'gradientMap',
-		'alphaMap', 'combine', 'vertexColors', 'vertexTangents', 'vertexUvs', 'uvsVertexOnly', 'fog', 'useFog', 'fogExp2',
+		'alphaMap', 'combine', 'vertexColors', 'vertexAlphas', 'vertexTangents', 'vertexUvs', 'uvsVertexOnly', 'fog', 'useFog', 'fogExp2',
 		'flatShading', 'sizeAttenuation', 'logarithmicDepthBuffer', 'skinning',
-		'maxBones', 'useVertexTexture', 'morphTargets', 'morphNormals',
-		'maxMorphTargets', 'maxMorphNormals', 'premultipliedAlpha',
+		'maxBones', 'useVertexTexture', 'morphTargets', 'morphNormals', 'premultipliedAlpha',
 		'numDirLights', 'numPointLights', 'numSpotLights', 'numHemiLights', 'numRectAreaLights',
 		'numDirLightShadows', 'numPointLightShadows', 'numSpotLightShadows',
 		'shadowMapEnabled', 'shadowMapType', 'toneMapping', 'physicallyCorrectLights',
@@ -20467,6 +22854,7 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 
 			vertexTangents: ( material.normalMap && material.vertexTangents ),
 			vertexColors: material.vertexColors,
+			vertexAlphas: material.vertexColors === true && object.geometry.attributes.color && object.geometry.attributes.color.itemSize === 4,
 			vertexUvs: !! material.map || !! material.bumpMap || !! material.normalMap || !! material.specularMap || !! material.alphaMap || !! material.emissiveMap || !! material.roughnessMap || !! material.metalnessMap || !! material.clearcoatMap || !! material.clearcoatRoughnessMap || !! material.clearcoatNormalMap || !! material.displacementMap || !! material.transmissionMap,
 			uvsVertexOnly: ! ( !! material.map || !! material.bumpMap || !! material.normalMap || !! material.specularMap || !! material.alphaMap || !! material.emissiveMap || !! material.roughnessMap || !! material.metalnessMap || !! material.clearcoatNormalMap || !! material.transmissionMap ) && !! material.displacementMap,
 
@@ -20485,8 +22873,6 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 
 			morphTargets: material.morphTargets,
 			morphNormals: material.morphNormals,
-			maxMorphTargets: renderer.maxMorphTargets,
-			maxMorphNormals: renderer.maxMorphNormals,
 
 			numDirLights: lights.directional.length,
 			numPointLights: lights.point.length,
@@ -21722,7 +24108,7 @@ var vsm_frag = "uniform sampler2D shadow_pass;\nuniform vec2 resolution;\nunifor
 
 var vsm_vert = "void main() {\n\tgl_Position = vec4( position, 1.0 );\n}";
 
-function WebGLShadowMap( _renderer, _objects, maxTextureSize ) {
+function WebGLShadowMap( _renderer, _objects, _capabilities ) {
 
 	let _frustum = new Frustum();
 
@@ -21734,7 +24120,9 @@ function WebGLShadowMap( _renderer, _objects, maxTextureSize ) {
 		_depthMaterials = [],
 		_distanceMaterials = [],
 
-		_materialCache = {};
+		_materialCache = {},
+
+		_maxTextureSize = _capabilities.maxTextureSize;
 
 	const shadowSide = { 0: BackSide, 1: FrontSide, 2: DoubleSide };
 
@@ -21823,19 +24211,19 @@ function WebGLShadowMap( _renderer, _objects, maxTextureSize ) {
 
 			_viewportSize.copy( shadow.mapSize );
 
-			if ( _shadowMapSize.x > maxTextureSize || _shadowMapSize.y > maxTextureSize ) {
+			if ( _shadowMapSize.x > _maxTextureSize || _shadowMapSize.y > _maxTextureSize ) {
 
-				if ( _shadowMapSize.x > maxTextureSize ) {
+				if ( _shadowMapSize.x > _maxTextureSize ) {
 
-					_viewportSize.x = Math.floor( maxTextureSize / shadowFrameExtents.x );
+					_viewportSize.x = Math.floor( _maxTextureSize / shadowFrameExtents.x );
 					_shadowMapSize.x = _viewportSize.x * shadowFrameExtents.x;
 					shadow.mapSize.x = _viewportSize.x;
 
 				}
 
-				if ( _shadowMapSize.y > maxTextureSize ) {
+				if ( _shadowMapSize.y > _maxTextureSize ) {
 
-					_viewportSize.y = Math.floor( maxTextureSize / shadowFrameExtents.y );
+					_viewportSize.y = Math.floor( _maxTextureSize / shadowFrameExtents.y );
 					_shadowMapSize.y = _viewportSize.y * shadowFrameExtents.y;
 					shadow.mapSize.y = _viewportSize.y;
 
@@ -22469,6 +24857,9 @@ function WebGLState( gl, extensions, capabilities ) {
 
 	let enabledCapabilities = {};
 
+	let xrFramebuffer = null;
+	let currentBoundFramebuffers = {};
+
 	let currentProgram = null;
 
 	let currentBlendingEnabled = false;
@@ -22510,8 +24901,8 @@ function WebGLState( gl, extensions, capabilities ) {
 	let currentTextureSlot = null;
 	let currentBoundTextures = {};
 
-	const currentScissor = new Vector4();
-	const currentViewport = new Vector4();
+	const currentScissor = new Vector4( 0, 0, gl.canvas.width, gl.canvas.height );
+	const currentViewport = new Vector4( 0, 0, gl.canvas.width, gl.canvas.height );
 
 	function createTexture( type, target, count ) {
 
@@ -22570,6 +24961,32 @@ function WebGLState( gl, extensions, capabilities ) {
 
 			gl.disable( id );
 			enabledCapabilities[ id ] = false;
+
+		}
+
+	}
+
+	function bindXRFramebuffer( framebuffer ) {
+
+		if ( framebuffer !== xrFramebuffer ) {
+
+			gl.bindFramebuffer( 36160, framebuffer );
+
+			xrFramebuffer = framebuffer;
+
+		}
+
+	}
+
+	function bindFramebuffer( target, framebuffer ) {
+
+		if ( framebuffer === null && xrFramebuffer !== null ) framebuffer = xrFramebuffer; // use active XR framebuffer if available
+
+		if ( currentBoundFramebuffers[ target ] !== framebuffer ) {
+
+			gl.bindFramebuffer( target, framebuffer );
+
+			currentBoundFramebuffers[ target ] = framebuffer;
 
 		}
 
@@ -22794,6 +25211,10 @@ function WebGLState( gl, extensions, capabilities ) {
 		}
 
 		setPolygonOffset( material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits );
+
+		material.alphaToCoverage === true
+			? enable( 32926 )
+			: disable( 32926 );
 
 	}
 
@@ -23038,6 +25459,7 @@ function WebGLState( gl, extensions, capabilities ) {
 		gl.disable( 32823 );
 		gl.disable( 3089 );
 		gl.disable( 2960 );
+		gl.disable( 32926 );
 
 		gl.blendEquation( 32774 );
 		gl.blendFunc( 1, 0 );
@@ -23062,6 +25484,15 @@ function WebGLState( gl, extensions, capabilities ) {
 
 		gl.activeTexture( 33984 );
 
+		gl.bindFramebuffer( 36160, null );
+
+		if ( isWebGL2 === true ) {
+
+			gl.bindFramebuffer( 36009, null );
+			gl.bindFramebuffer( 36008, null );
+
+		}
+
 		gl.useProgram( null );
 
 		gl.lineWidth( 1 );
@@ -23075,6 +25506,9 @@ function WebGLState( gl, extensions, capabilities ) {
 
 		currentTextureSlot = null;
 		currentBoundTextures = {};
+
+		xrFramebuffer = null;
+		currentBoundFramebuffers = {};
 
 		currentProgram = null;
 
@@ -23096,6 +25530,9 @@ function WebGLState( gl, extensions, capabilities ) {
 		currentPolygonOffsetFactor = null;
 		currentPolygonOffsetUnits = null;
 
+		currentScissor.set( 0, 0, gl.canvas.width, gl.canvas.height );
+		currentViewport.set( 0, 0, gl.canvas.width, gl.canvas.height );
+
 		colorBuffer.reset();
 		depthBuffer.reset();
 		stencilBuffer.reset();
@@ -23112,6 +25549,9 @@ function WebGLState( gl, extensions, capabilities ) {
 
 		enable: enable,
 		disable: disable,
+
+		bindFramebuffer: bindFramebuffer,
+		bindXRFramebuffer: bindXRFramebuffer,
 
 		useProgram: useProgram,
 
@@ -23992,9 +26432,9 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 		}
 
-		_gl.bindFramebuffer( 36160, framebuffer );
+		state.bindFramebuffer( 36160, framebuffer );
 		_gl.framebufferTexture2D( 36160, attachment, textureTarget, properties.get( texture ).__webglTexture, 0 );
-		_gl.bindFramebuffer( 36160, null );
+		state.bindFramebuffer( 36160, null );
 
 	}
 
@@ -24086,7 +26526,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 		const isCube = ( renderTarget && renderTarget.isWebGLCubeRenderTarget );
 		if ( isCube ) throw new Error( 'Depth Texture with cube render targets is not supported' );
 
-		_gl.bindFramebuffer( 36160, framebuffer );
+		state.bindFramebuffer( 36160, framebuffer );
 
 		if ( ! ( renderTarget.depthTexture && renderTarget.depthTexture.isDepthTexture ) ) {
 
@@ -24146,7 +26586,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 				for ( let i = 0; i < 6; i ++ ) {
 
-					_gl.bindFramebuffer( 36160, renderTargetProperties.__webglFramebuffer[ i ] );
+					state.bindFramebuffer( 36160, renderTargetProperties.__webglFramebuffer[ i ] );
 					renderTargetProperties.__webglDepthbuffer[ i ] = _gl.createRenderbuffer();
 					setupRenderBufferStorage( renderTargetProperties.__webglDepthbuffer[ i ], renderTarget, false );
 
@@ -24154,7 +26594,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 			} else {
 
-				_gl.bindFramebuffer( 36160, renderTargetProperties.__webglFramebuffer );
+				state.bindFramebuffer( 36160, renderTargetProperties.__webglFramebuffer );
 				renderTargetProperties.__webglDepthbuffer = _gl.createRenderbuffer();
 				setupRenderBufferStorage( renderTargetProperties.__webglDepthbuffer, renderTarget, false );
 
@@ -24162,7 +26602,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 		}
 
-		_gl.bindFramebuffer( 36160, null );
+		state.bindFramebuffer( 36160, null );
 
 	}
 
@@ -24177,6 +26617,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 		renderTarget.addEventListener( 'dispose', onRenderTargetDispose );
 
 		textureProperties.__webglTexture = _gl.createTexture();
+		textureProperties.__version = texture.version;
 
 		info.memory.textures ++;
 
@@ -24226,7 +26667,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 					const samples = getRenderTargetSamples( renderTarget );
 					_gl.renderbufferStorageMultisample( 36161, samples, glInternalFormat, renderTarget.width, renderTarget.height );
 
-					_gl.bindFramebuffer( 36160, renderTargetProperties.__webglMultisampledFramebuffer );
+					state.bindFramebuffer( 36160, renderTargetProperties.__webglMultisampledFramebuffer );
 					_gl.framebufferRenderbuffer( 36160, 36064, 36161, renderTargetProperties.__webglColorRenderbuffer );
 					_gl.bindRenderbuffer( 36161, null );
 
@@ -24237,7 +26678,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 					}
 
-					_gl.bindFramebuffer( 36160, null );
+					state.bindFramebuffer( 36160, null );
 
 
 				} else {
@@ -24343,8 +26784,8 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 				const renderTargetProperties = properties.get( renderTarget );
 
-				_gl.bindFramebuffer( 36008, renderTargetProperties.__webglMultisampledFramebuffer );
-				_gl.bindFramebuffer( 36009, renderTargetProperties.__webglFramebuffer );
+				state.bindFramebuffer( 36008, renderTargetProperties.__webglMultisampledFramebuffer );
+				state.bindFramebuffer( 36009, renderTargetProperties.__webglFramebuffer );
 
 				const width = renderTarget.width;
 				const height = renderTarget.height;
@@ -24355,7 +26796,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 				_gl.blitFramebuffer( 0, 0, width, height, 0, 0, width, height, mask, 9728 );
 
-				_gl.bindFramebuffer( 36160, renderTargetProperties.__webglMultisampledFramebuffer ); // see #18905
+				state.bindFramebuffer( 36160, renderTargetProperties.__webglMultisampledFramebuffer ); // see #18905
 
 			} else {
 
@@ -24644,21 +27085,19 @@ function WebGLUtils( gl, extensions, capabilities ) {
 
 }
 
-function ArrayCamera( array = [] ) {
+class ArrayCamera extends PerspectiveCamera {
 
-	PerspectiveCamera.call( this );
+	constructor( array = [] ) {
 
-	this.cameras = array;
+		super();
+
+		this.cameras = array;
+
+	}
 
 }
 
-ArrayCamera.prototype = Object.assign( Object.create( PerspectiveCamera.prototype ), {
-
-	constructor: ArrayCamera,
-
-	isArrayCamera: true
-
-} );
+ArrayCamera.prototype.isArrayCamera = true;
 
 class Group extends Object3D {
 
@@ -24793,6 +27232,19 @@ Object.assign( WebXRController.prototype, {
 
 		if ( inputSource && frame.session.visibilityState !== 'visible-blurred' ) {
 
+			if ( targetRay !== null ) {
+
+				inputPose = frame.getPose( inputSource.targetRaySpace, referenceSpace );
+
+				if ( inputPose !== null ) {
+
+					targetRay.matrix.fromArray( inputPose.transform.matrix );
+					targetRay.matrix.decompose( targetRay.position, targetRay.rotation, targetRay.scale );
+
+				}
+
+			}
+
 			if ( hand && inputSource.hand ) {
 
 				handPose = true;
@@ -24860,19 +27312,6 @@ Object.assign( WebXRController.prototype, {
 
 			} else {
 
-				if ( targetRay !== null ) {
-
-					inputPose = frame.getPose( inputSource.targetRaySpace, referenceSpace );
-
-					if ( inputPose !== null ) {
-
-						targetRay.matrix.fromArray( inputPose.transform.matrix );
-						targetRay.matrix.decompose( targetRay.position, targetRay.rotation, targetRay.scale );
-
-					}
-
-				}
-
 				if ( grip !== null && inputSource.gripSpace ) {
 
 					gripPose = frame.getPose( inputSource.gripSpace, referenceSpace );
@@ -24917,6 +27356,7 @@ Object.assign( WebXRController.prototype, {
 function WebXRManager( renderer, gl ) {
 
 	const scope = this;
+	const state = renderer.state;
 
 	let session = null;
 
@@ -25027,10 +27467,13 @@ function WebXRManager( renderer, gl ) {
 		_currentDepthNear = null;
 		_currentDepthFar = null;
 
+		// restore framebuffer/rendering state
+
+		state.bindXRFramebuffer( null );
+		renderer.setRenderTarget( renderer.getRenderTarget() );
+
 		//
 
-		renderer.setFramebuffer( null );
-		renderer.setRenderTarget( renderer.getRenderTarget() ); // Hack #15830
 		animation.stop();
 
 		scope.isPresenting = false;
@@ -25320,7 +27763,7 @@ function WebXRManager( renderer, gl ) {
 			const views = pose.views;
 			const baseLayer = session.renderState.baseLayer;
 
-			renderer.setFramebuffer( baseLayer.framebuffer );
+			state.bindXRFramebuffer( baseLayer.framebuffer );
 
 			let cameraVRNeedsUpdate = false;
 
@@ -26163,11 +28606,6 @@ function WebGLRenderer( parameters ) {
 	this.toneMapping = NoToneMapping;
 	this.toneMappingExposure = 1.0;
 
-	// morphs
-
-	this.maxMorphTargets = 8;
-	this.maxMorphNormals = 4;
-
 	// internal properties
 
 	const _this = this;
@@ -26176,12 +28614,9 @@ function WebGLRenderer( parameters ) {
 
 	// internal state cache
 
-	let _framebuffer = null;
-
 	let _currentActiveCubeFace = 0;
 	let _currentActiveMipmapLevel = 0;
 	let _currentRenderTarget = null;
-	let _currentFramebuffer = null;
 	let _currentMaterialId = - 1;
 
 	let _currentCamera = null;
@@ -26311,7 +28746,7 @@ function WebGLRenderer( parameters ) {
 
 	let extensions, capabilities, state, info;
 	let properties, textures, cubemaps, attributes, geometries, objects;
-	let programCache, materials, renderLists, renderStates, clipping;
+	let programCache, materials, renderLists, renderStates, clipping, shadowMap;
 
 	let background, morphtargets, bufferRenderer, indexedBufferRenderer;
 
@@ -26328,8 +28763,6 @@ function WebGLRenderer( parameters ) {
 		utils = new WebGLUtils( _gl, extensions, capabilities );
 
 		state = new WebGLState( _gl, extensions, capabilities );
-		state.scissor( _currentScissor.copy( _scissor ).multiplyScalar( _pixelRatio ).floor() );
-		state.viewport( _currentViewport.copy( _viewport ).multiplyScalar( _pixelRatio ).floor() );
 
 		info = new WebGLInfo( _gl );
 		properties = new WebGLProperties();
@@ -26346,6 +28779,7 @@ function WebGLRenderer( parameters ) {
 		renderLists = new WebGLRenderLists( properties );
 		renderStates = new WebGLRenderStates( extensions, capabilities );
 		background = new WebGLBackground( _this, cubemaps, state, objects, _premultipliedAlpha );
+		shadowMap = new WebGLShadowMap( _this, objects, capabilities );
 
 		bufferRenderer = new WebGLBufferRenderer( _gl, extensions, info, capabilities );
 		indexedBufferRenderer = new WebGLIndexedBufferRenderer( _gl, extensions, info, capabilities );
@@ -26356,6 +28790,7 @@ function WebGLRenderer( parameters ) {
 		_this.extensions = extensions;
 		_this.properties = properties;
 		_this.renderLists = renderLists;
+		_this.shadowMap = shadowMap;
 		_this.state = state;
 		_this.info = info;
 
@@ -26368,12 +28803,6 @@ function WebGLRenderer( parameters ) {
 	const xr = new WebXRManager( _this, _gl );
 
 	this.xr = xr;
-
-	// shadow map
-
-	const shadowMap = new WebGLShadowMap( _this, objects, capabilities.maxTextureSize );
-
-	this.shadowMap = shadowMap;
 
 	// API
 
@@ -26649,6 +29078,9 @@ function WebGLRenderer( parameters ) {
 
 		xr.dispose();
 
+		xr.removeEventListener( 'sessionstart', onXRSessionStart );
+		xr.removeEventListener( 'sessionend', onXRSessionEnd );
+
 		animation.stop();
 
 	};
@@ -26671,7 +29103,19 @@ function WebGLRenderer( parameters ) {
 
 		_isContextLost = false;
 
+		const infoAutoReset = info.autoReset;
+		const shadowMapEnabled = shadowMap.enabled;
+		const shadowMapAutoUpdate = shadowMap.autoUpdate;
+		const shadowMapNeedsUpdate = shadowMap.needsUpdate;
+		const shadowMapType = shadowMap.type;
+
 		initGLContext();
+
+		info.autoReset = infoAutoReset;
+		shadowMap.enabled = shadowMapEnabled;
+		shadowMap.autoUpdate = shadowMapAutoUpdate;
+		shadowMap.needsUpdate = shadowMapNeedsUpdate;
+		shadowMap.type = shadowMapType;
 
 	}
 
@@ -26689,20 +29133,24 @@ function WebGLRenderer( parameters ) {
 
 	function deallocateMaterial( material ) {
 
-		releaseMaterialProgramReference( material );
+		releaseMaterialProgramReferences( material );
 
 		properties.remove( material );
 
 	}
 
 
-	function releaseMaterialProgramReference( material ) {
+	function releaseMaterialProgramReferences( material ) {
 
-		const programInfo = properties.get( material ).program;
+		const programs = properties.get( material ).programs;
 
-		if ( programInfo !== undefined ) {
+		if ( programs !== undefined ) {
 
-			programCache.releaseProgram( programInfo );
+			programs.forEach( function ( program ) {
+
+				programCache.releaseProgram( program );
+
+			} );
 
 		}
 
@@ -26946,8 +29394,6 @@ function WebGLRenderer( parameters ) {
 
 		currentRenderState.setupLights();
 
-		const compiled = new WeakMap();
-
 		scene.traverse( function ( object ) {
 
 			const material = object.material;
@@ -26960,19 +29406,13 @@ function WebGLRenderer( parameters ) {
 
 						const material2 = material[ i ];
 
-						if ( compiled.has( material2 ) === false ) {
-
-							initMaterial( material2, scene, object );
-							compiled.set( material2 );
-
-						}
+						getProgram( material2, scene, object );
 
 					}
 
-				} else if ( compiled.has( material ) === false ) {
+				} else {
 
-					initMaterial( material, scene, object );
-					compiled.set( material );
+					getProgram( material, scene, object );
 
 				}
 
@@ -26988,8 +29428,19 @@ function WebGLRenderer( parameters ) {
 
 	function onAnimationFrame( time ) {
 
-		if ( xr.isPresenting ) return;
 		if ( onAnimationFrameCallback ) onAnimationFrameCallback( time );
+
+	}
+
+	function onXRSessionStart() {
+
+		animation.stop();
+
+	}
+
+	function onXRSessionEnd() {
+
+		animation.start();
 
 	}
 
@@ -27006,6 +29457,9 @@ function WebGLRenderer( parameters ) {
 		( callback === null ) ? animation.stop() : animation.start();
 
 	};
+
+	xr.addEventListener( 'sessionstart', onXRSessionStart );
+	xr.addEventListener( 'sessionend', onXRSessionEnd );
 
 	// Rendering
 
@@ -27035,12 +29489,6 @@ function WebGLRenderer( parameters ) {
 		}
 
 		if ( _isContextLost === true ) return;
-
-		// reset caching for this frame
-
-		bindingStates.resetDefaultState();
-		_currentMaterialId = - 1;
-		_currentCamera = null;
 
 		// update scene graph
 
@@ -27122,10 +29570,6 @@ function WebGLRenderer( parameters ) {
 
 		//
 
-		if ( scene.isScene === true ) scene.onAfterRender( _this, scene, camera );
-
-		//
-
 		if ( _currentRenderTarget !== null ) {
 
 			// Generate mipmap if we're using any kind of mipmap filtering
@@ -27138,6 +29582,10 @@ function WebGLRenderer( parameters ) {
 
 		}
 
+		//
+
+		if ( scene.isScene === true ) scene.onAfterRender( _this, scene, camera );
+
 		// Ensure depth buffer writing is enabled so it can be cleared on next render
 
 		state.buffers.depth.setTest( true );
@@ -27147,6 +29595,10 @@ function WebGLRenderer( parameters ) {
 		state.setPolygonOffset( false );
 
 		// _gl.finish();
+
+		bindingStates.resetDefaultState();
+		_currentMaterialId = - 1;
+		_currentCamera = null;
 
 		renderStateStack.pop();
 
@@ -27369,7 +29821,7 @@ function WebGLRenderer( parameters ) {
 
 	}
 
-	function initMaterial( material, scene, object ) {
+	function getProgram( material, scene, object ) {
 
 		if ( scene.isScene !== true ) scene = _emptyScene; // scene could be a Mesh, Line, Points, ...
 
@@ -27383,66 +29835,61 @@ function WebGLRenderer( parameters ) {
 		const parameters = programCache.getParameters( material, lights.state, shadowsArray, scene, object );
 		const programCacheKey = programCache.getProgramCacheKey( parameters );
 
-		let program = materialProperties.program;
-		let programChange = true;
+		let programs = materialProperties.programs;
 
-		// always update environment and fog - changing these trigger an initMaterial call, but it's possible that the program doesn't change
+		// always update environment and fog - changing these trigger an getProgram call, but it's possible that the program doesn't change
 
 		materialProperties.environment = material.isMeshStandardMaterial ? scene.environment : null;
 		materialProperties.fog = scene.fog;
 		materialProperties.envMap = cubemaps.get( material.envMap || materialProperties.environment );
 
-		if ( program === undefined ) {
+		if ( programs === undefined ) {
 
 			// new material
+
 			material.addEventListener( 'dispose', onMaterialDispose );
 
-		} else if ( program.cacheKey !== programCacheKey ) {
-
-			// changed glsl or parameters
-			releaseMaterialProgramReference( material );
-
-		} else if ( materialProperties.lightsStateVersion !== lightsStateVersion ) {
-
-			programChange = false;
-
-		} else if ( parameters.shaderID !== undefined ) {
-
-			// same glsl and uniform list
-			return;
-
-		} else {
-
-			// only rebuild uniform list
-			programChange = false;
+			programs = new Map();
+			materialProperties.programs = programs;
 
 		}
 
-		if ( programChange ) {
+		let program = programs.get( programCacheKey );
+
+		if ( program !== undefined ) {
+
+			// early out if program and light state is identical
+
+			if ( materialProperties.currentProgram === program && materialProperties.lightsStateVersion === lightsStateVersion ) {
+
+				updateCommonMaterialProperties( material, parameters );
+
+				return program;
+
+			}
+
+		} else {
 
 			parameters.uniforms = programCache.getUniforms( material );
 
 			material.onBeforeCompile( parameters, _this );
 
 			program = programCache.acquireProgram( parameters, programCacheKey );
+			programs.set( programCacheKey, program );
 
-			materialProperties.program = program;
 			materialProperties.uniforms = parameters.uniforms;
-			materialProperties.outputEncoding = parameters.outputEncoding;
 
 		}
 
 		const uniforms = materialProperties.uniforms;
 
-		if ( ! material.isShaderMaterial &&
-			! material.isRawShaderMaterial ||
-			material.clipping === true ) {
+		if ( ( ! material.isShaderMaterial && ! material.isRawShaderMaterial ) || material.clipping === true ) {
 
-			materialProperties.numClippingPlanes = clipping.numPlanes;
-			materialProperties.numIntersection = clipping.numIntersection;
 			uniforms.clippingPlanes = clipping.uniform;
 
 		}
+
+		updateCommonMaterialProperties( material, parameters );
 
 		// store the light setup it was created for
 
@@ -27476,10 +29923,25 @@ function WebGLRenderer( parameters ) {
 
 		}
 
-		const progUniforms = materialProperties.program.getUniforms();
+		const progUniforms = program.getUniforms();
 		const uniformsList = WebGLUniforms.seqWithValue( progUniforms.seq, uniforms );
 
+		materialProperties.currentProgram = program;
 		materialProperties.uniformsList = uniformsList;
+
+		return program;
+
+	}
+
+	function updateCommonMaterialProperties( material, parameters ) {
+
+		const materialProperties = properties.get( material );
+
+		materialProperties.outputEncoding = parameters.outputEncoding;
+		materialProperties.instancing = parameters.instancing;
+		materialProperties.numClippingPlanes = parameters.numClippingPlanes;
+		materialProperties.numIntersection = parameters.numClipIntersection;
+		materialProperties.vertexAlphas = parameters.vertexAlphas;
 
 	}
 
@@ -27493,6 +29955,7 @@ function WebGLRenderer( parameters ) {
 		const environment = material.isMeshStandardMaterial ? scene.environment : null;
 		const encoding = ( _currentRenderTarget === null ) ? _this.outputEncoding : _currentRenderTarget.texture.encoding;
 		const envMap = cubemaps.get( material.envMap || environment );
+		const vertexAlphas = material.vertexColors === true && object.geometry.attributes.color && object.geometry.attributes.color.itemSize === 4;
 
 		const materialProperties = properties.get( material );
 		const lights = currentRenderState.state.lights;
@@ -27514,40 +29977,62 @@ function WebGLRenderer( parameters ) {
 
 		}
 
+		//
+
+		let needsProgramChange = false;
+
 		if ( material.version === materialProperties.__version ) {
 
-			if ( material.fog && materialProperties.fog !== fog ) {
+			if ( materialProperties.needsLights && ( materialProperties.lightsStateVersion !== lights.state.version ) ) {
 
-				initMaterial( material, scene, object );
+				needsProgramChange = true;
 
-			} else if ( materialProperties.environment !== environment ) {
+			} else if ( materialProperties.outputEncoding !== encoding ) {
 
-				initMaterial( material, scene, object );
+				needsProgramChange = true;
 
-			} else if ( materialProperties.needsLights && ( materialProperties.lightsStateVersion !== lights.state.version ) ) {
+			} else if ( object.isInstancedMesh && materialProperties.instancing === false ) {
 
-				initMaterial( material, scene, object );
+				needsProgramChange = true;
+
+			} else if ( ! object.isInstancedMesh && materialProperties.instancing === true ) {
+
+				needsProgramChange = true;
+
+			} else if ( materialProperties.envMap !== envMap ) {
+
+				needsProgramChange = true;
+
+			} else if ( material.fog && materialProperties.fog !== fog ) {
+
+				needsProgramChange = true;
 
 			} else if ( materialProperties.numClippingPlanes !== undefined &&
 				( materialProperties.numClippingPlanes !== clipping.numPlanes ||
 				materialProperties.numIntersection !== clipping.numIntersection ) ) {
 
-				initMaterial( material, scene, object );
+				needsProgramChange = true;
 
-			} else if ( materialProperties.outputEncoding !== encoding ) {
+			} else if ( materialProperties.vertexAlphas !== vertexAlphas ) {
 
-				initMaterial( material, scene, object );
-
-			} else if ( materialProperties.envMap !== envMap ) {
-
-				initMaterial( material, scene, object );
+				needsProgramChange = true;
 
 			}
 
 		} else {
 
-			initMaterial( material, scene, object );
+			needsProgramChange = true;
 			materialProperties.__version = material.version;
+
+		}
+
+		//
+
+		let program = materialProperties.currentProgram;
+
+		if ( needsProgramChange === true ) {
+
+			program = getProgram( material, scene, object );
 
 		}
 
@@ -27555,8 +30040,7 @@ function WebGLRenderer( parameters ) {
 		let refreshMaterial = false;
 		let refreshLights = false;
 
-		const program = materialProperties.program,
-			p_uniforms = program.getUniforms(),
+		const p_uniforms = program.getUniforms(),
 			m_uniforms = materialProperties.uniforms;
 
 		if ( state.useProgram( program.program ) ) {
@@ -27789,15 +30273,6 @@ function WebGLRenderer( parameters ) {
 
 	}
 
-	//
-	this.setFramebuffer = function ( value ) {
-
-		if ( _framebuffer !== value && _currentRenderTarget === null ) _gl.bindFramebuffer( 36160, value );
-
-		_framebuffer = value;
-
-	};
-
 	this.getActiveCubeFace = function () {
 
 		return _currentActiveCubeFace;
@@ -27828,7 +30303,7 @@ function WebGLRenderer( parameters ) {
 
 		}
 
-		let framebuffer = _framebuffer;
+		let framebuffer = null;
 		let isCube = false;
 		let isRenderTarget3D = false;
 
@@ -27871,12 +30346,7 @@ function WebGLRenderer( parameters ) {
 
 		}
 
-		if ( _currentFramebuffer !== framebuffer ) {
-
-			_gl.bindFramebuffer( 36160, framebuffer );
-			_currentFramebuffer = framebuffer;
-
-		}
+		state.bindFramebuffer( 36160, framebuffer );
 
 		state.viewport( _currentViewport );
 		state.scissor( _currentScissor );
@@ -27916,15 +30386,7 @@ function WebGLRenderer( parameters ) {
 
 		if ( framebuffer ) {
 
-			let restore = false;
-
-			if ( framebuffer !== _currentFramebuffer ) {
-
-				_gl.bindFramebuffer( 36160, framebuffer );
-
-				restore = true;
-
-			}
+			state.bindFramebuffer( 36160, framebuffer );
 
 			try {
 
@@ -27968,11 +30430,10 @@ function WebGLRenderer( parameters ) {
 
 			} finally {
 
-				if ( restore ) {
+				// restore framebuffer of current render target if necessary
 
-					_gl.bindFramebuffer( 36160, _currentFramebuffer );
-
-				}
+				const framebuffer = ( _currentRenderTarget !== null ) ? properties.get( _currentRenderTarget ).__webglFramebuffer : null;
+				state.bindFramebuffer( 36160, framebuffer );
 
 			}
 
@@ -28119,6 +30580,10 @@ function WebGLRenderer( parameters ) {
 
 	this.resetState = function () {
 
+		_currentActiveCubeFace = 0;
+		_currentActiveMipmapLevel = 0;
+		_currentRenderTarget = null;
+
 		state.reset();
 		bindingStates.reset();
 
@@ -28138,12 +30603,12 @@ WebGL1Renderer.prototype.isWebGL1Renderer = true;
 
 class FogExp2 {
 
-	constructor( color, density ) {
+	constructor( color, density = 0.00025 ) {
 
 		this.name = '';
 
 		this.color = new Color( color );
-		this.density = ( density !== undefined ) ? density : 0.00025;
+		this.density = density;
 
 	}
 
@@ -28169,14 +30634,14 @@ FogExp2.prototype.isFogExp2 = true;
 
 class Fog {
 
-	constructor( color, near, far ) {
+	constructor( color, near = 1, far = 1000 ) {
 
 		this.name = '';
 
 		this.color = new Color( color );
 
-		this.near = ( near !== undefined ) ? near : 1;
-		this.far = ( far !== undefined ) ? far : 1000;
+		this.near = near;
+		this.far = far;
 
 	}
 
@@ -28473,6 +30938,42 @@ Object.assign( InterleavedBufferAttribute.prototype, {
 
 	},
 
+	applyNormalMatrix: function ( m ) {
+
+		for ( let i = 0, l = this.count; i < l; i ++ ) {
+
+			_vector$6.x = this.getX( i );
+			_vector$6.y = this.getY( i );
+			_vector$6.z = this.getZ( i );
+
+			_vector$6.applyNormalMatrix( m );
+
+			this.setXYZ( i, _vector$6.x, _vector$6.y, _vector$6.z );
+
+		}
+
+		return this;
+
+	},
+
+	transformDirection: function ( m ) {
+
+		for ( let i = 0, l = this.count; i < l; i ++ ) {
+
+			_vector$6.x = this.getX( i );
+			_vector$6.y = this.getY( i );
+			_vector$6.z = this.getZ( i );
+
+			_vector$6.transformDirection( m );
+
+			this.setXYZ( i, _vector$6.x, _vector$6.y, _vector$6.z );
+
+		}
+
+		return this;
+
+	},
+
 	setX: function ( index, x ) {
 
 		this.data.array[ index * this.data.stride + this.offset ] = x;
@@ -28732,13 +31233,13 @@ const _alignedPosition = /*@__PURE__*/ new Vector2();
 const _rotatedPosition = /*@__PURE__*/ new Vector2();
 const _viewWorldMatrix = /*@__PURE__*/ new Matrix4();
 
-const _vA$1 = /*@__PURE__*/ new Vector3();
-const _vB$1 = /*@__PURE__*/ new Vector3();
-const _vC$1 = /*@__PURE__*/ new Vector3();
+const _vA = /*@__PURE__*/ new Vector3();
+const _vB = /*@__PURE__*/ new Vector3();
+const _vC = /*@__PURE__*/ new Vector3();
 
-const _uvA$1 = /*@__PURE__*/ new Vector2();
-const _uvB$1 = /*@__PURE__*/ new Vector2();
-const _uvC$1 = /*@__PURE__*/ new Vector2();
+const _uvA = /*@__PURE__*/ new Vector2();
+const _uvB = /*@__PURE__*/ new Vector2();
+const _uvC = /*@__PURE__*/ new Vector2();
 
 class Sprite extends Object3D {
 
@@ -28807,24 +31308,24 @@ class Sprite extends Object3D {
 
 		const center = this.center;
 
-		transformVertex( _vA$1.set( - 0.5, - 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
-		transformVertex( _vB$1.set( 0.5, - 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
-		transformVertex( _vC$1.set( 0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+		transformVertex( _vA.set( - 0.5, - 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+		transformVertex( _vB.set( 0.5, - 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+		transformVertex( _vC.set( 0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
 
-		_uvA$1.set( 0, 0 );
-		_uvB$1.set( 1, 0 );
-		_uvC$1.set( 1, 1 );
+		_uvA.set( 0, 0 );
+		_uvB.set( 1, 0 );
+		_uvC.set( 1, 1 );
 
 		// check first triangle
-		let intersect = raycaster.ray.intersectTriangle( _vA$1, _vB$1, _vC$1, false, _intersectPoint );
+		let intersect = raycaster.ray.intersectTriangle( _vA, _vB, _vC, false, _intersectPoint );
 
 		if ( intersect === null ) {
 
 			// check second triangle
-			transformVertex( _vB$1.set( - 0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
-			_uvB$1.set( 0, 1 );
+			transformVertex( _vB.set( - 0.5, 0.5, 0 ), _mvPosition, center, _worldScale, sin, cos );
+			_uvB.set( 0, 1 );
 
-			intersect = raycaster.ray.intersectTriangle( _vA$1, _vC$1, _vB$1, false, _intersectPoint );
+			intersect = raycaster.ray.intersectTriangle( _vA, _vC, _vB, false, _intersectPoint );
 			if ( intersect === null ) {
 
 				return;
@@ -28841,7 +31342,7 @@ class Sprite extends Object3D {
 
 			distance: distance,
 			point: _intersectPoint.clone(),
-			uv: Triangle.getUV( _intersectPoint, _vA$1, _vB$1, _vC$1, _uvA$1, _uvB$1, _uvC$1, new Vector2() ),
+			uv: Triangle.getUV( _intersectPoint, _vA, _vB, _vC, _uvA, _uvB, _uvC, new Vector2() ),
 			face: null,
 			object: this
 
@@ -28892,8 +31393,8 @@ function transformVertex( vertexPosition, mvPosition, center, scale, sin, cos ) 
 
 }
 
-const _v1$4 = /*@__PURE__*/ new Vector3();
-const _v2$2 = /*@__PURE__*/ new Vector3();
+const _v1$2 = /*@__PURE__*/ new Vector3();
+const _v2$1 = /*@__PURE__*/ new Vector3();
 
 class LOD extends Object3D {
 
@@ -29003,9 +31504,9 @@ class LOD extends Object3D {
 
 		if ( levels.length > 0 ) {
 
-			_v1$4.setFromMatrixPosition( this.matrixWorld );
+			_v1$2.setFromMatrixPosition( this.matrixWorld );
 
-			const distance = raycaster.ray.origin.distanceTo( _v1$4 );
+			const distance = raycaster.ray.origin.distanceTo( _v1$2 );
 
 			this.getObjectForDistance( distance ).raycast( raycaster, intersects );
 
@@ -29019,10 +31520,10 @@ class LOD extends Object3D {
 
 		if ( levels.length > 1 ) {
 
-			_v1$4.setFromMatrixPosition( camera.matrixWorld );
-			_v2$2.setFromMatrixPosition( this.matrixWorld );
+			_v1$2.setFromMatrixPosition( camera.matrixWorld );
+			_v2$1.setFromMatrixPosition( this.matrixWorld );
 
-			const distance = _v1$4.distanceTo( _v2$2 ) / camera.zoom;
+			const distance = _v1$2.distanceTo( _v2$1 ) / camera.zoom;
 
 			levels[ 0 ].object.visible = true;
 
@@ -29087,8 +31588,8 @@ const _basePosition = new Vector3();
 const _skinIndex = new Vector4();
 const _skinWeight = new Vector4();
 
-const _vector$7 = new Vector3();
-const _matrix$1 = new Matrix4();
+const _vector$5 = new Vector3();
+const _matrix = new Matrix4();
 
 function SkinnedMesh( geometry, material ) {
 
@@ -29218,9 +31719,9 @@ SkinnedMesh.prototype = Object.assign( Object.create( Mesh.prototype ), {
 
 				const boneIndex = _skinIndex.getComponent( i );
 
-				_matrix$1.multiplyMatrices( skeleton.bones[ boneIndex ].matrixWorld, skeleton.boneInverses[ boneIndex ] );
+				_matrix.multiplyMatrices( skeleton.bones[ boneIndex ].matrixWorld, skeleton.boneInverses[ boneIndex ] );
 
-				target.addScaledVector( _vector$7.copy( _basePosition ).applyMatrix4( _matrix$1 ), weight );
+				target.addScaledVector( _vector$5.copy( _basePosition ).applyMatrix4( _matrix ), weight );
 
 			}
 
@@ -29667,11 +32168,11 @@ class LineBasicMaterial extends Material {
 
 LineBasicMaterial.prototype.isLineBasicMaterial = true;
 
-const _start = new Vector3();
-const _end = new Vector3();
+const _start$1 = new Vector3();
+const _end$1 = new Vector3();
 const _inverseMatrix$1 = new Matrix4();
 const _ray$1 = new Ray();
-const _sphere$2 = new Sphere();
+const _sphere$1 = new Sphere();
 
 function Line( geometry = new BufferGeometry(), material = new LineBasicMaterial() ) {
 
@@ -29718,11 +32219,11 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 				for ( let i = 1, l = positionAttribute.count; i < l; i ++ ) {
 
-					_start.fromBufferAttribute( positionAttribute, i - 1 );
-					_end.fromBufferAttribute( positionAttribute, i );
+					_start$1.fromBufferAttribute( positionAttribute, i - 1 );
+					_end$1.fromBufferAttribute( positionAttribute, i );
 
 					lineDistances[ i ] = lineDistances[ i - 1 ];
-					lineDistances[ i ] += _start.distanceTo( _end );
+					lineDistances[ i ] += _start$1.distanceTo( _end$1 );
 
 				}
 
@@ -29749,16 +32250,17 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		const geometry = this.geometry;
 		const matrixWorld = this.matrixWorld;
 		const threshold = raycaster.params.Line.threshold;
+		const drawRange = geometry.drawRange;
 
 		// Checking boundingSphere distance to ray
 
 		if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-		_sphere$2.copy( geometry.boundingSphere );
-		_sphere$2.applyMatrix4( matrixWorld );
-		_sphere$2.radius += threshold;
+		_sphere$1.copy( geometry.boundingSphere );
+		_sphere$1.applyMatrix4( matrixWorld );
+		_sphere$1.radius += threshold;
 
-		if ( raycaster.ray.intersectsSphere( _sphere$2 ) === false ) return;
+		if ( raycaster.ray.intersectsSphere( _sphere$1 ) === false ) return;
 
 		//
 
@@ -29782,12 +32284,13 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 			if ( index !== null ) {
 
-				const indices = index.array;
+				const start = Math.max( 0, drawRange.start );
+				const end = Math.min( index.count, ( drawRange.start + drawRange.count ) );
 
-				for ( let i = 0, l = indices.length - 1; i < l; i += step ) {
+				for ( let i = start, l = end - 1; i < l; i += step ) {
 
-					const a = indices[ i ];
-					const b = indices[ i + 1 ];
+					const a = index.getX( i );
+					const b = index.getX( i + 1 );
 
 					vStart.fromBufferAttribute( positionAttribute, a );
 					vEnd.fromBufferAttribute( positionAttribute, b );
@@ -29819,7 +32322,10 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 			} else {
 
-				for ( let i = 0, l = positionAttribute.count - 1; i < l; i += step ) {
+				const start = Math.max( 0, drawRange.start );
+				const end = Math.min( positionAttribute.count, ( drawRange.start + drawRange.count ) );
+
+				for ( let i = start, l = end - 1; i < l; i += step ) {
 
 					vStart.fromBufferAttribute( positionAttribute, i );
 					vEnd.fromBufferAttribute( positionAttribute, i + 1 );
@@ -29906,8 +32412,8 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
-const _start$1 = new Vector3();
-const _end$1 = new Vector3();
+const _start = new Vector3();
+const _end = new Vector3();
 
 function LineSegments( geometry, material ) {
 
@@ -29938,11 +32444,11 @@ LineSegments.prototype = Object.assign( Object.create( Line.prototype ), {
 
 				for ( let i = 0, l = positionAttribute.count; i < l; i += 2 ) {
 
-					_start$1.fromBufferAttribute( positionAttribute, i );
-					_end$1.fromBufferAttribute( positionAttribute, i + 1 );
+					_start.fromBufferAttribute( positionAttribute, i );
+					_end.fromBufferAttribute( positionAttribute, i + 1 );
 
 					lineDistances[ i ] = ( i === 0 ) ? 0 : lineDistances[ i - 1 ];
-					lineDistances[ i + 1 ] = lineDistances[ i ] + _start$1.distanceTo( _end$1 );
+					lineDistances[ i + 1 ] = lineDistances[ i ] + _start.distanceTo( _end );
 
 				}
 
@@ -30040,10 +32546,10 @@ class PointsMaterial extends Material {
 
 PointsMaterial.prototype.isPointsMaterial = true;
 
-const _inverseMatrix$2 = new Matrix4();
-const _ray$2 = new Ray();
-const _sphere$3 = new Sphere();
-const _position$1 = new Vector3();
+const _inverseMatrix = new Matrix4();
+const _ray = new Ray();
+const _sphere = new Sphere();
+const _position$2 = new Vector3();
 
 function Points( geometry = new BufferGeometry(), material = new PointsMaterial() ) {
 
@@ -30080,21 +32586,22 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 		const geometry = this.geometry;
 		const matrixWorld = this.matrixWorld;
 		const threshold = raycaster.params.Points.threshold;
+		const drawRange = geometry.drawRange;
 
 		// Checking boundingSphere distance to ray
 
 		if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
-		_sphere$3.copy( geometry.boundingSphere );
-		_sphere$3.applyMatrix4( matrixWorld );
-		_sphere$3.radius += threshold;
+		_sphere.copy( geometry.boundingSphere );
+		_sphere.applyMatrix4( matrixWorld );
+		_sphere.radius += threshold;
 
-		if ( raycaster.ray.intersectsSphere( _sphere$3 ) === false ) return;
+		if ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;
 
 		//
 
-		_inverseMatrix$2.copy( matrixWorld ).invert();
-		_ray$2.copy( raycaster.ray ).applyMatrix4( _inverseMatrix$2 );
+		_inverseMatrix.copy( matrixWorld ).invert();
+		_ray.copy( raycaster.ray ).applyMatrix4( _inverseMatrix );
 
 		const localThreshold = threshold / ( ( this.scale.x + this.scale.y + this.scale.z ) / 3 );
 		const localThresholdSq = localThreshold * localThreshold;
@@ -30107,25 +32614,29 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 			if ( index !== null ) {
 
-				const indices = index.array;
+				const start = Math.max( 0, drawRange.start );
+				const end = Math.min( index.count, ( drawRange.start + drawRange.count ) );
 
-				for ( let i = 0, il = indices.length; i < il; i ++ ) {
+				for ( let i = start, il = end; i < il; i ++ ) {
 
-					const a = indices[ i ];
+					const a = index.getX( i );
 
-					_position$1.fromBufferAttribute( positionAttribute, a );
+					_position$2.fromBufferAttribute( positionAttribute, a );
 
-					testPoint( _position$1, a, localThresholdSq, matrixWorld, raycaster, intersects, this );
+					testPoint( _position$2, a, localThresholdSq, matrixWorld, raycaster, intersects, this );
 
 				}
 
 			} else {
 
-				for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
+				const start = Math.max( 0, drawRange.start );
+				const end = Math.min( positionAttribute.count, ( drawRange.start + drawRange.count ) );
 
-					_position$1.fromBufferAttribute( positionAttribute, i );
+				for ( let i = start, l = end; i < l; i ++ ) {
 
-					testPoint( _position$1, i, localThresholdSq, matrixWorld, raycaster, intersects, this );
+					_position$2.fromBufferAttribute( positionAttribute, i );
+
+					testPoint( _position$2, i, localThresholdSq, matrixWorld, raycaster, intersects, this );
 
 				}
 
@@ -30188,13 +32699,13 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 function testPoint( point, index, localThresholdSq, matrixWorld, raycaster, intersects, object ) {
 
-	const rayPointDistanceSq = _ray$2.distanceSqToPoint( point );
+	const rayPointDistanceSq = _ray.distanceSqToPoint( point );
 
 	if ( rayPointDistanceSq < localThresholdSq ) {
 
 		const intersectPoint = new Vector3();
 
-		_ray$2.closestPointToPoint( point, intersectPoint );
+		_ray.closestPointToPoint( point, intersectPoint );
 		intersectPoint.applyMatrix4( matrixWorld );
 
 		const distance = raycaster.ray.origin.distanceTo( intersectPoint );
@@ -31055,9 +33566,9 @@ class DodecahedronGeometry extends PolyhedronGeometry {
 
 }
 
-const _v0$2 = new Vector3();
-const _v1$5 = new Vector3();
-const _normal$1 = new Vector3();
+const _v0 = new Vector3();
+const _v1$1 = new Vector3();
+const _normal = new Vector3();
 const _triangle = new Triangle();
 
 class EdgesGeometry extends BufferGeometry {
@@ -31115,7 +33626,7 @@ class EdgesGeometry extends BufferGeometry {
 			a.fromBufferAttribute( positionAttr, indexArr[ 0 ] );
 			b.fromBufferAttribute( positionAttr, indexArr[ 1 ] );
 			c.fromBufferAttribute( positionAttr, indexArr[ 2 ] );
-			_triangle.getNormal( _normal$1 );
+			_triangle.getNormal( _normal );
 
 			// create hashes for the edge from the vertices
 			hashes[ 0 ] = `${ Math.round( a.x * precision ) },${ Math.round( a.y * precision ) },${ Math.round( a.z * precision ) }`;
@@ -31146,7 +33657,7 @@ class EdgesGeometry extends BufferGeometry {
 
 					// if we found a sibling edge add it into the vertex array if
 					// it meets the angle threshold and delete the edge from the map.
-					if ( _normal$1.dot( edgeData[ reverseHash ].normal ) <= thresholdDot ) {
+					if ( _normal.dot( edgeData[ reverseHash ].normal ) <= thresholdDot ) {
 
 						vertices.push( v0.x, v0.y, v0.z );
 						vertices.push( v1.x, v1.y, v1.z );
@@ -31162,7 +33673,7 @@ class EdgesGeometry extends BufferGeometry {
 
 						index0: indexArr[ j ],
 						index1: indexArr[ jNext ],
-						normal: _normal$1.clone(),
+						normal: _normal.clone(),
 
 					};
 
@@ -31178,11 +33689,11 @@ class EdgesGeometry extends BufferGeometry {
 			if ( edgeData[ key ] ) {
 
 				const { index0, index1 } = edgeData[ key ];
-				_v0$2.fromBufferAttribute( positionAttr, index0 );
-				_v1$5.fromBufferAttribute( positionAttr, index1 );
+				_v0.fromBufferAttribute( positionAttr, index0 );
+				_v1$1.fromBufferAttribute( positionAttr, index1 );
 
-				vertices.push( _v0$2.x, _v0$2.y, _v0$2.z );
-				vertices.push( _v1$5.x, _v1$5.y, _v1$5.z );
+				vertices.push( _v0.x, _v0.y, _v0.z );
+				vertices.push( _v1$1.x, _v1$1.y, _v1$1.z );
 
 			}
 
@@ -32760,7 +35271,7 @@ class ExtrudeGeometry extends BufferGeometry {
 		const shapes = this.parameters.shapes;
 		const options = this.parameters.options;
 
-		return toJSON( shapes, options, data );
+		return toJSON$1( shapes, options, data );
 
 	}
 
@@ -32824,7 +35335,7 @@ const WorldUVGenerator = {
 
 };
 
-function toJSON( shapes, options, data ) {
+function toJSON$1( shapes, options, data ) {
 
 	data.shapes = [];
 
@@ -33415,13 +35926,13 @@ class ShapeGeometry extends BufferGeometry {
 
 		const shapes = this.parameters.shapes;
 
-		return toJSON$1( shapes, data );
+		return toJSON( shapes, data );
 
 	}
 
 }
 
-function toJSON$1( shapes, data ) {
+function toJSON( shapes, data ) {
 
 	data.shapes = [];
 
@@ -38016,6 +40527,12 @@ DataTextureLoader.prototype = Object.assign( Object.create( Loader.prototype ), 
 
 			}
 
+			if ( texData.generateMipmaps !== undefined ) {
+
+				texture.generateMipmaps = texData.generateMipmaps;
+
+			}
+
 			texture.needsUpdate = true;
 
 			if ( onLoad ) onLoad( texture, texData );
@@ -40130,9 +42647,9 @@ class HemisphereLight extends Light {
 
 HemisphereLight.prototype.isHemisphereLight = true;
 
-const _projScreenMatrix = /*@__PURE__*/ new Matrix4();
-const _lightPositionWorld = /*@__PURE__*/ new Vector3();
-const _lookTarget = /*@__PURE__*/ new Vector3();
+const _projScreenMatrix$1 = /*@__PURE__*/ new Matrix4();
+const _lightPositionWorld$1 = /*@__PURE__*/ new Vector3();
+const _lookTarget$1 = /*@__PURE__*/ new Vector3();
 
 class LightShadow {
 
@@ -40183,15 +42700,15 @@ class LightShadow {
 		const shadowCamera = this.camera;
 		const shadowMatrix = this.matrix;
 
-		_lightPositionWorld.setFromMatrixPosition( light.matrixWorld );
-		shadowCamera.position.copy( _lightPositionWorld );
+		_lightPositionWorld$1.setFromMatrixPosition( light.matrixWorld );
+		shadowCamera.position.copy( _lightPositionWorld$1 );
 
-		_lookTarget.setFromMatrixPosition( light.target.matrixWorld );
-		shadowCamera.lookAt( _lookTarget );
+		_lookTarget$1.setFromMatrixPosition( light.target.matrixWorld );
+		shadowCamera.lookAt( _lookTarget$1 );
 		shadowCamera.updateMatrixWorld();
 
-		_projScreenMatrix.multiplyMatrices( shadowCamera.projectionMatrix, shadowCamera.matrixWorldInverse );
-		this._frustum.setFromProjectionMatrix( _projScreenMatrix );
+		_projScreenMatrix$1.multiplyMatrices( shadowCamera.projectionMatrix, shadowCamera.matrixWorldInverse );
+		this._frustum.setFromProjectionMatrix( _projScreenMatrix$1 );
 
 		shadowMatrix.set(
 			0.5, 0.0, 0.0, 0.5,
@@ -40285,6 +42802,16 @@ class SpotLightShadow extends LightShadow {
 
 	}
 
+	copy( source ) {
+
+		super.copy( source );
+
+		this.focus = source.focus;
+
+		return this;
+
+	}
+
 }
 
 SpotLightShadow.prototype.isSpotLightShadow = true;
@@ -40348,9 +42875,9 @@ class SpotLight extends Light {
 
 SpotLight.prototype.isSpotLight = true;
 
-const _projScreenMatrix$1 = /*@__PURE__*/ new Matrix4();
-const _lightPositionWorld$1 = /*@__PURE__*/ new Vector3();
-const _lookTarget$1 = /*@__PURE__*/ new Vector3();
+const _projScreenMatrix = /*@__PURE__*/ new Matrix4();
+const _lightPositionWorld = /*@__PURE__*/ new Vector3();
+const _lookTarget = /*@__PURE__*/ new Vector3();
 
 class PointLightShadow extends LightShadow {
 
@@ -40407,19 +42934,28 @@ class PointLightShadow extends LightShadow {
 		const camera = this.camera;
 		const shadowMatrix = this.matrix;
 
-		_lightPositionWorld$1.setFromMatrixPosition( light.matrixWorld );
-		camera.position.copy( _lightPositionWorld$1 );
+		const far = light.distance || camera.far;
 
-		_lookTarget$1.copy( camera.position );
-		_lookTarget$1.add( this._cubeDirections[ viewportIndex ] );
+		if ( far !== camera.far ) {
+
+			camera.far = far;
+			camera.updateProjectionMatrix();
+
+		}
+
+		_lightPositionWorld.setFromMatrixPosition( light.matrixWorld );
+		camera.position.copy( _lightPositionWorld );
+
+		_lookTarget.copy( camera.position );
+		_lookTarget.add( this._cubeDirections[ viewportIndex ] );
 		camera.up.copy( this._cubeUps[ viewportIndex ] );
-		camera.lookAt( _lookTarget$1 );
+		camera.lookAt( _lookTarget );
 		camera.updateMatrixWorld();
 
-		shadowMatrix.makeTranslation( - _lightPositionWorld$1.x, - _lightPositionWorld$1.y, - _lightPositionWorld$1.z );
+		shadowMatrix.makeTranslation( - _lightPositionWorld.x, - _lightPositionWorld.y, - _lightPositionWorld.z );
 
-		_projScreenMatrix$1.multiplyMatrices( camera.projectionMatrix, camera.matrixWorldInverse );
-		this._frustum.setFromProjectionMatrix( _projScreenMatrix$1 );
+		_projScreenMatrix.multiplyMatrices( camera.projectionMatrix, camera.matrixWorldInverse );
+		this._frustum.setFromProjectionMatrix( _projScreenMatrix );
 
 	}
 
@@ -41065,6 +43601,7 @@ class MaterialLoader extends Loader {
 		if ( json.blending !== undefined ) material.blending = json.blending;
 		if ( json.combine !== undefined ) material.combine = json.combine;
 		if ( json.side !== undefined ) material.side = json.side;
+		if ( json.shadowSide !== undefined ) material.shadowSide = json.shadowSide;
 		if ( json.opacity !== undefined ) material.opacity = json.opacity;
 		if ( json.transparent !== undefined ) material.transparent = json.transparent;
 		if ( json.alphaTest !== undefined ) material.alphaTest = json.alphaTest;
@@ -41101,6 +43638,9 @@ class MaterialLoader extends Loader {
 		if ( json.morphTargets !== undefined ) material.morphTargets = json.morphTargets;
 		if ( json.morphNormals !== undefined ) material.morphNormals = json.morphNormals;
 		if ( json.dithering !== undefined ) material.dithering = json.dithering;
+
+		if ( json.alphaToCoverage !== undefined ) material.alphaToCoverage = json.alphaToCoverage;
+		if ( json.premultipliedAlpha !== undefined ) material.premultipliedAlpha = json.premultipliedAlpha;
 
 		if ( json.vertexTangents !== undefined ) material.vertexTangents = json.vertexTangents;
 
@@ -41525,6 +44065,15 @@ class BufferGeometryLoader extends Loader {
 			}
 
 			if ( attribute.name !== undefined ) bufferAttribute.name = attribute.name;
+			if ( attribute.usage !== undefined ) bufferAttribute.setUsage( attribute.usage );
+
+			if ( attribute.updateRange !== undefined ) {
+
+				bufferAttribute.updateRange.offset = attribute.updateRange.offset;
+				bufferAttribute.updateRange.count = attribute.updateRange.count;
+
+			}
+
 			geometry.setAttribute( key, bufferAttribute );
 
 		}
@@ -42514,9 +45063,11 @@ class ObjectLoader extends Loader {
 				material = getMaterial( data.material );
 				const count = data.count;
 				const instanceMatrix = data.instanceMatrix;
+				const instanceColor = data.instanceColor;
 
 				object = new InstancedMesh( geometry, material, count );
 				object.instanceMatrix = new BufferAttribute( new Float32Array( instanceMatrix.array ), 16 );
+				if ( instanceColor !== undefined ) object.instanceColor = new BufferAttribute( new Float32Array( instanceColor.array ), instanceColor.itemSize );
 
 				break;
 
@@ -43586,10 +46137,10 @@ function now() {
 
 }
 
-const _position$2 = /*@__PURE__*/ new Vector3();
-const _quaternion$3 = /*@__PURE__*/ new Quaternion();
+const _position$1 = /*@__PURE__*/ new Vector3();
+const _quaternion$1 = /*@__PURE__*/ new Quaternion();
 const _scale$1 = /*@__PURE__*/ new Vector3();
-const _orientation = /*@__PURE__*/ new Vector3();
+const _orientation$1 = /*@__PURE__*/ new Vector3();
 
 class AudioListener extends Object3D {
 
@@ -43685,9 +46236,9 @@ class AudioListener extends Object3D {
 
 		this.timeDelta = this._clock.getDelta();
 
-		this.matrixWorld.decompose( _position$2, _quaternion$3, _scale$1 );
+		this.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
 
-		_orientation.set( 0, 0, - 1 ).applyQuaternion( _quaternion$3 );
+		_orientation$1.set( 0, 0, - 1 ).applyQuaternion( _quaternion$1 );
 
 		if ( listener.positionX ) {
 
@@ -43695,20 +46246,20 @@ class AudioListener extends Object3D {
 
 			const endTime = this.context.currentTime + this.timeDelta;
 
-			listener.positionX.linearRampToValueAtTime( _position$2.x, endTime );
-			listener.positionY.linearRampToValueAtTime( _position$2.y, endTime );
-			listener.positionZ.linearRampToValueAtTime( _position$2.z, endTime );
-			listener.forwardX.linearRampToValueAtTime( _orientation.x, endTime );
-			listener.forwardY.linearRampToValueAtTime( _orientation.y, endTime );
-			listener.forwardZ.linearRampToValueAtTime( _orientation.z, endTime );
+			listener.positionX.linearRampToValueAtTime( _position$1.x, endTime );
+			listener.positionY.linearRampToValueAtTime( _position$1.y, endTime );
+			listener.positionZ.linearRampToValueAtTime( _position$1.z, endTime );
+			listener.forwardX.linearRampToValueAtTime( _orientation$1.x, endTime );
+			listener.forwardY.linearRampToValueAtTime( _orientation$1.y, endTime );
+			listener.forwardZ.linearRampToValueAtTime( _orientation$1.z, endTime );
 			listener.upX.linearRampToValueAtTime( up.x, endTime );
 			listener.upY.linearRampToValueAtTime( up.y, endTime );
 			listener.upZ.linearRampToValueAtTime( up.z, endTime );
 
 		} else {
 
-			listener.setPosition( _position$2.x, _position$2.y, _position$2.z );
-			listener.setOrientation( _orientation.x, _orientation.y, _orientation.z, up.x, up.y, up.z );
+			listener.setPosition( _position$1.x, _position$1.y, _position$1.z );
+			listener.setOrientation( _orientation$1.x, _orientation$1.y, _orientation$1.z, up.x, up.y, up.z );
 
 		}
 
@@ -44104,10 +46655,10 @@ class Audio extends Object3D {
 
 }
 
-const _position$3 = /*@__PURE__*/ new Vector3();
-const _quaternion$4 = /*@__PURE__*/ new Quaternion();
-const _scale$2 = /*@__PURE__*/ new Vector3();
-const _orientation$1 = /*@__PURE__*/ new Vector3();
+const _position = /*@__PURE__*/ new Vector3();
+const _quaternion = /*@__PURE__*/ new Quaternion();
+const _scale = /*@__PURE__*/ new Vector3();
+const _orientation = /*@__PURE__*/ new Vector3();
 
 class PositionalAudio extends Audio {
 
@@ -44199,9 +46750,9 @@ class PositionalAudio extends Audio {
 
 		if ( this.hasPlaybackControl === true && this.isPlaying === false ) return;
 
-		this.matrixWorld.decompose( _position$3, _quaternion$4, _scale$2 );
+		this.matrixWorld.decompose( _position, _quaternion, _scale );
 
-		_orientation$1.set( 0, 0, 1 ).applyQuaternion( _quaternion$4 );
+		_orientation.set( 0, 0, 1 ).applyQuaternion( _quaternion );
 
 		const panner = this.panner;
 
@@ -44211,17 +46762,17 @@ class PositionalAudio extends Audio {
 
 			const endTime = this.context.currentTime + this.listener.timeDelta;
 
-			panner.positionX.linearRampToValueAtTime( _position$3.x, endTime );
-			panner.positionY.linearRampToValueAtTime( _position$3.y, endTime );
-			panner.positionZ.linearRampToValueAtTime( _position$3.z, endTime );
-			panner.orientationX.linearRampToValueAtTime( _orientation$1.x, endTime );
-			panner.orientationY.linearRampToValueAtTime( _orientation$1.y, endTime );
-			panner.orientationZ.linearRampToValueAtTime( _orientation$1.z, endTime );
+			panner.positionX.linearRampToValueAtTime( _position.x, endTime );
+			panner.positionY.linearRampToValueAtTime( _position.y, endTime );
+			panner.positionZ.linearRampToValueAtTime( _position.z, endTime );
+			panner.orientationX.linearRampToValueAtTime( _orientation.x, endTime );
+			panner.orientationY.linearRampToValueAtTime( _orientation.y, endTime );
+			panner.orientationZ.linearRampToValueAtTime( _orientation.z, endTime );
 
 		} else {
 
-			panner.setPosition( _position$3.x, _position$3.y, _position$3.z );
-			panner.setOrientation( _orientation$1.x, _orientation$1.y, _orientation$1.z );
+			panner.setPosition( _position.x, _position.y, _position.z );
+			panner.setOrientation( _orientation.x, _orientation.y, _orientation.z );
 
 		}
 
@@ -47491,7 +50042,7 @@ class Cylindrical {
 
 }
 
-const _vector$8 = /*@__PURE__*/ new Vector2();
+const _vector$4 = /*@__PURE__*/ new Vector2();
 
 class Box2 {
 
@@ -47527,7 +50078,7 @@ class Box2 {
 
 	setFromCenterAndSize( center, size ) {
 
-		const halfSize = _vector$8.copy( size ).multiplyScalar( 0.5 );
+		const halfSize = _vector$4.copy( size ).multiplyScalar( 0.5 );
 		this.min.copy( center ).sub( halfSize );
 		this.max.copy( center ).add( halfSize );
 
@@ -47677,7 +50228,7 @@ class Box2 {
 
 	distanceToPoint( point ) {
 
-		const clampedPoint = _vector$8.copy( point ).clamp( this.min, this.max );
+		const clampedPoint = _vector$4.copy( point ).clamp( this.min, this.max );
 		return clampedPoint.sub( point ).length();
 
 	}
@@ -47884,7 +50435,7 @@ ImmediateRenderObject.prototype.constructor = ImmediateRenderObject;
 
 ImmediateRenderObject.prototype.isImmediateRenderObject = true;
 
-const _vector$9 = /*@__PURE__*/ new Vector3();
+const _vector$3 = /*@__PURE__*/ new Vector3();
 
 class SpotLightHelper extends Object3D {
 
@@ -47948,9 +50499,9 @@ class SpotLightHelper extends Object3D {
 
 		this.cone.scale.set( coneWidth, coneWidth, coneLength );
 
-		_vector$9.setFromMatrixPosition( this.light.target.matrixWorld );
+		_vector$3.setFromMatrixPosition( this.light.target.matrixWorld );
 
-		this.cone.lookAt( _vector$9 );
+		this.cone.lookAt( _vector$3 );
 
 		if ( this.color !== undefined ) {
 
@@ -47966,7 +50517,7 @@ class SpotLightHelper extends Object3D {
 
 }
 
-const _vector$a = /*@__PURE__*/ new Vector3();
+const _vector$2 = /*@__PURE__*/ new Vector3();
 const _boneMatrix = /*@__PURE__*/ new Matrix4();
 const _matrixWorldInv = /*@__PURE__*/ new Matrix4();
 
@@ -48034,12 +50585,12 @@ class SkeletonHelper extends LineSegments {
 			if ( bone.parent && bone.parent.isBone ) {
 
 				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.matrixWorld );
-				_vector$a.setFromMatrixPosition( _boneMatrix );
-				position.setXYZ( j, _vector$a.x, _vector$a.y, _vector$a.z );
+				_vector$2.setFromMatrixPosition( _boneMatrix );
+				position.setXYZ( j, _vector$2.x, _vector$2.y, _vector$2.z );
 
 				_boneMatrix.multiplyMatrices( _matrixWorldInv, bone.parent.matrixWorld );
-				_vector$a.setFromMatrixPosition( _boneMatrix );
-				position.setXYZ( j + 1, _vector$a.x, _vector$a.y, _vector$a.z );
+				_vector$2.setFromMatrixPosition( _boneMatrix );
+				position.setXYZ( j + 1, _vector$2.x, _vector$2.y, _vector$2.z );
 
 				j += 2;
 
@@ -48161,7 +50712,7 @@ class PointLightHelper extends Mesh {
 
 }
 
-const _vector$b = /*@__PURE__*/ new Vector3();
+const _vector$1 = /*@__PURE__*/ new Vector3();
 const _color1 = /*@__PURE__*/ new Color();
 const _color2 = /*@__PURE__*/ new Color();
 
@@ -48229,7 +50780,7 @@ class HemisphereLightHelper extends Object3D {
 
 		}
 
-		mesh.lookAt( _vector$b.setFromMatrixPosition( this.light.matrixWorld ).negate() );
+		mesh.lookAt( _vector$1.setFromMatrixPosition( this.light.matrixWorld ).negate() );
 
 	}
 
@@ -48353,9 +50904,9 @@ class PolarGridHelper extends LineSegments {
 
 }
 
-const _v1$6 = /*@__PURE__*/ new Vector3();
-const _v2$3 = /*@__PURE__*/ new Vector3();
-const _v3$1 = /*@__PURE__*/ new Vector3();
+const _v1 = /*@__PURE__*/ new Vector3();
+const _v2 = /*@__PURE__*/ new Vector3();
+const _v3 = /*@__PURE__*/ new Vector3();
 
 class DirectionalLightHelper extends Object3D {
 
@@ -48407,11 +50958,11 @@ class DirectionalLightHelper extends Object3D {
 
 	update() {
 
-		_v1$6.setFromMatrixPosition( this.light.matrixWorld );
-		_v2$3.setFromMatrixPosition( this.light.target.matrixWorld );
-		_v3$1.subVectors( _v2$3, _v1$6 );
+		_v1.setFromMatrixPosition( this.light.matrixWorld );
+		_v2.setFromMatrixPosition( this.light.target.matrixWorld );
+		_v3.subVectors( _v2, _v1 );
 
-		this.lightPlane.lookAt( _v2$3 );
+		this.lightPlane.lookAt( _v2 );
 
 		if ( this.color !== undefined ) {
 
@@ -48425,14 +50976,14 @@ class DirectionalLightHelper extends Object3D {
 
 		}
 
-		this.targetLine.lookAt( _v2$3 );
-		this.targetLine.scale.z = _v3$1.length();
+		this.targetLine.lookAt( _v2 );
+		this.targetLine.scale.z = _v3.length();
 
 	}
 
 }
 
-const _vector$c = /*@__PURE__*/ new Vector3();
+const _vector = /*@__PURE__*/ new Vector3();
 const _camera = /*@__PURE__*/ new Camera();
 
 /**
@@ -48608,7 +51159,7 @@ class CameraHelper extends LineSegments {
 
 function setPoint( point, pointMap, geometry, camera, x, y, z ) {
 
-	_vector$c.set( x, y, z ).unproject( camera );
+	_vector.set( x, y, z ).unproject( camera );
 
 	const points = pointMap[ point ];
 
@@ -48618,7 +51169,7 @@ function setPoint( point, pointMap, geometry, camera, x, y, z ) {
 
 		for ( let i = 0, l = points.length; i < l; i ++ ) {
 
-			position.setXYZ( points[ i ], _vector$c.x, _vector$c.y, _vector$c.z );
+			position.setXYZ( points[ i ], _vector.x, _vector.y, _vector.z );
 
 		}
 
@@ -48626,7 +51177,7 @@ function setPoint( point, pointMap, geometry, camera, x, y, z ) {
 
 }
 
-const _box$3 = /*@__PURE__*/ new Box3();
+const _box = /*@__PURE__*/ new Box3();
 
 class BoxHelper extends LineSegments {
 
@@ -48660,14 +51211,14 @@ class BoxHelper extends LineSegments {
 
 		if ( this.object !== undefined ) {
 
-			_box$3.setFromObject( this.object );
+			_box.setFromObject( this.object );
 
 		}
 
-		if ( _box$3.isEmpty() ) return;
+		if ( _box.isEmpty() ) return;
 
-		const min = _box$3.min;
-		const max = _box$3.max;
+		const min = _box.min;
+		const max = _box.max;
 
 		/*
 			5____4
@@ -49062,7 +51613,10 @@ const _axisDirections = [
  * even more filtered 'mips' at the same LOD_MIN resolution, associated with
  * higher roughness levels. In this way we maintain resolution to smoothly
  * interpolate diffuse lighting while limiting sampling computation.
- */
+ *
+ * Paper: Fast, Accurate Image-Based Lighting
+ * https://drive.google.com/file/d/15y8r_UpKlU9SvV4ILb0C3qCPecS8pvLz/view
+*/
 
 function convertLinearToRGBE( color ) {
 
@@ -50818,34 +53372,6 @@ Object.defineProperties( Mesh.prototype, {
 
 } );
 
-Object.defineProperties( LOD.prototype, {
-
-	objects: {
-		get: function () {
-
-			console.warn( 'THREE.LOD: .objects has been renamed to .levels.' );
-			return this.levels;
-
-		}
-	}
-
-} );
-
-Object.defineProperty( Skeleton.prototype, 'useVertexTexture', {
-
-	get: function () {
-
-		console.warn( 'THREE.Skeleton: useVertexTexture has been removed.' );
-
-	},
-	set: function () {
-
-		console.warn( 'THREE.Skeleton: useVertexTexture has been removed.' );
-
-	}
-
-} );
-
 SkinnedMesh.prototype.initBones = function () {
 
 	console.error( 'THREE.SkinnedMesh: initBones() has been removed.' );
@@ -51233,25 +53759,12 @@ Scene.prototype.dispose = function () {
 
 //
 
-Object.defineProperties( Uniform.prototype, {
+Uniform.prototype.onUpdate = function () {
 
-	dynamic: {
-		set: function () {
+	console.warn( 'THREE.Uniform: .onUpdate() has been removed. Use object.onBeforeRender() instead.' );
+	return this;
 
-			console.warn( 'THREE.Uniform: .dynamic has been removed. Use object.onBeforeRender() instead.' );
-
-		}
-	},
-	onUpdate: {
-		value: function () {
-
-			console.warn( 'THREE.Uniform: .onUpdate() has been removed. Use object.onBeforeRender() instead.' );
-			return this;
-
-		}
-	}
-
-} );
+};
 
 //
 
@@ -51317,24 +53830,6 @@ Object.defineProperties( Material.prototype, {
 
 			console.warn( 'THREE.' + this.type + ': .stencilMask has been removed. Use .stencilFuncMask instead.' );
 			this.stencilFuncMask = value;
-
-		}
-	}
-
-} );
-
-Object.defineProperties( MeshPhongMaterial.prototype, {
-
-	metal: {
-		get: function () {
-
-			console.warn( 'THREE.MeshPhongMaterial: .metal has been removed. Use THREE.MeshStandardMaterial instead.' );
-			return false;
-
-		},
-		set: function () {
-
-			console.warn( 'THREE.MeshPhongMaterial: .metal has been removed. Use THREE.MeshStandardMaterial instead' );
 
 		}
 	}
@@ -51848,32 +54343,20 @@ Object.defineProperties( WebGLRenderTarget.prototype, {
 
 //
 
-Object.defineProperties( Audio.prototype, {
+Audio.prototype.load = function ( file ) {
 
-	load: {
-		value: function ( file ) {
+	console.warn( 'THREE.Audio: .load has been deprecated. Use THREE.AudioLoader instead.' );
+	const scope = this;
+	const audioLoader = new AudioLoader();
+	audioLoader.load( file, function ( buffer ) {
 
-			console.warn( 'THREE.Audio: .load has been deprecated. Use THREE.AudioLoader instead.' );
-			const scope = this;
-			const audioLoader = new AudioLoader();
-			audioLoader.load( file, function ( buffer ) {
+		scope.setBuffer( buffer );
 
-				scope.setBuffer( buffer );
+	} );
+	return this;
 
-			} );
-			return this;
+};
 
-		}
-	},
-	startTime: {
-		set: function () {
-
-			console.warn( 'THREE.Audio: .startTime is now .play( delay ).' );
-
-		}
-	}
-
-} );
 
 AudioAnalyser.prototype.getData = function () {
 
@@ -52029,7 +54512,7 @@ if ( typeof window !== 'undefined' ) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "StopLight", function() { return StopLight; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
 /* harmony import */ var _tfc_state__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./tfc-state */ "EAKZ");
 /* harmony import */ var _traffic_flow_control__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./traffic-flow-control */ "ADEk");
 
@@ -52102,41 +54585,10 @@ class StopLight extends _traffic_flow_control__WEBPACK_IMPORTED_MODULE_2__["Traf
 
 /***/ }),
 
-/***/ "g93T":
-/*!***********************************************************!*\
-  !*** ./src/app/traffic-sim/traffic-sim-routing.module.ts ***!
-  \***********************************************************/
-/*! exports provided: TrafficSimRoutingModule */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrafficSimRoutingModule", function() { return TrafficSimRoutingModule; });
-/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/router */ "tyNb");
-/* harmony import */ var _traffic_sim_component__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./traffic-sim.component */ "UPaR");
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/core */ "fXoL");
-
-
-
-
-const routes = [
-    { path: '', component: _traffic_sim_component__WEBPACK_IMPORTED_MODULE_1__["TrafficSimComponent"] },
-    { path: 'traffic-sim', component: _traffic_sim_component__WEBPACK_IMPORTED_MODULE_1__["TrafficSimComponent"] }
-];
-class TrafficSimRoutingModule {
-}
-TrafficSimRoutingModule.ɵfac = function TrafficSimRoutingModule_Factory(t) { return new (t || TrafficSimRoutingModule)(); };
-TrafficSimRoutingModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵdefineNgModule"]({ type: TrafficSimRoutingModule });
-TrafficSimRoutingModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵdefineInjector"]({ imports: [[_angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"].forChild(routes)], _angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"]] });
-(function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵsetNgModuleScope"](TrafficSimRoutingModule, { imports: [_angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"]], exports: [_angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"]] }); })();
-
-
-/***/ }),
-
-/***/ "mrSG":
-/*!*****************************************!*\
-  !*** ./node_modules/tslib/tslib.es6.js ***!
-  \*****************************************/
+/***/ "bb6g":
+/*!******************************************!*\
+  !*** ../node_modules/tslib/tslib.es6.js ***!
+  \******************************************/
 /*! exports provided: __extends, __assign, __rest, __decorate, __param, __metadata, __awaiter, __generator, __createBinding, __exportStar, __values, __read, __spread, __spreadArrays, __spreadArray, __await, __asyncGenerator, __asyncDelegator, __asyncValues, __makeTemplateObject, __importStar, __importDefault, __classPrivateFieldGet, __classPrivateFieldSet */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -52407,6 +54859,36 @@ function __classPrivateFieldSet(receiver, privateMap, value) {
 
 /***/ }),
 
+/***/ "g93T":
+/*!***********************************************************!*\
+  !*** ./src/app/traffic-sim/traffic-sim-routing.module.ts ***!
+  \***********************************************************/
+/*! exports provided: TrafficSimRoutingModule */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrafficSimRoutingModule", function() { return TrafficSimRoutingModule; });
+/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/router */ "Fk62");
+/* harmony import */ var _traffic_sim_component__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./traffic-sim.component */ "UPaR");
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/core */ "Ub9n");
+
+
+
+
+const routes = [
+    { path: '', component: _traffic_sim_component__WEBPACK_IMPORTED_MODULE_1__["TrafficSimComponent"] },
+    { path: 'traffic-sim', component: _traffic_sim_component__WEBPACK_IMPORTED_MODULE_1__["TrafficSimComponent"] }
+];
+class TrafficSimRoutingModule {
+}
+TrafficSimRoutingModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵdefineNgModule"]({ type: TrafficSimRoutingModule });
+TrafficSimRoutingModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵdefineInjector"]({ factory: function TrafficSimRoutingModule_Factory(t) { return new (t || TrafficSimRoutingModule)(); }, imports: [[_angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"].forChild(routes)], _angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"]] });
+(function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_2__["ɵɵsetNgModuleScope"](TrafficSimRoutingModule, { imports: [_angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"]], exports: [_angular_router__WEBPACK_IMPORTED_MODULE_0__["RouterModule"]] }); })();
+
+
+/***/ }),
+
 /***/ "s0T7":
 /*!**************************************************!*\
   !*** ./src/app/traffic-sim/view/view-manager.ts ***!
@@ -52417,8 +54899,8 @@ function __classPrivateFieldSet(receiver, privateMap, value) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ViewManager", function() { return ViewManager; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
-/* harmony import */ var three_examples_jsm_controls_OrbitControls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three/examples/jsm/controls/OrbitControls */ "RyHr");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
+/* harmony import */ var three_examples_jsm_controls_OrbitControls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three/examples/jsm/controls/OrbitControls */ "CRHq");
 
 
 class ViewManager {
@@ -52474,6 +54956,14 @@ class ViewManager {
         this._camera = null;
         this._controls = null;
     }
+    destroy() {
+        this._renderer.dispose();
+        this._controls.dispose();
+        this._scene = null;
+        this._camera = null;
+        this._renderer = null;
+        this._controls = null;
+    }
     resize() {
         let width = this.getWidth();
         let height = this.getHeight();
@@ -52490,2252 +54980,18 @@ class ViewManager {
         this._scene.remove(renderable.getObj3D());
     }
     getWidth() {
-        return window.innerWidth;
+        var _a;
+        return ((_a = this._canvas) === null || _a === void 0 ? void 0 : _a.clientWidth) || window.innerWidth;
     }
     getHeight() {
-        return window.innerHeight;
+        var _a;
+        return ((_a = this._canvas) === null || _a === void 0 ? void 0 : _a.clientHeight) || window.innerHeight;
     }
 }
 (function (ViewManager) {
     ViewManager.inst = new ViewManager();
 })(ViewManager || (ViewManager = {}));
 
-
-/***/ }),
-
-/***/ "tk/3":
-/*!********************************************************************!*\
-  !*** ./node_modules/@angular/common/__ivy_ngcc__/fesm2015/http.js ***!
-  \********************************************************************/
-/*! exports provided: HTTP_INTERCEPTORS, HttpBackend, HttpClient, HttpClientJsonpModule, HttpClientModule, HttpClientXsrfModule, HttpErrorResponse, HttpEventType, HttpHandler, HttpHeaderResponse, HttpHeaders, HttpParams, HttpRequest, HttpResponse, HttpResponseBase, HttpUrlEncodingCodec, HttpXhrBackend, HttpXsrfTokenExtractor, JsonpClientBackend, JsonpInterceptor, XhrFactory, ɵHttpInterceptingHandler, ɵangular_packages_common_http_http_a, ɵangular_packages_common_http_http_b, ɵangular_packages_common_http_http_c, ɵangular_packages_common_http_http_d, ɵangular_packages_common_http_http_e, ɵangular_packages_common_http_http_f, ɵangular_packages_common_http_http_g, ɵangular_packages_common_http_http_h */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HTTP_INTERCEPTORS", function() { return HTTP_INTERCEPTORS; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpBackend", function() { return HttpBackend; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClient", function() { return HttpClient; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClientJsonpModule", function() { return HttpClientJsonpModule; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClientModule", function() { return HttpClientModule; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpClientXsrfModule", function() { return HttpClientXsrfModule; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpErrorResponse", function() { return HttpErrorResponse; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpEventType", function() { return HttpEventType; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpHandler", function() { return HttpHandler; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpHeaderResponse", function() { return HttpHeaderResponse; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpHeaders", function() { return HttpHeaders; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpParams", function() { return HttpParams; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpRequest", function() { return HttpRequest; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpResponse", function() { return HttpResponse; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpResponseBase", function() { return HttpResponseBase; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpUrlEncodingCodec", function() { return HttpUrlEncodingCodec; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpXhrBackend", function() { return HttpXhrBackend; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HttpXsrfTokenExtractor", function() { return HttpXsrfTokenExtractor; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "JsonpClientBackend", function() { return JsonpClientBackend; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "JsonpInterceptor", function() { return JsonpInterceptor; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "XhrFactory", function() { return XhrFactory; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵHttpInterceptingHandler", function() { return HttpInterceptingHandler; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_a", function() { return NoopInterceptor; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_b", function() { return JsonpCallbackContext; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_c", function() { return jsonpCallbackContext; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_d", function() { return BrowserXhr; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_e", function() { return XSRF_COOKIE_NAME; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_f", function() { return XSRF_HEADER_NAME; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_g", function() { return HttpXsrfCookieExtractor; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_common_http_http_h", function() { return HttpXsrfInterceptor; });
-/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! rxjs */ "qCKp");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs/operators */ "kU1M");
-/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/common */ "ofXK");
-/**
- * @license Angular v11.2.6
- * (c) 2010-2021 Google LLC. https://angular.io/
- * License: MIT
- */
-
-
-
-
-
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Transforms an `HttpRequest` into a stream of `HttpEvent`s, one of which will likely be a
- * `HttpResponse`.
- *
- * `HttpHandler` is injectable. When injected, the handler instance dispatches requests to the
- * first interceptor in the chain, which dispatches to the second, etc, eventually reaching the
- * `HttpBackend`.
- *
- * In an `HttpInterceptor`, the `HttpHandler` parameter is the next interceptor in the chain.
- *
- * @publicApi
- */
-
-class HttpHandler {
-}
-/**
- * A final `HttpHandler` which will dispatch the request via browser HTTP APIs to a backend.
- *
- * Interceptors sit between the `HttpClient` interface and the `HttpBackend`.
- *
- * When injected, `HttpBackend` dispatches requests directly to the backend, without going
- * through the interceptor chain.
- *
- * @publicApi
- */
-class HttpBackend {
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Represents the header configuration options for an HTTP request.
- * Instances are immutable. Modifying methods return a cloned
- * instance with the change. The original object is never changed.
- *
- * @publicApi
- */
-class HttpHeaders {
-    /**  Constructs a new HTTP header object with the given values.*/
-    constructor(headers) {
-        /**
-         * Internal map of lowercased header names to the normalized
-         * form of the name (the form seen first).
-         */
-        this.normalizedNames = new Map();
-        /**
-         * Queued updates to be materialized the next initialization.
-         */
-        this.lazyUpdate = null;
-        if (!headers) {
-            this.headers = new Map();
-        }
-        else if (typeof headers === 'string') {
-            this.lazyInit = () => {
-                this.headers = new Map();
-                headers.split('\n').forEach(line => {
-                    const index = line.indexOf(':');
-                    if (index > 0) {
-                        const name = line.slice(0, index);
-                        const key = name.toLowerCase();
-                        const value = line.slice(index + 1).trim();
-                        this.maybeSetNormalizedName(name, key);
-                        if (this.headers.has(key)) {
-                            this.headers.get(key).push(value);
-                        }
-                        else {
-                            this.headers.set(key, [value]);
-                        }
-                    }
-                });
-            };
-        }
-        else {
-            this.lazyInit = () => {
-                this.headers = new Map();
-                Object.keys(headers).forEach(name => {
-                    let values = headers[name];
-                    const key = name.toLowerCase();
-                    if (typeof values === 'string') {
-                        values = [values];
-                    }
-                    if (values.length > 0) {
-                        this.headers.set(key, values);
-                        this.maybeSetNormalizedName(name, key);
-                    }
-                });
-            };
-        }
-    }
-    /**
-     * Checks for existence of a given header.
-     *
-     * @param name The header name to check for existence.
-     *
-     * @returns True if the header exists, false otherwise.
-     */
-    has(name) {
-        this.init();
-        return this.headers.has(name.toLowerCase());
-    }
-    /**
-     * Retrieves the first value of a given header.
-     *
-     * @param name The header name.
-     *
-     * @returns The value string if the header exists, null otherwise
-     */
-    get(name) {
-        this.init();
-        const values = this.headers.get(name.toLowerCase());
-        return values && values.length > 0 ? values[0] : null;
-    }
-    /**
-     * Retrieves the names of the headers.
-     *
-     * @returns A list of header names.
-     */
-    keys() {
-        this.init();
-        return Array.from(this.normalizedNames.values());
-    }
-    /**
-     * Retrieves a list of values for a given header.
-     *
-     * @param name The header name from which to retrieve values.
-     *
-     * @returns A string of values if the header exists, null otherwise.
-     */
-    getAll(name) {
-        this.init();
-        return this.headers.get(name.toLowerCase()) || null;
-    }
-    /**
-     * Appends a new value to the existing set of values for a header
-     * and returns them in a clone of the original instance.
-     *
-     * @param name The header name for which to append the values.
-     * @param value The value to append.
-     *
-     * @returns A clone of the HTTP headers object with the value appended to the given header.
-     */
-    append(name, value) {
-        return this.clone({ name, value, op: 'a' });
-    }
-    /**
-     * Sets or modifies a value for a given header in a clone of the original instance.
-     * If the header already exists, its value is replaced with the given value
-     * in the returned object.
-     *
-     * @param name The header name.
-     * @param value The value or values to set or overide for the given header.
-     *
-     * @returns A clone of the HTTP headers object with the newly set header value.
-     */
-    set(name, value) {
-        return this.clone({ name, value, op: 's' });
-    }
-    /**
-     * Deletes values for a given header in a clone of the original instance.
-     *
-     * @param name The header name.
-     * @param value The value or values to delete for the given header.
-     *
-     * @returns A clone of the HTTP headers object with the given value deleted.
-     */
-    delete(name, value) {
-        return this.clone({ name, value, op: 'd' });
-    }
-    maybeSetNormalizedName(name, lcName) {
-        if (!this.normalizedNames.has(lcName)) {
-            this.normalizedNames.set(lcName, name);
-        }
-    }
-    init() {
-        if (!!this.lazyInit) {
-            if (this.lazyInit instanceof HttpHeaders) {
-                this.copyFrom(this.lazyInit);
-            }
-            else {
-                this.lazyInit();
-            }
-            this.lazyInit = null;
-            if (!!this.lazyUpdate) {
-                this.lazyUpdate.forEach(update => this.applyUpdate(update));
-                this.lazyUpdate = null;
-            }
-        }
-    }
-    copyFrom(other) {
-        other.init();
-        Array.from(other.headers.keys()).forEach(key => {
-            this.headers.set(key, other.headers.get(key));
-            this.normalizedNames.set(key, other.normalizedNames.get(key));
-        });
-    }
-    clone(update) {
-        const clone = new HttpHeaders();
-        clone.lazyInit =
-            (!!this.lazyInit && this.lazyInit instanceof HttpHeaders) ? this.lazyInit : this;
-        clone.lazyUpdate = (this.lazyUpdate || []).concat([update]);
-        return clone;
-    }
-    applyUpdate(update) {
-        const key = update.name.toLowerCase();
-        switch (update.op) {
-            case 'a':
-            case 's':
-                let value = update.value;
-                if (typeof value === 'string') {
-                    value = [value];
-                }
-                if (value.length === 0) {
-                    return;
-                }
-                this.maybeSetNormalizedName(update.name, key);
-                const base = (update.op === 'a' ? this.headers.get(key) : undefined) || [];
-                base.push(...value);
-                this.headers.set(key, base);
-                break;
-            case 'd':
-                const toDelete = update.value;
-                if (!toDelete) {
-                    this.headers.delete(key);
-                    this.normalizedNames.delete(key);
-                }
-                else {
-                    let existing = this.headers.get(key);
-                    if (!existing) {
-                        return;
-                    }
-                    existing = existing.filter(value => toDelete.indexOf(value) === -1);
-                    if (existing.length === 0) {
-                        this.headers.delete(key);
-                        this.normalizedNames.delete(key);
-                    }
-                    else {
-                        this.headers.set(key, existing);
-                    }
-                }
-                break;
-        }
-    }
-    /**
-     * @internal
-     */
-    forEach(fn) {
-        this.init();
-        Array.from(this.normalizedNames.keys())
-            .forEach(key => fn(this.normalizedNames.get(key), this.headers.get(key)));
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Provides encoding and decoding of URL parameter and query-string values.
- *
- * Serializes and parses URL parameter keys and values to encode and decode them.
- * If you pass URL query parameters without encoding,
- * the query parameters can be misinterpreted at the receiving end.
- *
- *
- * @publicApi
- */
-class HttpUrlEncodingCodec {
-    /**
-     * Encodes a key name for a URL parameter or query-string.
-     * @param key The key name.
-     * @returns The encoded key name.
-     */
-    encodeKey(key) {
-        return standardEncoding(key);
-    }
-    /**
-     * Encodes the value of a URL parameter or query-string.
-     * @param value The value.
-     * @returns The encoded value.
-     */
-    encodeValue(value) {
-        return standardEncoding(value);
-    }
-    /**
-     * Decodes an encoded URL parameter or query-string key.
-     * @param key The encoded key name.
-     * @returns The decoded key name.
-     */
-    decodeKey(key) {
-        return decodeURIComponent(key);
-    }
-    /**
-     * Decodes an encoded URL parameter or query-string value.
-     * @param value The encoded value.
-     * @returns The decoded value.
-     */
-    decodeValue(value) {
-        return decodeURIComponent(value);
-    }
-}
-function paramParser(rawParams, codec) {
-    const map = new Map();
-    if (rawParams.length > 0) {
-        // The `window.location.search` can be used while creating an instance of the `HttpParams` class
-        // (e.g. `new HttpParams({ fromString: window.location.search })`). The `window.location.search`
-        // may start with the `?` char, so we strip it if it's present.
-        const params = rawParams.replace(/^\?/, '').split('&');
-        params.forEach((param) => {
-            const eqIdx = param.indexOf('=');
-            const [key, val] = eqIdx == -1 ?
-                [codec.decodeKey(param), ''] :
-                [codec.decodeKey(param.slice(0, eqIdx)), codec.decodeValue(param.slice(eqIdx + 1))];
-            const list = map.get(key) || [];
-            list.push(val);
-            map.set(key, list);
-        });
-    }
-    return map;
-}
-function standardEncoding(v) {
-    return encodeURIComponent(v)
-        .replace(/%40/gi, '@')
-        .replace(/%3A/gi, ':')
-        .replace(/%24/gi, '$')
-        .replace(/%2C/gi, ',')
-        .replace(/%3B/gi, ';')
-        .replace(/%2B/gi, '+')
-        .replace(/%3D/gi, '=')
-        .replace(/%3F/gi, '?')
-        .replace(/%2F/gi, '/');
-}
-/**
- * An HTTP request/response body that represents serialized parameters,
- * per the MIME type `application/x-www-form-urlencoded`.
- *
- * This class is immutable; all mutation operations return a new instance.
- *
- * @publicApi
- */
-class HttpParams {
-    constructor(options = {}) {
-        this.updates = null;
-        this.cloneFrom = null;
-        this.encoder = options.encoder || new HttpUrlEncodingCodec();
-        if (!!options.fromString) {
-            if (!!options.fromObject) {
-                throw new Error(`Cannot specify both fromString and fromObject.`);
-            }
-            this.map = paramParser(options.fromString, this.encoder);
-        }
-        else if (!!options.fromObject) {
-            this.map = new Map();
-            Object.keys(options.fromObject).forEach(key => {
-                const value = options.fromObject[key];
-                this.map.set(key, Array.isArray(value) ? value : [value]);
-            });
-        }
-        else {
-            this.map = null;
-        }
-    }
-    /**
-     * Reports whether the body includes one or more values for a given parameter.
-     * @param param The parameter name.
-     * @returns True if the parameter has one or more values,
-     * false if it has no value or is not present.
-     */
-    has(param) {
-        this.init();
-        return this.map.has(param);
-    }
-    /**
-     * Retrieves the first value for a parameter.
-     * @param param The parameter name.
-     * @returns The first value of the given parameter,
-     * or `null` if the parameter is not present.
-     */
-    get(param) {
-        this.init();
-        const res = this.map.get(param);
-        return !!res ? res[0] : null;
-    }
-    /**
-     * Retrieves all values for a  parameter.
-     * @param param The parameter name.
-     * @returns All values in a string array,
-     * or `null` if the parameter not present.
-     */
-    getAll(param) {
-        this.init();
-        return this.map.get(param) || null;
-    }
-    /**
-     * Retrieves all the parameters for this body.
-     * @returns The parameter names in a string array.
-     */
-    keys() {
-        this.init();
-        return Array.from(this.map.keys());
-    }
-    /**
-     * Appends a new value to existing values for a parameter.
-     * @param param The parameter name.
-     * @param value The new value to add.
-     * @return A new body with the appended value.
-     */
-    append(param, value) {
-        return this.clone({ param, value, op: 'a' });
-    }
-    /**
-     * Constructs a new body with appended values for the given parameter name.
-     * @param params parameters and values
-     * @return A new body with the new value.
-     */
-    appendAll(params) {
-        const updates = [];
-        Object.keys(params).forEach(param => {
-            const value = params[param];
-            if (Array.isArray(value)) {
-                value.forEach(_value => {
-                    updates.push({ param, value: _value, op: 'a' });
-                });
-            }
-            else {
-                updates.push({ param, value, op: 'a' });
-            }
-        });
-        return this.clone(updates);
-    }
-    /**
-     * Replaces the value for a parameter.
-     * @param param The parameter name.
-     * @param value The new value.
-     * @return A new body with the new value.
-     */
-    set(param, value) {
-        return this.clone({ param, value, op: 's' });
-    }
-    /**
-     * Removes a given value or all values from a parameter.
-     * @param param The parameter name.
-     * @param value The value to remove, if provided.
-     * @return A new body with the given value removed, or with all values
-     * removed if no value is specified.
-     */
-    delete(param, value) {
-        return this.clone({ param, value, op: 'd' });
-    }
-    /**
-     * Serializes the body to an encoded string, where key-value pairs (separated by `=`) are
-     * separated by `&`s.
-     */
-    toString() {
-        this.init();
-        return this.keys()
-            .map(key => {
-            const eKey = this.encoder.encodeKey(key);
-            // `a: ['1']` produces `'a=1'`
-            // `b: []` produces `''`
-            // `c: ['1', '2']` produces `'c=1&c=2'`
-            return this.map.get(key).map(value => eKey + '=' + this.encoder.encodeValue(value))
-                .join('&');
-        })
-            // filter out empty values because `b: []` produces `''`
-            // which results in `a=1&&c=1&c=2` instead of `a=1&c=1&c=2` if we don't
-            .filter(param => param !== '')
-            .join('&');
-    }
-    clone(update) {
-        const clone = new HttpParams({ encoder: this.encoder });
-        clone.cloneFrom = this.cloneFrom || this;
-        clone.updates = (this.updates || []).concat(update);
-        return clone;
-    }
-    init() {
-        if (this.map === null) {
-            this.map = new Map();
-        }
-        if (this.cloneFrom !== null) {
-            this.cloneFrom.init();
-            this.cloneFrom.keys().forEach(key => this.map.set(key, this.cloneFrom.map.get(key)));
-            this.updates.forEach(update => {
-                switch (update.op) {
-                    case 'a':
-                    case 's':
-                        const base = (update.op === 'a' ? this.map.get(update.param) : undefined) || [];
-                        base.push(update.value);
-                        this.map.set(update.param, base);
-                        break;
-                    case 'd':
-                        if (update.value !== undefined) {
-                            let base = this.map.get(update.param) || [];
-                            const idx = base.indexOf(update.value);
-                            if (idx !== -1) {
-                                base.splice(idx, 1);
-                            }
-                            if (base.length > 0) {
-                                this.map.set(update.param, base);
-                            }
-                            else {
-                                this.map.delete(update.param);
-                            }
-                        }
-                        else {
-                            this.map.delete(update.param);
-                            break;
-                        }
-                }
-            });
-            this.cloneFrom = this.updates = null;
-        }
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Determine whether the given HTTP method may include a body.
- */
-function mightHaveBody(method) {
-    switch (method) {
-        case 'DELETE':
-        case 'GET':
-        case 'HEAD':
-        case 'OPTIONS':
-        case 'JSONP':
-            return false;
-        default:
-            return true;
-    }
-}
-/**
- * Safely assert whether the given value is an ArrayBuffer.
- *
- * In some execution environments ArrayBuffer is not defined.
- */
-function isArrayBuffer(value) {
-    return typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer;
-}
-/**
- * Safely assert whether the given value is a Blob.
- *
- * In some execution environments Blob is not defined.
- */
-function isBlob(value) {
-    return typeof Blob !== 'undefined' && value instanceof Blob;
-}
-/**
- * Safely assert whether the given value is a FormData instance.
- *
- * In some execution environments FormData is not defined.
- */
-function isFormData(value) {
-    return typeof FormData !== 'undefined' && value instanceof FormData;
-}
-/**
- * An outgoing HTTP request with an optional typed body.
- *
- * `HttpRequest` represents an outgoing request, including URL, method,
- * headers, body, and other request configuration options. Instances should be
- * assumed to be immutable. To modify a `HttpRequest`, the `clone`
- * method should be used.
- *
- * @publicApi
- */
-class HttpRequest {
-    constructor(method, url, third, fourth) {
-        this.url = url;
-        /**
-         * The request body, or `null` if one isn't set.
-         *
-         * Bodies are not enforced to be immutable, as they can include a reference to any
-         * user-defined data type. However, interceptors should take care to preserve
-         * idempotence by treating them as such.
-         */
-        this.body = null;
-        /**
-         * Whether this request should be made in a way that exposes progress events.
-         *
-         * Progress events are expensive (change detection runs on each event) and so
-         * they should only be requested if the consumer intends to monitor them.
-         */
-        this.reportProgress = false;
-        /**
-         * Whether this request should be sent with outgoing credentials (cookies).
-         */
-        this.withCredentials = false;
-        /**
-         * The expected response type of the server.
-         *
-         * This is used to parse the response appropriately before returning it to
-         * the requestee.
-         */
-        this.responseType = 'json';
-        this.method = method.toUpperCase();
-        // Next, need to figure out which argument holds the HttpRequestInit
-        // options, if any.
-        let options;
-        // Check whether a body argument is expected. The only valid way to omit
-        // the body argument is to use a known no-body method like GET.
-        if (mightHaveBody(this.method) || !!fourth) {
-            // Body is the third argument, options are the fourth.
-            this.body = (third !== undefined) ? third : null;
-            options = fourth;
-        }
-        else {
-            // No body required, options are the third argument. The body stays null.
-            options = third;
-        }
-        // If options have been passed, interpret them.
-        if (options) {
-            // Normalize reportProgress and withCredentials.
-            this.reportProgress = !!options.reportProgress;
-            this.withCredentials = !!options.withCredentials;
-            // Override default response type of 'json' if one is provided.
-            if (!!options.responseType) {
-                this.responseType = options.responseType;
-            }
-            // Override headers if they're provided.
-            if (!!options.headers) {
-                this.headers = options.headers;
-            }
-            if (!!options.params) {
-                this.params = options.params;
-            }
-        }
-        // If no headers have been passed in, construct a new HttpHeaders instance.
-        if (!this.headers) {
-            this.headers = new HttpHeaders();
-        }
-        // If no parameters have been passed in, construct a new HttpUrlEncodedParams instance.
-        if (!this.params) {
-            this.params = new HttpParams();
-            this.urlWithParams = url;
-        }
-        else {
-            // Encode the parameters to a string in preparation for inclusion in the URL.
-            const params = this.params.toString();
-            if (params.length === 0) {
-                // No parameters, the visible URL is just the URL given at creation time.
-                this.urlWithParams = url;
-            }
-            else {
-                // Does the URL already have query parameters? Look for '?'.
-                const qIdx = url.indexOf('?');
-                // There are 3 cases to handle:
-                // 1) No existing parameters -> append '?' followed by params.
-                // 2) '?' exists and is followed by existing query string ->
-                //    append '&' followed by params.
-                // 3) '?' exists at the end of the url -> append params directly.
-                // This basically amounts to determining the character, if any, with
-                // which to join the URL and parameters.
-                const sep = qIdx === -1 ? '?' : (qIdx < url.length - 1 ? '&' : '');
-                this.urlWithParams = url + sep + params;
-            }
-        }
-    }
-    /**
-     * Transform the free-form body into a serialized format suitable for
-     * transmission to the server.
-     */
-    serializeBody() {
-        // If no body is present, no need to serialize it.
-        if (this.body === null) {
-            return null;
-        }
-        // Check whether the body is already in a serialized form. If so,
-        // it can just be returned directly.
-        if (isArrayBuffer(this.body) || isBlob(this.body) || isFormData(this.body) ||
-            typeof this.body === 'string') {
-            return this.body;
-        }
-        // Check whether the body is an instance of HttpUrlEncodedParams.
-        if (this.body instanceof HttpParams) {
-            return this.body.toString();
-        }
-        // Check whether the body is an object or array, and serialize with JSON if so.
-        if (typeof this.body === 'object' || typeof this.body === 'boolean' ||
-            Array.isArray(this.body)) {
-            return JSON.stringify(this.body);
-        }
-        // Fall back on toString() for everything else.
-        return this.body.toString();
-    }
-    /**
-     * Examine the body and attempt to infer an appropriate MIME type
-     * for it.
-     *
-     * If no such type can be inferred, this method will return `null`.
-     */
-    detectContentTypeHeader() {
-        // An empty body has no content type.
-        if (this.body === null) {
-            return null;
-        }
-        // FormData bodies rely on the browser's content type assignment.
-        if (isFormData(this.body)) {
-            return null;
-        }
-        // Blobs usually have their own content type. If it doesn't, then
-        // no type can be inferred.
-        if (isBlob(this.body)) {
-            return this.body.type || null;
-        }
-        // Array buffers have unknown contents and thus no type can be inferred.
-        if (isArrayBuffer(this.body)) {
-            return null;
-        }
-        // Technically, strings could be a form of JSON data, but it's safe enough
-        // to assume they're plain strings.
-        if (typeof this.body === 'string') {
-            return 'text/plain';
-        }
-        // `HttpUrlEncodedParams` has its own content-type.
-        if (this.body instanceof HttpParams) {
-            return 'application/x-www-form-urlencoded;charset=UTF-8';
-        }
-        // Arrays, objects, and numbers will be encoded as JSON.
-        if (typeof this.body === 'object' || typeof this.body === 'number' ||
-            Array.isArray(this.body)) {
-            return 'application/json';
-        }
-        // No type could be inferred.
-        return null;
-    }
-    clone(update = {}) {
-        // For method, url, and responseType, take the current value unless
-        // it is overridden in the update hash.
-        const method = update.method || this.method;
-        const url = update.url || this.url;
-        const responseType = update.responseType || this.responseType;
-        // The body is somewhat special - a `null` value in update.body means
-        // whatever current body is present is being overridden with an empty
-        // body, whereas an `undefined` value in update.body implies no
-        // override.
-        const body = (update.body !== undefined) ? update.body : this.body;
-        // Carefully handle the boolean options to differentiate between
-        // `false` and `undefined` in the update args.
-        const withCredentials = (update.withCredentials !== undefined) ? update.withCredentials : this.withCredentials;
-        const reportProgress = (update.reportProgress !== undefined) ? update.reportProgress : this.reportProgress;
-        // Headers and params may be appended to if `setHeaders` or
-        // `setParams` are used.
-        let headers = update.headers || this.headers;
-        let params = update.params || this.params;
-        // Check whether the caller has asked to add headers.
-        if (update.setHeaders !== undefined) {
-            // Set every requested header.
-            headers =
-                Object.keys(update.setHeaders)
-                    .reduce((headers, name) => headers.set(name, update.setHeaders[name]), headers);
-        }
-        // Check whether the caller has asked to set params.
-        if (update.setParams) {
-            // Set every requested param.
-            params = Object.keys(update.setParams)
-                .reduce((params, param) => params.set(param, update.setParams[param]), params);
-        }
-        // Finally, construct the new HttpRequest using the pieces from above.
-        return new HttpRequest(method, url, body, {
-            params,
-            headers,
-            reportProgress,
-            responseType,
-            withCredentials,
-        });
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Type enumeration for the different kinds of `HttpEvent`.
- *
- * @publicApi
- */
-var HttpEventType;
-(function (HttpEventType) {
-    /**
-     * The request was sent out over the wire.
-     */
-    HttpEventType[HttpEventType["Sent"] = 0] = "Sent";
-    /**
-     * An upload progress event was received.
-     */
-    HttpEventType[HttpEventType["UploadProgress"] = 1] = "UploadProgress";
-    /**
-     * The response status code and headers were received.
-     */
-    HttpEventType[HttpEventType["ResponseHeader"] = 2] = "ResponseHeader";
-    /**
-     * A download progress event was received.
-     */
-    HttpEventType[HttpEventType["DownloadProgress"] = 3] = "DownloadProgress";
-    /**
-     * The full response including the body was received.
-     */
-    HttpEventType[HttpEventType["Response"] = 4] = "Response";
-    /**
-     * A custom event from an interceptor or a backend.
-     */
-    HttpEventType[HttpEventType["User"] = 5] = "User";
-})(HttpEventType || (HttpEventType = {}));
-/**
- * Base class for both `HttpResponse` and `HttpHeaderResponse`.
- *
- * @publicApi
- */
-class HttpResponseBase {
-    /**
-     * Super-constructor for all responses.
-     *
-     * The single parameter accepted is an initialization hash. Any properties
-     * of the response passed there will override the default values.
-     */
-    constructor(init, defaultStatus = 200, defaultStatusText = 'OK') {
-        // If the hash has values passed, use them to initialize the response.
-        // Otherwise use the default values.
-        this.headers = init.headers || new HttpHeaders();
-        this.status = init.status !== undefined ? init.status : defaultStatus;
-        this.statusText = init.statusText || defaultStatusText;
-        this.url = init.url || null;
-        // Cache the ok value to avoid defining a getter.
-        this.ok = this.status >= 200 && this.status < 300;
-    }
-}
-/**
- * A partial HTTP response which only includes the status and header data,
- * but no response body.
- *
- * `HttpHeaderResponse` is a `HttpEvent` available on the response
- * event stream, only when progress events are requested.
- *
- * @publicApi
- */
-class HttpHeaderResponse extends HttpResponseBase {
-    /**
-     * Create a new `HttpHeaderResponse` with the given parameters.
-     */
-    constructor(init = {}) {
-        super(init);
-        this.type = HttpEventType.ResponseHeader;
-    }
-    /**
-     * Copy this `HttpHeaderResponse`, overriding its contents with the
-     * given parameter hash.
-     */
-    clone(update = {}) {
-        // Perform a straightforward initialization of the new HttpHeaderResponse,
-        // overriding the current parameters with new ones if given.
-        return new HttpHeaderResponse({
-            headers: update.headers || this.headers,
-            status: update.status !== undefined ? update.status : this.status,
-            statusText: update.statusText || this.statusText,
-            url: update.url || this.url || undefined,
-        });
-    }
-}
-/**
- * A full HTTP response, including a typed response body (which may be `null`
- * if one was not returned).
- *
- * `HttpResponse` is a `HttpEvent` available on the response event
- * stream.
- *
- * @publicApi
- */
-class HttpResponse extends HttpResponseBase {
-    /**
-     * Construct a new `HttpResponse`.
-     */
-    constructor(init = {}) {
-        super(init);
-        this.type = HttpEventType.Response;
-        this.body = init.body !== undefined ? init.body : null;
-    }
-    clone(update = {}) {
-        return new HttpResponse({
-            body: (update.body !== undefined) ? update.body : this.body,
-            headers: update.headers || this.headers,
-            status: (update.status !== undefined) ? update.status : this.status,
-            statusText: update.statusText || this.statusText,
-            url: update.url || this.url || undefined,
-        });
-    }
-}
-/**
- * A response that represents an error or failure, either from a
- * non-successful HTTP status, an error while executing the request,
- * or some other failure which occurred during the parsing of the response.
- *
- * Any error returned on the `Observable` response stream will be
- * wrapped in an `HttpErrorResponse` to provide additional context about
- * the state of the HTTP layer when the error occurred. The error property
- * will contain either a wrapped Error object or the error response returned
- * from the server.
- *
- * @publicApi
- */
-class HttpErrorResponse extends HttpResponseBase {
-    constructor(init) {
-        // Initialize with a default status of 0 / Unknown Error.
-        super(init, 0, 'Unknown Error');
-        this.name = 'HttpErrorResponse';
-        /**
-         * Errors are never okay, even when the status code is in the 2xx success range.
-         */
-        this.ok = false;
-        // If the response was successful, then this was a parse error. Otherwise, it was
-        // a protocol-level failure of some sort. Either the request failed in transit
-        // or the server returned an unsuccessful status code.
-        if (this.status >= 200 && this.status < 300) {
-            this.message = `Http failure during parsing for ${init.url || '(unknown url)'}`;
-        }
-        else {
-            this.message = `Http failure response for ${init.url || '(unknown url)'}: ${init.status} ${init.statusText}`;
-        }
-        this.error = init.error || null;
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Constructs an instance of `HttpRequestOptions<T>` from a source `HttpMethodOptions` and
- * the given `body`. This function clones the object and adds the body.
- *
- * Note that the `responseType` *options* value is a String that identifies the
- * single data type of the response.
- * A single overload version of the method handles each response type.
- * The value of `responseType` cannot be a union, as the combined signature could imply.
- *
- */
-function addBody(options, body) {
-    return {
-        body,
-        headers: options.headers,
-        observe: options.observe,
-        params: options.params,
-        reportProgress: options.reportProgress,
-        responseType: options.responseType,
-        withCredentials: options.withCredentials,
-    };
-}
-/**
- * Performs HTTP requests.
- * This service is available as an injectable class, with methods to perform HTTP requests.
- * Each request method has multiple signatures, and the return type varies based on
- * the signature that is called (mainly the values of `observe` and `responseType`).
- *
- * Note that the `responseType` *options* value is a String that identifies the
- * single data type of the response.
- * A single overload version of the method handles each response type.
- * The value of `responseType` cannot be a union, as the combined signature could imply.
-
- *
- * @usageNotes
- * Sample HTTP requests for the [Tour of Heroes](/tutorial/toh-pt0) application.
- *
- * ### HTTP Request Example
- *
- * ```
- *  // GET heroes whose name contains search term
- * searchHeroes(term: string): observable<Hero[]>{
- *
- *  const params = new HttpParams({fromString: 'name=term'});
- *    return this.httpClient.request('GET', this.heroesUrl, {responseType:'json', params});
- * }
- * ```
- *
- * Alternatively, the parameter string can be used without invoking HttpParams
- * by directly joining to the URL.
- * ```
- * this.httpClient.request('GET', this.heroesUrl + '?' + 'name=term', {responseType:'json'});
- * ```
- *
- *
- * ### JSONP Example
- * ```
- * requestJsonp(url, callback = 'callback') {
- *  return this.httpClient.jsonp(this.heroesURL, callback);
- * }
- * ```
- *
- * ### PATCH Example
- * ```
- * // PATCH one of the heroes' name
- * patchHero (id: number, heroName: string): Observable<{}> {
- * const url = `${this.heroesUrl}/${id}`;   // PATCH api/heroes/42
- *  return this.httpClient.patch(url, {name: heroName}, httpOptions)
- *    .pipe(catchError(this.handleError('patchHero')));
- * }
- * ```
- *
- * @see [HTTP Guide](guide/http)
- * @see [HTTP Request](api/common/http/HttpRequest)
- *
- * @publicApi
- */
-class HttpClient {
-    constructor(handler) {
-        this.handler = handler;
-    }
-    /**
-     * Constructs an observable for a generic HTTP request that, when subscribed,
-     * fires the request through the chain of registered interceptors and on to the
-     * server.
-     *
-     * You can pass an `HttpRequest` directly as the only parameter. In this case,
-     * the call returns an observable of the raw `HttpEvent` stream.
-     *
-     * Alternatively you can pass an HTTP method as the first parameter,
-     * a URL string as the second, and an options hash containing the request body as the third.
-     * See `addBody()`. In this case, the specified `responseType` and `observe` options determine the
-     * type of returned observable.
-     *   * The `responseType` value determines how a successful response body is parsed.
-     *   * If `responseType` is the default `json`, you can pass a type interface for the resulting
-     * object as a type parameter to the call.
-     *
-     * The `observe` value determines the return type, according to what you are interested in
-     * observing.
-     *   * An `observe` value of events returns an observable of the raw `HttpEvent` stream, including
-     * progress events by default.
-     *   * An `observe` value of response returns an observable of `HttpResponse<T>`,
-     * where the `T` parameter depends on the `responseType` and any optionally provided type
-     * parameter.
-     *   * An `observe` value of body returns an observable of `<T>` with the same `T` body type.
-     *
-     */
-    request(first, url, options = {}) {
-        let req;
-        // First, check whether the primary argument is an instance of `HttpRequest`.
-        if (first instanceof HttpRequest) {
-            // It is. The other arguments must be undefined (per the signatures) and can be
-            // ignored.
-            req = first;
-        }
-        else {
-            // It's a string, so it represents a URL. Construct a request based on it,
-            // and incorporate the remaining arguments (assuming `GET` unless a method is
-            // provided.
-            // Figure out the headers.
-            let headers = undefined;
-            if (options.headers instanceof HttpHeaders) {
-                headers = options.headers;
-            }
-            else {
-                headers = new HttpHeaders(options.headers);
-            }
-            // Sort out parameters.
-            let params = undefined;
-            if (!!options.params) {
-                if (options.params instanceof HttpParams) {
-                    params = options.params;
-                }
-                else {
-                    params = new HttpParams({ fromObject: options.params });
-                }
-            }
-            // Construct the request.
-            req = new HttpRequest(first, url, (options.body !== undefined ? options.body : null), {
-                headers,
-                params,
-                reportProgress: options.reportProgress,
-                // By default, JSON is assumed to be returned for all calls.
-                responseType: options.responseType || 'json',
-                withCredentials: options.withCredentials,
-            });
-        }
-        // Start with an Observable.of() the initial request, and run the handler (which
-        // includes all interceptors) inside a concatMap(). This way, the handler runs
-        // inside an Observable chain, which causes interceptors to be re-run on every
-        // subscription (this also makes retries re-run the handler, including interceptors).
-        const events$ = Object(rxjs__WEBPACK_IMPORTED_MODULE_1__["of"])(req).pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["concatMap"])((req) => this.handler.handle(req)));
-        // If coming via the API signature which accepts a previously constructed HttpRequest,
-        // the only option is to get the event stream. Otherwise, return the event stream if
-        // that is what was requested.
-        if (first instanceof HttpRequest || options.observe === 'events') {
-            return events$;
-        }
-        // The requested stream contains either the full response or the body. In either
-        // case, the first step is to filter the event stream to extract a stream of
-        // responses(s).
-        const res$ = events$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["filter"])((event) => event instanceof HttpResponse));
-        // Decide which stream to return.
-        switch (options.observe || 'body') {
-            case 'body':
-                // The requested stream is the body. Map the response stream to the response
-                // body. This could be done more simply, but a misbehaving interceptor might
-                // transform the response body into a different format and ignore the requested
-                // responseType. Guard against this by validating that the response is of the
-                // requested type.
-                switch (req.responseType) {
-                    case 'arraybuffer':
-                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => {
-                            // Validate that the body is an ArrayBuffer.
-                            if (res.body !== null && !(res.body instanceof ArrayBuffer)) {
-                                throw new Error('Response is not an ArrayBuffer.');
-                            }
-                            return res.body;
-                        }));
-                    case 'blob':
-                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => {
-                            // Validate that the body is a Blob.
-                            if (res.body !== null && !(res.body instanceof Blob)) {
-                                throw new Error('Response is not a Blob.');
-                            }
-                            return res.body;
-                        }));
-                    case 'text':
-                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => {
-                            // Validate that the body is a string.
-                            if (res.body !== null && typeof res.body !== 'string') {
-                                throw new Error('Response is not a string.');
-                            }
-                            return res.body;
-                        }));
-                    case 'json':
-                    default:
-                        // No validation needed for JSON responses, as they can be of any type.
-                        return res$.pipe(Object(rxjs_operators__WEBPACK_IMPORTED_MODULE_2__["map"])((res) => res.body));
-                }
-            case 'response':
-                // The response stream was requested directly, so return it.
-                return res$;
-            default:
-                // Guard against new future observe types being added.
-                throw new Error(`Unreachable: unhandled observe type ${options.observe}}`);
-        }
-    }
-    /**
-     * Constructs an observable that, when subscribed, causes the configured
-     * `DELETE` request to execute on the server. See the individual overloads for
-     * details on the return type.
-     *
-     * @param url     The endpoint URL.
-     * @param options The HTTP options to send with the request.
-     *
-     */
-    delete(url, options = {}) {
-        return this.request('DELETE', url, options);
-    }
-    /**
-     * Constructs an observable that, when subscribed, causes the configured
-     * `GET` request to execute on the server. See the individual overloads for
-     * details on the return type.
-     */
-    get(url, options = {}) {
-        return this.request('GET', url, options);
-    }
-    /**
-     * Constructs an observable that, when subscribed, causes the configured
-     * `HEAD` request to execute on the server. The `HEAD` method returns
-     * meta information about the resource without transferring the
-     * resource itself. See the individual overloads for
-     * details on the return type.
-     */
-    head(url, options = {}) {
-        return this.request('HEAD', url, options);
-    }
-    /**
-     * Constructs an `Observable` that, when subscribed, causes a request with the special method
-     * `JSONP` to be dispatched via the interceptor pipeline.
-     * The [JSONP pattern](https://en.wikipedia.org/wiki/JSONP) works around limitations of certain
-     * API endpoints that don't support newer,
-     * and preferable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) protocol.
-     * JSONP treats the endpoint API as a JavaScript file and tricks the browser to process the
-     * requests even if the API endpoint is not located on the same domain (origin) as the client-side
-     * application making the request.
-     * The endpoint API must support JSONP callback for JSONP requests to work.
-     * The resource API returns the JSON response wrapped in a callback function.
-     * You can pass the callback function name as one of the query parameters.
-     * Note that JSONP requests can only be used with `GET` requests.
-     *
-     * @param url The resource URL.
-     * @param callbackParam The callback function name.
-     *
-     */
-    jsonp(url, callbackParam) {
-        return this.request('JSONP', url, {
-            params: new HttpParams().append(callbackParam, 'JSONP_CALLBACK'),
-            observe: 'body',
-            responseType: 'json',
-        });
-    }
-    /**
-     * Constructs an `Observable` that, when subscribed, causes the configured
-     * `OPTIONS` request to execute on the server. This method allows the client
-     * to determine the supported HTTP methods and other capabilites of an endpoint,
-     * without implying a resource action. See the individual overloads for
-     * details on the return type.
-     */
-    options(url, options = {}) {
-        return this.request('OPTIONS', url, options);
-    }
-    /**
-     * Constructs an observable that, when subscribed, causes the configured
-     * `PATCH` request to execute on the server. See the individual overloads for
-     * details on the return type.
-     */
-    patch(url, body, options = {}) {
-        return this.request('PATCH', url, addBody(options, body));
-    }
-    /**
-     * Constructs an observable that, when subscribed, causes the configured
-     * `POST` request to execute on the server. The server responds with the location of
-     * the replaced resource. See the individual overloads for
-     * details on the return type.
-     */
-    post(url, body, options = {}) {
-        return this.request('POST', url, addBody(options, body));
-    }
-    /**
-     * Constructs an observable that, when subscribed, causes the configured
-     * `PUT` request to execute on the server. The `PUT` method replaces an existing resource
-     * with a new set of values.
-     * See the individual overloads for details on the return type.
-     */
-    put(url, body, options = {}) {
-        return this.request('PUT', url, addBody(options, body));
-    }
-}
-HttpClient.ɵfac = function HttpClient_Factory(t) { return new (t || HttpClient)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](HttpHandler)); };
-HttpClient.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpClient, factory: HttpClient.ɵfac });
-HttpClient.ctorParameters = () => [
-    { type: HttpHandler }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClient, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: HttpHandler }]; }, null); })();
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * `HttpHandler` which applies an `HttpInterceptor` to an `HttpRequest`.
- *
- *
- */
-class HttpInterceptorHandler {
-    constructor(next, interceptor) {
-        this.next = next;
-        this.interceptor = interceptor;
-    }
-    handle(req) {
-        return this.interceptor.intercept(req, this.next);
-    }
-}
-/**
- * A multi-provider token that represents the array of registered
- * `HttpInterceptor` objects.
- *
- * @publicApi
- */
-const HTTP_INTERCEPTORS = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('HTTP_INTERCEPTORS');
-class NoopInterceptor {
-    intercept(req, next) {
-        return next.handle(req);
-    }
-}
-NoopInterceptor.ɵfac = function NoopInterceptor_Factory(t) { return new (t || NoopInterceptor)(); };
-NoopInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: NoopInterceptor, factory: NoopInterceptor.ɵfac });
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](NoopInterceptor, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], null, null); })();
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// Every request made through JSONP needs a callback name that's unique across the
-// whole page. Each request is assigned an id and the callback name is constructed
-// from that. The next id to be assigned is tracked in a global variable here that
-// is shared among all applications on the page.
-let nextRequestId = 0;
-// Error text given when a JSONP script is injected, but doesn't invoke the callback
-// passed in its URL.
-const JSONP_ERR_NO_CALLBACK = 'JSONP injected script did not invoke callback.';
-// Error text given when a request is passed to the JsonpClientBackend that doesn't
-// have a request method JSONP.
-const JSONP_ERR_WRONG_METHOD = 'JSONP requests must use JSONP request method.';
-const JSONP_ERR_WRONG_RESPONSE_TYPE = 'JSONP requests must use Json response type.';
-/**
- * DI token/abstract type representing a map of JSONP callbacks.
- *
- * In the browser, this should always be the `window` object.
- *
- *
- */
-class JsonpCallbackContext {
-}
-/**
- * Processes an `HttpRequest` with the JSONP method,
- * by performing JSONP style requests.
- * @see `HttpHandler`
- * @see `HttpXhrBackend`
- *
- * @publicApi
- */
-class JsonpClientBackend {
-    constructor(callbackMap, document) {
-        this.callbackMap = callbackMap;
-        this.document = document;
-        /**
-         * A resolved promise that can be used to schedule microtasks in the event handlers.
-         */
-        this.resolvedPromise = Promise.resolve();
-    }
-    /**
-     * Get the name of the next callback method, by incrementing the global `nextRequestId`.
-     */
-    nextCallback() {
-        return `ng_jsonp_callback_${nextRequestId++}`;
-    }
-    /**
-     * Processes a JSONP request and returns an event stream of the results.
-     * @param req The request object.
-     * @returns An observable of the response events.
-     *
-     */
-    handle(req) {
-        // Firstly, check both the method and response type. If either doesn't match
-        // then the request was improperly routed here and cannot be handled.
-        if (req.method !== 'JSONP') {
-            throw new Error(JSONP_ERR_WRONG_METHOD);
-        }
-        else if (req.responseType !== 'json') {
-            throw new Error(JSONP_ERR_WRONG_RESPONSE_TYPE);
-        }
-        // Everything else happens inside the Observable boundary.
-        return new rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"]((observer) => {
-            // The first step to make a request is to generate the callback name, and replace the
-            // callback placeholder in the URL with the name. Care has to be taken here to ensure
-            // a trailing &, if matched, gets inserted back into the URL in the correct place.
-            const callback = this.nextCallback();
-            const url = req.urlWithParams.replace(/=JSONP_CALLBACK(&|$)/, `=${callback}$1`);
-            // Construct the <script> tag and point it at the URL.
-            const node = this.document.createElement('script');
-            node.src = url;
-            // A JSONP request requires waiting for multiple callbacks. These variables
-            // are closed over and track state across those callbacks.
-            // The response object, if one has been received, or null otherwise.
-            let body = null;
-            // Whether the response callback has been called.
-            let finished = false;
-            // Whether the request has been cancelled (and thus any other callbacks)
-            // should be ignored.
-            let cancelled = false;
-            // Set the response callback in this.callbackMap (which will be the window
-            // object in the browser. The script being loaded via the <script> tag will
-            // eventually call this callback.
-            this.callbackMap[callback] = (data) => {
-                // Data has been received from the JSONP script. Firstly, delete this callback.
-                delete this.callbackMap[callback];
-                // Next, make sure the request wasn't cancelled in the meantime.
-                if (cancelled) {
-                    return;
-                }
-                // Set state to indicate data was received.
-                body = data;
-                finished = true;
-            };
-            // cleanup() is a utility closure that removes the <script> from the page and
-            // the response callback from the window. This logic is used in both the
-            // success, error, and cancellation paths, so it's extracted out for convenience.
-            const cleanup = () => {
-                // Remove the <script> tag if it's still on the page.
-                if (node.parentNode) {
-                    node.parentNode.removeChild(node);
-                }
-                // Remove the response callback from the callbackMap (window object in the
-                // browser).
-                delete this.callbackMap[callback];
-            };
-            // onLoad() is the success callback which runs after the response callback
-            // if the JSONP script loads successfully. The event itself is unimportant.
-            // If something went wrong, onLoad() may run without the response callback
-            // having been invoked.
-            const onLoad = (event) => {
-                // Do nothing if the request has been cancelled.
-                if (cancelled) {
-                    return;
-                }
-                // We wrap it in an extra Promise, to ensure the microtask
-                // is scheduled after the loaded endpoint has executed any potential microtask itself,
-                // which is not guaranteed in Internet Explorer and EdgeHTML. See issue #39496
-                this.resolvedPromise.then(() => {
-                    // Cleanup the page.
-                    cleanup();
-                    // Check whether the response callback has run.
-                    if (!finished) {
-                        // It hasn't, something went wrong with the request. Return an error via
-                        // the Observable error path. All JSONP errors have status 0.
-                        observer.error(new HttpErrorResponse({
-                            url,
-                            status: 0,
-                            statusText: 'JSONP Error',
-                            error: new Error(JSONP_ERR_NO_CALLBACK),
-                        }));
-                        return;
-                    }
-                    // Success. body either contains the response body or null if none was
-                    // returned.
-                    observer.next(new HttpResponse({
-                        body,
-                        status: 200,
-                        statusText: 'OK',
-                        url,
-                    }));
-                    // Complete the stream, the response is over.
-                    observer.complete();
-                });
-            };
-            // onError() is the error callback, which runs if the script returned generates
-            // a Javascript error. It emits the error via the Observable error channel as
-            // a HttpErrorResponse.
-            const onError = (error) => {
-                // If the request was already cancelled, no need to emit anything.
-                if (cancelled) {
-                    return;
-                }
-                cleanup();
-                // Wrap the error in a HttpErrorResponse.
-                observer.error(new HttpErrorResponse({
-                    error,
-                    status: 0,
-                    statusText: 'JSONP Error',
-                    url,
-                }));
-            };
-            // Subscribe to both the success (load) and error events on the <script> tag,
-            // and add it to the page.
-            node.addEventListener('load', onLoad);
-            node.addEventListener('error', onError);
-            this.document.body.appendChild(node);
-            // The request has now been successfully sent.
-            observer.next({ type: HttpEventType.Sent });
-            // Cancellation handler.
-            return () => {
-                // Track the cancellation so event listeners won't do anything even if already scheduled.
-                cancelled = true;
-                // Remove the event listeners so they won't run if the events later fire.
-                node.removeEventListener('load', onLoad);
-                node.removeEventListener('error', onError);
-                // And finally, clean up the page.
-                cleanup();
-            };
-        });
-    }
-}
-JsonpClientBackend.ɵfac = function JsonpClientBackend_Factory(t) { return new (t || JsonpClientBackend)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](JsonpCallbackContext), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"])); };
-JsonpClientBackend.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: JsonpClientBackend, factory: JsonpClientBackend.ɵfac });
-JsonpClientBackend.ctorParameters = () => [
-    { type: JsonpCallbackContext },
-    { type: undefined, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"],] }] }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](JsonpClientBackend, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: JsonpCallbackContext }, { type: undefined, decorators: [{
-                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
-                args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"]]
-            }] }]; }, null); })();
-/**
- * Identifies requests with the method JSONP and
- * shifts them to the `JsonpClientBackend`.
- *
- * @see `HttpInterceptor`
- *
- * @publicApi
- */
-class JsonpInterceptor {
-    constructor(jsonp) {
-        this.jsonp = jsonp;
-    }
-    /**
-     * Identifies and handles a given JSONP request.
-     * @param req The outgoing request object to handle.
-     * @param next The next interceptor in the chain, or the backend
-     * if no interceptors remain in the chain.
-     * @returns An observable of the event stream.
-     */
-    intercept(req, next) {
-        if (req.method === 'JSONP') {
-            return this.jsonp.handle(req);
-        }
-        // Fall through for normal HTTP requests.
-        return next.handle(req);
-    }
-}
-JsonpInterceptor.ɵfac = function JsonpInterceptor_Factory(t) { return new (t || JsonpInterceptor)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](JsonpClientBackend)); };
-JsonpInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: JsonpInterceptor, factory: JsonpInterceptor.ɵfac });
-JsonpInterceptor.ctorParameters = () => [
-    { type: JsonpClientBackend }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](JsonpInterceptor, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: JsonpClientBackend }]; }, null); })();
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const XSSI_PREFIX = /^\)\]\}',?\n/;
-/**
- * Determine an appropriate URL for the response, by checking either
- * XMLHttpRequest.responseURL or the X-Request-URL header.
- */
-function getResponseUrl(xhr) {
-    if ('responseURL' in xhr && xhr.responseURL) {
-        return xhr.responseURL;
-    }
-    if (/^X-Request-URL:/m.test(xhr.getAllResponseHeaders())) {
-        return xhr.getResponseHeader('X-Request-URL');
-    }
-    return null;
-}
-/**
- * A wrapper around the `XMLHttpRequest` constructor.
- *
- * @publicApi
- */
-class XhrFactory {
-}
-/**
- * A factory for `HttpXhrBackend` that uses the `XMLHttpRequest` browser API.
- *
- */
-class BrowserXhr {
-    constructor() { }
-    build() {
-        return (new XMLHttpRequest());
-    }
-}
-BrowserXhr.ɵfac = function BrowserXhr_Factory(t) { return new (t || BrowserXhr)(); };
-BrowserXhr.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: BrowserXhr, factory: BrowserXhr.ɵfac });
-BrowserXhr.ctorParameters = () => [];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](BrowserXhr, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return []; }, null); })();
-/**
- * Uses `XMLHttpRequest` to send requests to a backend server.
- * @see `HttpHandler`
- * @see `JsonpClientBackend`
- *
- * @publicApi
- */
-class HttpXhrBackend {
-    constructor(xhrFactory) {
-        this.xhrFactory = xhrFactory;
-    }
-    /**
-     * Processes a request and returns a stream of response events.
-     * @param req The request object.
-     * @returns An observable of the response events.
-     */
-    handle(req) {
-        // Quick check to give a better error message when a user attempts to use
-        // HttpClient.jsonp() without installing the HttpClientJsonpModule
-        if (req.method === 'JSONP') {
-            throw new Error(`Attempted to construct Jsonp request without HttpClientJsonpModule installed.`);
-        }
-        // Everything happens on Observable subscription.
-        return new rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"]((observer) => {
-            // Start by setting up the XHR object with request method, URL, and withCredentials flag.
-            const xhr = this.xhrFactory.build();
-            xhr.open(req.method, req.urlWithParams);
-            if (!!req.withCredentials) {
-                xhr.withCredentials = true;
-            }
-            // Add all the requested headers.
-            req.headers.forEach((name, values) => xhr.setRequestHeader(name, values.join(',')));
-            // Add an Accept header if one isn't present already.
-            if (!req.headers.has('Accept')) {
-                xhr.setRequestHeader('Accept', 'application/json, text/plain, */*');
-            }
-            // Auto-detect the Content-Type header if one isn't present already.
-            if (!req.headers.has('Content-Type')) {
-                const detectedType = req.detectContentTypeHeader();
-                // Sometimes Content-Type detection fails.
-                if (detectedType !== null) {
-                    xhr.setRequestHeader('Content-Type', detectedType);
-                }
-            }
-            // Set the responseType if one was requested.
-            if (req.responseType) {
-                const responseType = req.responseType.toLowerCase();
-                // JSON responses need to be processed as text. This is because if the server
-                // returns an XSSI-prefixed JSON response, the browser will fail to parse it,
-                // xhr.response will be null, and xhr.responseText cannot be accessed to
-                // retrieve the prefixed JSON data in order to strip the prefix. Thus, all JSON
-                // is parsed by first requesting text and then applying JSON.parse.
-                xhr.responseType = ((responseType !== 'json') ? responseType : 'text');
-            }
-            // Serialize the request body if one is present. If not, this will be set to null.
-            const reqBody = req.serializeBody();
-            // If progress events are enabled, response headers will be delivered
-            // in two events - the HttpHeaderResponse event and the full HttpResponse
-            // event. However, since response headers don't change in between these
-            // two events, it doesn't make sense to parse them twice. So headerResponse
-            // caches the data extracted from the response whenever it's first parsed,
-            // to ensure parsing isn't duplicated.
-            let headerResponse = null;
-            // partialFromXhr extracts the HttpHeaderResponse from the current XMLHttpRequest
-            // state, and memoizes it into headerResponse.
-            const partialFromXhr = () => {
-                if (headerResponse !== null) {
-                    return headerResponse;
-                }
-                // Read status and normalize an IE9 bug (https://bugs.jquery.com/ticket/1450).
-                const status = xhr.status === 1223 ? 204 : xhr.status;
-                const statusText = xhr.statusText || 'OK';
-                // Parse headers from XMLHttpRequest - this step is lazy.
-                const headers = new HttpHeaders(xhr.getAllResponseHeaders());
-                // Read the response URL from the XMLHttpResponse instance and fall back on the
-                // request URL.
-                const url = getResponseUrl(xhr) || req.url;
-                // Construct the HttpHeaderResponse and memoize it.
-                headerResponse = new HttpHeaderResponse({ headers, status, statusText, url });
-                return headerResponse;
-            };
-            // Next, a few closures are defined for the various events which XMLHttpRequest can
-            // emit. This allows them to be unregistered as event listeners later.
-            // First up is the load event, which represents a response being fully available.
-            const onLoad = () => {
-                // Read response state from the memoized partial data.
-                let { headers, status, statusText, url } = partialFromXhr();
-                // The body will be read out if present.
-                let body = null;
-                if (status !== 204) {
-                    // Use XMLHttpRequest.response if set, responseText otherwise.
-                    body = (typeof xhr.response === 'undefined') ? xhr.responseText : xhr.response;
-                }
-                // Normalize another potential bug (this one comes from CORS).
-                if (status === 0) {
-                    status = !!body ? 200 : 0;
-                }
-                // ok determines whether the response will be transmitted on the event or
-                // error channel. Unsuccessful status codes (not 2xx) will always be errors,
-                // but a successful status code can still result in an error if the user
-                // asked for JSON data and the body cannot be parsed as such.
-                let ok = status >= 200 && status < 300;
-                // Check whether the body needs to be parsed as JSON (in many cases the browser
-                // will have done that already).
-                if (req.responseType === 'json' && typeof body === 'string') {
-                    // Save the original body, before attempting XSSI prefix stripping.
-                    const originalBody = body;
-                    body = body.replace(XSSI_PREFIX, '');
-                    try {
-                        // Attempt the parse. If it fails, a parse error should be delivered to the user.
-                        body = body !== '' ? JSON.parse(body) : null;
-                    }
-                    catch (error) {
-                        // Since the JSON.parse failed, it's reasonable to assume this might not have been a
-                        // JSON response. Restore the original body (including any XSSI prefix) to deliver
-                        // a better error response.
-                        body = originalBody;
-                        // If this was an error request to begin with, leave it as a string, it probably
-                        // just isn't JSON. Otherwise, deliver the parsing error to the user.
-                        if (ok) {
-                            // Even though the response status was 2xx, this is still an error.
-                            ok = false;
-                            // The parse error contains the text of the body that failed to parse.
-                            body = { error, text: body };
-                        }
-                    }
-                }
-                if (ok) {
-                    // A successful response is delivered on the event stream.
-                    observer.next(new HttpResponse({
-                        body,
-                        headers,
-                        status,
-                        statusText,
-                        url: url || undefined,
-                    }));
-                    // The full body has been received and delivered, no further events
-                    // are possible. This request is complete.
-                    observer.complete();
-                }
-                else {
-                    // An unsuccessful request is delivered on the error channel.
-                    observer.error(new HttpErrorResponse({
-                        // The error in this case is the response body (error from the server).
-                        error: body,
-                        headers,
-                        status,
-                        statusText,
-                        url: url || undefined,
-                    }));
-                }
-            };
-            // The onError callback is called when something goes wrong at the network level.
-            // Connection timeout, DNS error, offline, etc. These are actual errors, and are
-            // transmitted on the error channel.
-            const onError = (error) => {
-                const { url } = partialFromXhr();
-                const res = new HttpErrorResponse({
-                    error,
-                    status: xhr.status || 0,
-                    statusText: xhr.statusText || 'Unknown Error',
-                    url: url || undefined,
-                });
-                observer.error(res);
-            };
-            // The sentHeaders flag tracks whether the HttpResponseHeaders event
-            // has been sent on the stream. This is necessary to track if progress
-            // is enabled since the event will be sent on only the first download
-            // progerss event.
-            let sentHeaders = false;
-            // The download progress event handler, which is only registered if
-            // progress events are enabled.
-            const onDownProgress = (event) => {
-                // Send the HttpResponseHeaders event if it hasn't been sent already.
-                if (!sentHeaders) {
-                    observer.next(partialFromXhr());
-                    sentHeaders = true;
-                }
-                // Start building the download progress event to deliver on the response
-                // event stream.
-                let progressEvent = {
-                    type: HttpEventType.DownloadProgress,
-                    loaded: event.loaded,
-                };
-                // Set the total number of bytes in the event if it's available.
-                if (event.lengthComputable) {
-                    progressEvent.total = event.total;
-                }
-                // If the request was for text content and a partial response is
-                // available on XMLHttpRequest, include it in the progress event
-                // to allow for streaming reads.
-                if (req.responseType === 'text' && !!xhr.responseText) {
-                    progressEvent.partialText = xhr.responseText;
-                }
-                // Finally, fire the event.
-                observer.next(progressEvent);
-            };
-            // The upload progress event handler, which is only registered if
-            // progress events are enabled.
-            const onUpProgress = (event) => {
-                // Upload progress events are simpler. Begin building the progress
-                // event.
-                let progress = {
-                    type: HttpEventType.UploadProgress,
-                    loaded: event.loaded,
-                };
-                // If the total number of bytes being uploaded is available, include
-                // it.
-                if (event.lengthComputable) {
-                    progress.total = event.total;
-                }
-                // Send the event.
-                observer.next(progress);
-            };
-            // By default, register for load and error events.
-            xhr.addEventListener('load', onLoad);
-            xhr.addEventListener('error', onError);
-            xhr.addEventListener('timeout', onError);
-            xhr.addEventListener('abort', onError);
-            // Progress events are only enabled if requested.
-            if (req.reportProgress) {
-                // Download progress is always enabled if requested.
-                xhr.addEventListener('progress', onDownProgress);
-                // Upload progress depends on whether there is a body to upload.
-                if (reqBody !== null && xhr.upload) {
-                    xhr.upload.addEventListener('progress', onUpProgress);
-                }
-            }
-            // Fire the request, and notify the event stream that it was fired.
-            xhr.send(reqBody);
-            observer.next({ type: HttpEventType.Sent });
-            // This is the return from the Observable function, which is the
-            // request cancellation handler.
-            return () => {
-                // On a cancellation, remove all registered event listeners.
-                xhr.removeEventListener('error', onError);
-                xhr.removeEventListener('abort', onError);
-                xhr.removeEventListener('load', onLoad);
-                xhr.removeEventListener('timeout', onError);
-                if (req.reportProgress) {
-                    xhr.removeEventListener('progress', onDownProgress);
-                    if (reqBody !== null && xhr.upload) {
-                        xhr.upload.removeEventListener('progress', onUpProgress);
-                    }
-                }
-                // Finally, abort the in-flight request.
-                if (xhr.readyState !== xhr.DONE) {
-                    xhr.abort();
-                }
-            };
-        });
-    }
-}
-HttpXhrBackend.ɵfac = function HttpXhrBackend_Factory(t) { return new (t || HttpXhrBackend)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](XhrFactory)); };
-HttpXhrBackend.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpXhrBackend, factory: HttpXhrBackend.ɵfac });
-HttpXhrBackend.ctorParameters = () => [
-    { type: XhrFactory }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpXhrBackend, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: XhrFactory }]; }, null); })();
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const XSRF_COOKIE_NAME = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('XSRF_COOKIE_NAME');
-const XSRF_HEADER_NAME = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('XSRF_HEADER_NAME');
-/**
- * Retrieves the current XSRF token to use with the next outgoing request.
- *
- * @publicApi
- */
-class HttpXsrfTokenExtractor {
-}
-/**
- * `HttpXsrfTokenExtractor` which retrieves the token from a cookie.
- */
-class HttpXsrfCookieExtractor {
-    constructor(doc, platform, cookieName) {
-        this.doc = doc;
-        this.platform = platform;
-        this.cookieName = cookieName;
-        this.lastCookieString = '';
-        this.lastToken = null;
-        /**
-         * @internal for testing
-         */
-        this.parseCount = 0;
-    }
-    getToken() {
-        if (this.platform === 'server') {
-            return null;
-        }
-        const cookieString = this.doc.cookie || '';
-        if (cookieString !== this.lastCookieString) {
-            this.parseCount++;
-            this.lastToken = Object(_angular_common__WEBPACK_IMPORTED_MODULE_3__["ɵparseCookieValue"])(cookieString, this.cookieName);
-            this.lastCookieString = cookieString;
-        }
-        return this.lastToken;
-    }
-}
-HttpXsrfCookieExtractor.ɵfac = function HttpXsrfCookieExtractor_Factory(t) { return new (t || HttpXsrfCookieExtractor)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_core__WEBPACK_IMPORTED_MODULE_0__["PLATFORM_ID"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](XSRF_COOKIE_NAME)); };
-HttpXsrfCookieExtractor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpXsrfCookieExtractor, factory: HttpXsrfCookieExtractor.ɵfac });
-HttpXsrfCookieExtractor.ctorParameters = () => [
-    { type: undefined, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"],] }] },
-    { type: String, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [_angular_core__WEBPACK_IMPORTED_MODULE_0__["PLATFORM_ID"],] }] },
-    { type: String, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [XSRF_COOKIE_NAME,] }] }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpXsrfCookieExtractor, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: undefined, decorators: [{
-                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
-                args: [_angular_common__WEBPACK_IMPORTED_MODULE_3__["DOCUMENT"]]
-            }] }, { type: String, decorators: [{
-                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
-                args: [_angular_core__WEBPACK_IMPORTED_MODULE_0__["PLATFORM_ID"]]
-            }] }, { type: String, decorators: [{
-                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
-                args: [XSRF_COOKIE_NAME]
-            }] }]; }, null); })();
-/**
- * `HttpInterceptor` which adds an XSRF token to eligible outgoing requests.
- */
-class HttpXsrfInterceptor {
-    constructor(tokenService, headerName) {
-        this.tokenService = tokenService;
-        this.headerName = headerName;
-    }
-    intercept(req, next) {
-        const lcUrl = req.url.toLowerCase();
-        // Skip both non-mutating requests and absolute URLs.
-        // Non-mutating requests don't require a token, and absolute URLs require special handling
-        // anyway as the cookie set
-        // on our origin is not the same as the token expected by another origin.
-        if (req.method === 'GET' || req.method === 'HEAD' || lcUrl.startsWith('http://') ||
-            lcUrl.startsWith('https://')) {
-            return next.handle(req);
-        }
-        const token = this.tokenService.getToken();
-        // Be careful not to overwrite an existing header of the same name.
-        if (token !== null && !req.headers.has(this.headerName)) {
-            req = req.clone({ headers: req.headers.set(this.headerName, token) });
-        }
-        return next.handle(req);
-    }
-}
-HttpXsrfInterceptor.ɵfac = function HttpXsrfInterceptor_Factory(t) { return new (t || HttpXsrfInterceptor)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](HttpXsrfTokenExtractor), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](XSRF_HEADER_NAME)); };
-HttpXsrfInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpXsrfInterceptor, factory: HttpXsrfInterceptor.ɵfac });
-HttpXsrfInterceptor.ctorParameters = () => [
-    { type: HttpXsrfTokenExtractor },
-    { type: String, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"], args: [XSRF_HEADER_NAME,] }] }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpXsrfInterceptor, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: HttpXsrfTokenExtractor }, { type: String, decorators: [{
-                type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Inject"],
-                args: [XSRF_HEADER_NAME]
-            }] }]; }, null); })();
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * An injectable `HttpHandler` that applies multiple interceptors
- * to a request before passing it to the given `HttpBackend`.
- *
- * The interceptors are loaded lazily from the injector, to allow
- * interceptors to themselves inject classes depending indirectly
- * on `HttpInterceptingHandler` itself.
- * @see `HttpInterceptor`
- */
-class HttpInterceptingHandler {
-    constructor(backend, injector) {
-        this.backend = backend;
-        this.injector = injector;
-        this.chain = null;
-    }
-    handle(req) {
-        if (this.chain === null) {
-            const interceptors = this.injector.get(HTTP_INTERCEPTORS, []);
-            this.chain = interceptors.reduceRight((next, interceptor) => new HttpInterceptorHandler(next, interceptor), this.backend);
-        }
-        return this.chain.handle(req);
-    }
-}
-HttpInterceptingHandler.ɵfac = function HttpInterceptingHandler_Factory(t) { return new (t || HttpInterceptingHandler)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](HttpBackend), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injector"])); };
-HttpInterceptingHandler.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: HttpInterceptingHandler, factory: HttpInterceptingHandler.ɵfac });
-HttpInterceptingHandler.ctorParameters = () => [
-    { type: HttpBackend },
-    { type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injector"] }
-];
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpInterceptingHandler, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
-    }], function () { return [{ type: HttpBackend }, { type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injector"] }]; }, null); })();
-/**
- * Constructs an `HttpHandler` that applies interceptors
- * to a request before passing it to the given `HttpBackend`.
- *
- * Use as a factory function within `HttpClientModule`.
- *
- *
- */
-function interceptingHandler(backend, interceptors = []) {
-    if (!interceptors) {
-        return backend;
-    }
-    return interceptors.reduceRight((next, interceptor) => new HttpInterceptorHandler(next, interceptor), backend);
-}
-/**
- * Factory function that determines where to store JSONP callbacks.
- *
- * Ordinarily JSONP callbacks are stored on the `window` object, but this may not exist
- * in test environments. In that case, callbacks are stored on an anonymous object instead.
- *
- *
- */
-function jsonpCallbackContext() {
-    if (typeof window === 'object') {
-        return window;
-    }
-    return {};
-}
-/**
- * Configures XSRF protection support for outgoing requests.
- *
- * For a server that supports a cookie-based XSRF protection system,
- * use directly to configure XSRF protection with the correct
- * cookie and header names.
- *
- * If no names are supplied, the default cookie name is `XSRF-TOKEN`
- * and the default header name is `X-XSRF-TOKEN`.
- *
- * @publicApi
- */
-class HttpClientXsrfModule {
-    /**
-     * Disable the default XSRF protection.
-     */
-    static disable() {
-        return {
-            ngModule: HttpClientXsrfModule,
-            providers: [
-                { provide: HttpXsrfInterceptor, useClass: NoopInterceptor },
-            ],
-        };
-    }
-    /**
-     * Configure XSRF protection.
-     * @param options An object that can specify either or both
-     * cookie name or header name.
-     * - Cookie name default is `XSRF-TOKEN`.
-     * - Header name default is `X-XSRF-TOKEN`.
-     *
-     */
-    static withOptions(options = {}) {
-        return {
-            ngModule: HttpClientXsrfModule,
-            providers: [
-                options.cookieName ? { provide: XSRF_COOKIE_NAME, useValue: options.cookieName } : [],
-                options.headerName ? { provide: XSRF_HEADER_NAME, useValue: options.headerName } : [],
-            ],
-        };
-    }
-}
-HttpClientXsrfModule.ɵfac = function HttpClientXsrfModule_Factory(t) { return new (t || HttpClientXsrfModule)(); };
-HttpClientXsrfModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineNgModule"]({ type: HttpClientXsrfModule });
-HttpClientXsrfModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjector"]({ providers: [
-        HttpXsrfInterceptor,
-        { provide: HTTP_INTERCEPTORS, useExisting: HttpXsrfInterceptor, multi: true },
-        { provide: HttpXsrfTokenExtractor, useClass: HttpXsrfCookieExtractor },
-        { provide: XSRF_COOKIE_NAME, useValue: 'XSRF-TOKEN' },
-        { provide: XSRF_HEADER_NAME, useValue: 'X-XSRF-TOKEN' },
-    ] });
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClientXsrfModule, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["NgModule"],
-        args: [{
-                providers: [
-                    HttpXsrfInterceptor,
-                    { provide: HTTP_INTERCEPTORS, useExisting: HttpXsrfInterceptor, multi: true },
-                    { provide: HttpXsrfTokenExtractor, useClass: HttpXsrfCookieExtractor },
-                    { provide: XSRF_COOKIE_NAME, useValue: 'XSRF-TOKEN' },
-                    { provide: XSRF_HEADER_NAME, useValue: 'X-XSRF-TOKEN' },
-                ]
-            }]
-    }], null, null); })();
-/**
- * Configures the [dependency injector](guide/glossary#injector) for `HttpClient`
- * with supporting services for XSRF. Automatically imported by `HttpClientModule`.
- *
- * You can add interceptors to the chain behind `HttpClient` by binding them to the
- * multiprovider for built-in [DI token](guide/glossary#di-token) `HTTP_INTERCEPTORS`.
- *
- * @publicApi
- */
-class HttpClientModule {
-}
-HttpClientModule.ɵfac = function HttpClientModule_Factory(t) { return new (t || HttpClientModule)(); };
-HttpClientModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineNgModule"]({ type: HttpClientModule });
-HttpClientModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjector"]({ providers: [
-        HttpClient,
-        { provide: HttpHandler, useClass: HttpInterceptingHandler },
-        HttpXhrBackend,
-        { provide: HttpBackend, useExisting: HttpXhrBackend },
-        BrowserXhr,
-        { provide: XhrFactory, useExisting: BrowserXhr },
-    ], imports: [[
-            HttpClientXsrfModule.withOptions({
-                cookieName: 'XSRF-TOKEN',
-                headerName: 'X-XSRF-TOKEN'
-            }),
-        ]] });
-(function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵsetNgModuleScope"](HttpClientModule, { imports: [HttpClientXsrfModule] }); })();
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClientModule, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["NgModule"],
-        args: [{
-                /**
-                 * Optional configuration for XSRF protection.
-                 */
-                imports: [
-                    HttpClientXsrfModule.withOptions({
-                        cookieName: 'XSRF-TOKEN',
-                        headerName: 'X-XSRF-TOKEN'
-                    }),
-                ],
-                /**
-                 * Configures the [dependency injector](guide/glossary#injector) where it is imported
-                 * with supporting services for HTTP communications.
-                 */
-                providers: [
-                    HttpClient,
-                    { provide: HttpHandler, useClass: HttpInterceptingHandler },
-                    HttpXhrBackend,
-                    { provide: HttpBackend, useExisting: HttpXhrBackend },
-                    BrowserXhr,
-                    { provide: XhrFactory, useExisting: BrowserXhr },
-                ]
-            }]
-    }], null, null); })();
-/**
- * Configures the [dependency injector](guide/glossary#injector) for `HttpClient`
- * with supporting services for JSONP.
- * Without this module, Jsonp requests reach the backend
- * with method JSONP, where they are rejected.
- *
- * You can add interceptors to the chain behind `HttpClient` by binding them to the
- * multiprovider for built-in [DI token](guide/glossary#di-token) `HTTP_INTERCEPTORS`.
- *
- * @publicApi
- */
-class HttpClientJsonpModule {
-}
-HttpClientJsonpModule.ɵfac = function HttpClientJsonpModule_Factory(t) { return new (t || HttpClientJsonpModule)(); };
-HttpClientJsonpModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineNgModule"]({ type: HttpClientJsonpModule });
-HttpClientJsonpModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjector"]({ providers: [
-        JsonpClientBackend,
-        { provide: JsonpCallbackContext, useFactory: jsonpCallbackContext },
-        { provide: HTTP_INTERCEPTORS, useClass: JsonpInterceptor, multi: true },
-    ] });
-(function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](HttpClientJsonpModule, [{
-        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["NgModule"],
-        args: [{
-                providers: [
-                    JsonpClientBackend,
-                    { provide: JsonpCallbackContext, useFactory: jsonpCallbackContext },
-                    { provide: HTTP_INTERCEPTORS, useClass: JsonpInterceptor, multi: true },
-                ]
-            }]
-    }], null, null); })();
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
-/**
- * Generated bundle index. Do not edit.
- */
-
-
-
-//# sourceMappingURL=http.js.map
 
 /***/ }),
 
@@ -54749,7 +55005,7 @@ HttpClientJsonpModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵde
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrafficObject", function() { return TrafficObject; });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "Womt");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "YmrP");
 /* harmony import */ var _helpers_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../helpers/utils */ "1iqU");
 /* harmony import */ var _simulation_manager__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../simulation-manager */ "GBxy");
 

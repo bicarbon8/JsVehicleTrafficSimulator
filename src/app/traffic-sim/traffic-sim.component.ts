@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Utils } from './helpers/utils';
 import { RoadMap } from './map/road-map';
 import { SimulationManager } from './simulation-manager';
@@ -9,22 +9,28 @@ import { SimulationManager } from './simulation-manager';
   templateUrl: './traffic-sim.component.html',
   styleUrls: ['./traffic-sim.component.css']
 })
-export class TrafficSimComponent implements OnInit {
+export class TrafficSimComponent implements OnInit, OnDestroy {
   private _simMgr: SimulationManager;
   
   runningState: string;
+  elapsed: string;
 
-  constructor(private httpClient: HttpClient) {
+  constructor(private httpClient: HttpClient, private zone: NgZone) {
     this.runningState = 'running';
   }
-
+  
   async ngOnInit(): Promise<void> {
     this._simMgr = SimulationManager.inst;
     this._simMgr.init('#traffic-sim');
-    let path: string = 'assets/maps/intersection.json';
+    let path: string = './assets/maps/intersection.json';
     await this.loadMap(path);
-    // this._simMgr.setRealtime(true);
-    this._simMgr.start();
+    this.zone.runOutsideAngular(() => {
+      this._simMgr.start();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this._simMgr.destroy();
   }
 
   async loadMap(path: string): Promise<void> {
@@ -50,7 +56,9 @@ export class TrafficSimComponent implements OnInit {
       this._simMgr.stop();
     } else {
       this.runningState = 'running';
-      this._simMgr.start();
+      this.zone.runOutsideAngular(() => {
+        this._simMgr.start();
+      });
     }
   }
 
