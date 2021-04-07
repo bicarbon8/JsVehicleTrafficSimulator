@@ -98,11 +98,11 @@ export class ViewManager {
     }
 
     getWidth(): number {
-        return this._canvas?.clientWidth || window.innerWidth;
+        return window.innerWidth;
     }
 
     getHeight(): number {
-        return this._canvas?.clientHeight || window.innerHeight;
+        return window.innerHeight * 0.8;
     }
 }
 

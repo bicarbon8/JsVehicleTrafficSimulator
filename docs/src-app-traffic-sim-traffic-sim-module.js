@@ -54980,12 +54980,10 @@ class ViewManager {
         this._scene.remove(renderable.getObj3D());
     }
     getWidth() {
-        var _a;
-        return ((_a = this._canvas) === null || _a === void 0 ? void 0 : _a.clientWidth) || window.innerWidth;
+        return window.innerWidth;
     }
     getHeight() {
-        var _a;
-        return ((_a = this._canvas) === null || _a === void 0 ? void 0 : _a.clientHeight) || window.innerHeight;
+        return window.innerHeight * 0.8;
     }
 }
 (function (ViewManager) {
