@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  {path: '**', loadChildren: () => import('src/app/traffic-sim/traffic-sim.module').then((m) => m.TrafficSimModule)}
+  {path: '', loadChildren: () => import('src/app/traffic-sim/traffic-sim.module').then((m) => m.TrafficSimModule)}
 ];
 
 @NgModule({

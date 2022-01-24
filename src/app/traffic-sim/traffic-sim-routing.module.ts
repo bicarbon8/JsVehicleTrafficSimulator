@@ -3,8 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { TrafficSimComponent } from './traffic-sim.component';
 
 const routes: Routes = [
-  {path: '', component: TrafficSimComponent},
-  {path: 'traffic-sim', component: TrafficSimComponent}
+  {path: '', component: TrafficSimComponent}
 ];
 
 @NgModule({

@@ -1,4 +1,4 @@
-import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, TextGeometry, FontLoader, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
+import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -128,27 +128,7 @@ export class RoadSegment extends TrafficObject {
         if (this.name && this.name != '') {
             identity = this.name;
         }
-        let loader = new FontLoader();
-        loader.load('assets/fonts/helvetiker_regular.typeface.json', (font) => {
-            let text = new TextGeometry(identity, {
-                font: font,
-                size: 80,
-                height: 5,
-                curveSegments: 12,
-                bevelEnabled: true,
-                bevelThickness: 10,
-                bevelSize: 8,
-                bevelOffset: 0,
-                bevelSegments: 5
-            });
-            var textMesh = new Mesh(text, this._material);
-            let pt: Vector3 = this.getCenter();
-            textMesh.position.set(pt.x, pt.y, pt.z);
-            textMesh.lookAt(this._line.end);
-            textMesh.rotateY(90*(Math.PI/180));
-            textMesh.translateY(this.getObj3D().position.y + 5);
-            obj3D.add(textMesh);
-        });
+        
         this._generateLaneChangePoints();
 
         return obj3D;

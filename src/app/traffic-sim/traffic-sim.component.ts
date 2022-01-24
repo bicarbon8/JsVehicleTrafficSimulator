@@ -3,6 +3,7 @@ import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Utils } from './helpers/utils';
 import { RoadMap } from './map/road-map';
 import { SimulationManager } from './simulation-manager';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-traffic-sim',
@@ -22,8 +23,8 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this._simMgr = SimulationManager.inst;
     this._simMgr.init('#traffic-sim');
-    let path: string = './assets/maps/intersection.json';
-    await this.loadMap(path);
+    let path: string = 'assets/maps/intersection.json';
+    await this.loadLocalMap(path);
     this.zone.runOutsideAngular(() => {
       this._simMgr.start();
     });
@@ -33,10 +34,14 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
     this._simMgr.destroy();
   }
 
-  async loadMap(path: string): Promise<void> {
+  async loadLocalMap(lpath: string): Promise<void> {
+    await this.loadMap(`${environment.baseUrl}/${lpath}`);
+  }
+
+  async loadMap(fpath: string): Promise<void> {
     try {
       await new Promise<void>((resolve, reject) => {
-        this.httpClient.get(path).subscribe((data: RoadMap) =>{
+        this.httpClient.get(fpath).subscribe((data: RoadMap) =>{
           this._simMgr.loadMap(data);
           resolve();
         });
