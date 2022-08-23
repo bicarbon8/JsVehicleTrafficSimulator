@@ -1,28 +1,48 @@
 import { Box3, Line3, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
+import * as uuid from 'uuid';
 
-export module Utils {
-    var _id: number = 0;
+export class Utils {
+    static #vehicleId: number = 0;
+    static #segmentId: number = 0;
+    static #tfcId: number = 0;
+    static #genId: number = 0;
     
-    export function getNewId(): number {
-        return _id++;
+    static getVehicleId(): number {
+        return this.#vehicleId++;
     }
 
-    export function getRandomBetween(min: number, max: number): number {
+    static getSegmentId(): number {
+        return this.#segmentId++;
+    }
+
+    static getTfcId(): number {
+        return this.#tfcId++;
+    }
+
+    static getGeneratorId(): number {
+        return this.#genId++;
+    }
+
+    static guid(): string {
+        return uuid.v4();
+    }
+
+    static getRandomBetween(min: number, max: number): number {
 		return Math.random() * (max - min) + min;
 	}
 
-	export function getLength(p1: Vector3, p2: Vector3): number {
+	static getLength(p1: Vector3, p2: Vector3): number {
         return new Line3(p1, p2).distance();
     }
 
-    export function angleFormedBy(line1: Line3, line2: Line3): number {
+    static angleFormedBy(line1: Line3, line2: Line3): number {
         var a = line1.end.clone().sub(line1.start.clone()).normalize();
         var b = line2.end.clone().sub(line2.start.clone()).normalize();
         return (Math.acos(a.dot(b))*(180/Math.PI));
     }
 
-    export function isCollidingWith<T extends Renderable>(obj1: T, obj2: T): boolean {
+    static isCollidingWith<T extends Renderable>(obj1: T, obj2: T): boolean {
         if (obj1 && obj2) {
             let b1: Box3 = new Box3().setFromObject(obj1.getMesh());
             let b2: Box3 = new Box3().setFromObject(obj2.getMesh());
@@ -31,27 +51,27 @@ export module Utils {
         return false;
     }
 
-    export function convertKmphToMetresPerSec(kilometersPerHour: number): number {
+    static convertKmphToMetresPerSec(kilometersPerHour: number): number {
 		return kilometersPerHour / 3.6;
 	}
 
-	export function convertMetresPerSecToKmph(metersPerSecond: number): number {
+	static convertMetresPerSecToKmph(metersPerSecond: number): number {
 		return metersPerSecond * 3.6;
 	}
 
-    export function convertMillisecondsToSeconds(ms: number): number {
+    static convertMillisecondsToSeconds(ms: number): number {
         return ms / 1000;
     }
 
-    export function convertMillisecondsToMinutes(ms: number): number {
-        return convertMillisecondsToSeconds(ms) / 60;
+    static convertMillisecondsToMinutes(ms: number): number {
+        return Utils.convertMillisecondsToSeconds(ms) / 60;
     }
 
-    export function convertMillisecondsToHours(ms: number): number {
-        return convertMillisecondsToMinutes(ms) / 60;
+    static convertMillisecondsToHours(ms: number): number {
+        return Utils.convertMillisecondsToMinutes(ms) / 60;
     }
 
-    export function convertMsToHumanReadable(milliseconds: number): string {
+    static convertMsToHumanReadable(milliseconds: number): string {
         var x = milliseconds / 1000;
         var seconds: string = (Math.round((x % 60) * 100) / 100).toFixed(2);
         x /= 60;
@@ -66,7 +86,7 @@ export module Utils {
         return elapsedReadable;
     }
 
-    export function corneringSpeedCalculator(headingAngle: number): number {
+    static corneringSpeedCalculator(headingAngle: number): number {
         if (headingAngle < 12) {
             // no real difference
             return Infinity; // fast as you like
@@ -100,7 +120,11 @@ export module Utils {
      * @param velocity the speed in Metres per Second
      * @param elapsedMs the time in milliseconds
      */
-    export function getDistanceTravelled(velocity: number, elapsedMs: number): number {
-        return velocity * convertMillisecondsToSeconds(elapsedMs);
+    static getDistanceTravelled(velocity: number, elapsedMs: number): number {
+        return velocity * Utils.convertMillisecondsToSeconds(elapsedMs);
+    }
+
+    static isWithinDistance(p1: Vector3, p2: Vector3, distance: number): boolean {
+        return Utils.getLength(p1, p2) <= distance;
     }
 }

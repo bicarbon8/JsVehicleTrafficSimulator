@@ -1,10 +1,16 @@
-import { RoadSegment } from "../../map/road-segment";
+import { Vector3 } from "three";
 import { SimulationManager } from "../../simulation-manager";
-import { TrafficObject } from "../traffic-object";
-import { TrafficObjectOptions } from "../traffic-object-options";
+import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
 import { Vehicle } from "../vehicles/vehicle";
-import { TfcOptions } from "./tfc-options";
 import { TfcState } from "./tfc-state";
+
+export type TfcOptions = TrafficObjectOptions & {
+    startState?: TfcState;
+    changeDelay?: number;
+    roadName?: string;
+    type?: string;
+    location?: Vector3;
+}
 
 export abstract class TrafficFlowControl extends TrafficObject {
     readonly startState: TfcState;
@@ -15,7 +21,7 @@ export abstract class TrafficFlowControl extends TrafficObject {
     protected elapsed: number;
 
     constructor(options?: TfcOptions, simMgr?: SimulationManager) {
-        super(options as TrafficObjectOptions, simMgr);
+        super(options);
         this.startState = (options?.startState === undefined) ? 2 : options?.startState;
         this.changeDelay = (options?.changeDelay === undefined) ? Infinity : options?.changeDelay;
         this.roadName = options?.roadName;

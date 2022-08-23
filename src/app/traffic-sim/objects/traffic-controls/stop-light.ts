@@ -1,10 +1,22 @@
 import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D } from "three";
-import { SimulationManager } from "../../simulation-manager";
 import { Vehicle } from "../vehicles/vehicle";
-import { StopLightOptions } from "./stop-light-options";
-import { TfcOptions } from "./tfc-options";
 import { TfcState } from "./tfc-state";
-import { TrafficFlowControl } from "./traffic-flow-control";
+import { TfcOptions, TrafficFlowControl } from "./traffic-flow-control";
+
+export type StopLightOptions = TfcOptions & {
+    /**
+     * number of milliseconds the light remains green
+     */
+    greenDuration?: number; // 56000 ms
+    /**
+     * number of milliseconds the light remains yellow
+     */
+    yellowDuration?: number; // 4000 ms
+    /**
+     * number of milliseconds the light remains red
+     */
+    redDuration?: number; // 60000 ms
+}
 
 export class StopLight extends TrafficFlowControl {
     /**
@@ -20,8 +32,8 @@ export class StopLight extends TrafficFlowControl {
      */
     private readonly _redDuration: number;
     
-    constructor(options?: StopLightOptions, simMgr?: SimulationManager) {
-        super(options as TfcOptions, simMgr);
+    constructor(options?: StopLightOptions) {
+        super(options);
         this._greenDuration = (options?.greenDuration === undefined) ? 26000 : options?.greenDuration; // 24 seconds
         this._yellowDuration = (options?.yellowDuration === undefined) ? 4000 : options?.yellowDuration; // 4 seconds
         this._redDuration = (options?.redDuration === undefined) ? 30000 : options?.redDuration; // 30 seconds

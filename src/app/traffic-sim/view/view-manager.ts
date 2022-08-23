@@ -94,7 +94,7 @@ export class ViewManager {
     }
 
     removeRenderable<T extends Renderable>(renderable: T): void {
-        this._scene.remove(renderable.getObj3D());
+        this._scene?.remove(renderable.getObj3D());
     }
 
     getWidth(): number {

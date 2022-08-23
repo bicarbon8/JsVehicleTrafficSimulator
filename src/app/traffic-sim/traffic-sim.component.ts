@@ -11,7 +11,7 @@ import { environment } from '../../environments/environment';
   styleUrls: ['./traffic-sim.component.css']
 })
 export class TrafficSimComponent implements OnInit, OnDestroy {
-  private _simMgr: SimulationManager;
+  #simMgr: SimulationManager;
   
   runningState: string;
   elapsed: string;
@@ -21,17 +21,17 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
   }
   
   async ngOnInit(): Promise<void> {
-    this._simMgr = SimulationManager.inst;
-    this._simMgr.init('#traffic-sim');
+    this.#simMgr = SimulationManager.inst;
+    this.#simMgr.init('#traffic-sim');
     let path: string = 'assets/maps/intersection.json';
     await this.loadLocalMap(path);
     this.zone.runOutsideAngular(() => {
-      this._simMgr.start();
+      this.#simMgr.start();
     });
   }
 
   ngOnDestroy(): void {
-    this._simMgr.destroy();
+    this.#simMgr.destroy();
   }
 
   async loadLocalMap(lpath: string): Promise<void> {
@@ -42,7 +42,7 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
     try {
       await new Promise<void>((resolve, reject) => {
         this.httpClient.get(fpath).subscribe((data: RoadMap) =>{
-          this._simMgr.loadMap(data);
+          this.#simMgr.loadMap(data);
           resolve();
         });
       });
@@ -52,28 +52,32 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
   }
 
   isRunning(): boolean {
-    return this._simMgr.isRunning();
+    return this.#simMgr.isRunning();
   }
 
   async toggleAnimationState(): Promise<void> {
     if (this.isRunning()) {
       this.runningState = 'paused';
-      this._simMgr.stop();
+      this.#simMgr.stop();
     } else {
       this.runningState = 'running';
       this.zone.runOutsideAngular(() => {
-        this._simMgr.start();
+        this.#simMgr.start();
       });
     }
   }
 
+  toggleDebug(): void {
+    this.#simMgr.toggleDebugging();
+  }
+
   async updateTimeStep(step: number): Promise<void> {
     if (!isNaN(step)) {
-      this._simMgr.setTimestep(step);
+      this.#simMgr.setTimestep(step);
     }
   }
 
   getSimulationTimeElapsed(): string {
-    return Utils.convertMsToHumanReadable(this._simMgr.getTotalElapsed());
+    return Utils.convertMsToHumanReadable(this.#simMgr.getTotalElapsed());
   }
 }

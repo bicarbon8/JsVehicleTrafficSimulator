@@ -1,11 +1,48 @@
 import { Mesh, BoxGeometry, Line3, Vector3, Object3D, Box3, Quaternion } from "three";
+import { SimulationConstants } from "../../helpers/simulation-constants";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
-import { SimulationManager } from "../../simulation-manager";
-import { TrafficObject } from "../traffic-object";
-import { TrafficObjectOptions } from "../traffic-object-options";
+import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
 import { ShouldStopResponse } from "./should-stop-response";
-import { VehicleOptions } from "./vehicle-options";
+
+export type VehicleOptions = TrafficObjectOptions & {
+    /**
+     * vehicle width in metres
+     */
+    width?: number;
+    /**
+     * vehicle length in metres
+     */
+    length?: number;
+    /**
+     * vehicle height in metres
+     */
+    height?: number;
+    /**
+     * milliseconds to react
+     */
+    reactionTime?: number;
+    /**
+     * acceleration in Metres per Second
+     */
+    acceleration?: number;
+    /**
+     * deceleration in Metres per Second
+     */
+    deceleration?: number;
+    /**
+     * minimum time in milliseconds to wait after changing lanes before changing again
+     */
+    changeLaneDelay?: number;
+    /**
+     * maximum speed this vehicle can sustain in Kilometres per Hour
+     */
+    maxSpeed?: number;
+    /**
+     * the starting speed along the forward trajectory for this vehicle
+     */
+    startingVelocity?: number;
+}
 
 export class Vehicle extends TrafficObject {
     /**
@@ -21,7 +58,7 @@ export class Vehicle extends TrafficObject {
      */
     readonly height: number;
     /**
-     * milliseconds taken to react to events (defaults to 2500 ms)
+     * milliseconds taken to react to events (defaults to 750 ms)
      */
     readonly reactionTime: number;
     /**
@@ -44,42 +81,55 @@ export class Vehicle extends TrafficObject {
     /**
      * indicates if the vehicle is in the process of changing lanes
      */
-    private _isChangingLanes: boolean;
+    #isChangingLanes: boolean;
     /**
      * time when we should consider changing lanes again if blocked
      */
-    private _changeLaneTime: number;
+    #changeLaneTime: number;
     /**
      * velocity in Metres per Second
      */
-    private _velocity: number;
+    #velocity: number;
     /**
      * time when (if) a crash occurred
      */
-    private _crashedAt: number;
+    #crashedAt: number;
     /**
      * time when vehicle should be removed from simulation following crash
      */
-    private _crashCleanupTime: number;
+    #crashCleanupTime: number;
 
-    constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
-        super(options as TrafficObjectOptions, simMgr);
+    constructor(options: VehicleOptions) {
+        super(options as TrafficObjectOptions);
         this.width = options?.width || 2; // metres
         this.length = options?.length || 3; // metres
         this.height = options?.height || 1.5; // metres
-        this.reactionTime = options?.reactionTime || 2500; // milliseconds
-        this.acceleration = options?.acceleration || 2.78; // Metres per Second
-        this.deceleration = options?.deceleration || 6.94; // Metres per Second
-        this.changeLaneDelay = options?.changeLaneDelay || 30000; // milliseconds
+        this.reactionTime = options?.reactionTime || Utils.getRandomBetween(
+            SimulationConstants.Vehicles.ReactionTime.min,
+            SimulationConstants.Vehicles.ReactionTime.max
+        ); // milliseconds
+        this.acceleration = options?.acceleration || Utils.getRandomBetween(
+            SimulationConstants.Vehicles.Acceleration.min,
+            SimulationConstants.Vehicles.Acceleration.max
+        ); // Metres per Second
+        this.deceleration = options?.deceleration || Utils.getRandomBetween(
+            SimulationConstants.Vehicles.Deceleration.min,
+            SimulationConstants.Vehicles.Deceleration.max
+        ); // Metres per Second
+        this.changeLaneDelay = options?.changeLaneDelay || Utils.getRandomBetween(
+            SimulationConstants.Vehicles.ChangeLaneDelay.min,
+            SimulationConstants.Vehicles.ChangeLaneDelay.max
+        ); // milliseconds
         this.maxSpeed = options?.maxSpeed || 260; // Kilometres per Hour
         
-        this._velocity = options?.startingVelocity || 0; // Metres per Second
-        this._changeLaneTime = this.changeLaneDelay;
+        this.#velocity = options?.startingVelocity || 0; // Metres per Second
+        this.#changeLaneTime = Date.now() + this.changeLaneDelay;
     }
 
     clone(): Vehicle {
         let v = new Vehicle({
             id: this.id,
+            map: this.map,
             name: this.name,
             width: this.width,
             length: this.length,
@@ -98,24 +148,28 @@ export class Vehicle extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-        // console.info(`velocity: ${this.getVelocity()}`);
+        const distTravelled: number = Utils.getDistanceTravelled(this.getVelocity(), elapsedMs);
         this.updateVelocity(elapsedMs);
-        let distTravelled: number = Utils.getDistanceTravelled(this.getVelocity(), elapsedMs);
+        let remaining = distTravelled;
 
         // check if we should move to next RoadSegment or remove vehicle from the simulation
-        if(distTravelled > 0) {
-            let currentSegment: RoadSegment = this.getSegment();
+        while (remaining > 0) {
+            let currentSegment: RoadSegment = this.map.getSegmentById(this.getSegmentId());
+            let currentSegmentEnd = currentSegment.getEnd();
             if (currentSegment) {
-                let remainingDistOnSegment: number = Utils.getLength(this.getLocation(), currentSegment.getEnd());
-                if (distTravelled >= remainingDistOnSegment) {
+                let remainingDistOnSegment: number = Utils.getLength(this.getLocation(), currentSegmentEnd);
+                if (remaining >= remainingDistOnSegment) {
+                    this.moveForwardBy(remainingDistOnSegment);
+                    remaining -= remainingDistOnSegment;
                     // if there is a next Segment
                     let nextSegments: RoadSegment[];
                     if (this.isChangingLanes()) { // then we've finished changing lanes
                         this.setChangingLanes(false);
-                        this._simMgr.getMapManager().removeSegment(this.getSegmentId());
-                        nextSegments = this._simMgr.getMapManager().getSegmentsContainingPoint(currentSegment.getEnd());
+                        let nextSegId: number = +(`${currentSegment.id}`.split('.')[1]);
+                        nextSegments = [this.map.getSegmentById(nextSegId)];
+                        this.map.removeSegment(this.getSegmentId());
                     } else {
-                        nextSegments = this._simMgr.getMapManager().getSegmentsStartingAt(currentSegment.getEnd());
+                        nextSegments = this.map.getSegmentsStartingAt(currentSegmentEnd);
                     }
 
                     if(nextSegments?.length) {
@@ -123,37 +177,55 @@ export class Vehicle extends TrafficObject {
                         // TODO: lookup values from vehicle's choosen path
                         var randIndex = Math.floor((Math.random() * nextSegments.length));
                         var nextSeg: RoadSegment = nextSegments[randIndex];
-                        nextSeg.addVehicle(this, currentSegment.getEnd());
-
-                        distTravelled -= remainingDistOnSegment;
+                        this.map.addVehicle(this, nextSeg, this.getLocation());
                     } else {
                         // end of Road reached... remove vehicle from Simulation
-                        this._simMgr.removeVehicle(this);
+                        this.map.removeVehicle(this);
                         return;
                     }
+                } else {
+                    this.moveForwardBy(remaining);
+                    remaining = 0;
                 }
             }
         }
         
         if (this.isCrashed()) {
             // remove vehicle after appropriate time has passed
-            if (this._crashedAt + this._crashCleanupTime >= this._simMgr.getTotalElapsed()) {
+            if (this.#crashedAt + this.#crashCleanupTime <= this.map.simMgr.getTotalElapsed()) {
                 // remove self from the Simulation
-                this._simMgr.removeVehicle(this);
+                this.map.removeVehicle(this);
                 return;
             }
         }
-        
-        this.moveForwardBy(distTravelled);
     }
 
+    #isStopping: boolean = false;
+    #updateVelocityAt: number = 0;
     updateVelocity(elapsedMs: number): void {
         // speed up or slow down
         if (this.shouldDecelerate()) {
-            this.brake(elapsedMs);
+            if (!this.#isStopping) {
+                if (this.#updateVelocityAt <= this.map.simMgr.getTotalElapsed()) {
+                    this.#isStopping = true;
+                    this.brake(elapsedMs);
+                    this.#updateVelocityAt = this.map.simMgr.getTotalElapsed() + this.reactionTime;
+                }
+            } else {
+                this.brake(elapsedMs);
+            }
         } else {
-            this.accelerate(elapsedMs);
+            if (this.#isStopping) {
+                if (this.#updateVelocityAt <= this.map.simMgr.getTotalElapsed()) {
+                    this.#isStopping = false;
+                    this.accelerate(elapsedMs);
+                    this.#updateVelocityAt = this.map.simMgr.getTotalElapsed() + this.reactionTime;
+                }
+            } else {
+                this.accelerate(elapsedMs);
+            }
         }
+        
     }
 
     /**
@@ -161,27 +233,44 @@ export class Vehicle extends TrafficObject {
      * @returns the speed in Metres per Second
      */
     getVelocity(): number {
-        return this._velocity;
+        return this.#velocity;
     }
 
-    setCrashed(): void {
-        this._crashedAt = this._simMgr.getTotalElapsed();
+    setCrashed(vehicle: Vehicle): void {
+        this.#crashedAt = this.map.simMgr.getTotalElapsed();
+        const maxVelocityMps: number = Math.max(this.getVelocity(), vehicle.getVelocity());
+        if (maxVelocityMps < Utils.convertKmphToMetresPerSec(15)) {
+            this.#crashCleanupTime = Utils.getRandomBetween(
+                SimulationConstants.Vehicles.CrashCleanupDelay.LowSpeed.min,
+                SimulationConstants.Vehicles.CrashCleanupDelay.LowSpeed.max
+            );
+        } else if (Utils.convertKmphToMetresPerSec(15) <= maxVelocityMps && maxVelocityMps < Utils.convertKmphToMetresPerSec(50)) {
+            this.#crashCleanupTime = Utils.getRandomBetween(
+                SimulationConstants.Vehicles.CrashCleanupDelay.MediumSpeed.min,
+                SimulationConstants.Vehicles.CrashCleanupDelay.MediumSpeed.max
+            );
+        } else if (Utils.convertKmphToMetresPerSec(50) <= maxVelocityMps) {
+            this.#crashCleanupTime = Utils.getRandomBetween(
+                SimulationConstants.Vehicles.CrashCleanupDelay.HighSpeed.min,
+                SimulationConstants.Vehicles.CrashCleanupDelay.HighSpeed.max
+            );
+        }
         this.getMaterial().color.setHex(0xff0000); // red
     }
 
     isCrashed(): boolean {
-        return this._crashedAt !== null && this._crashedAt !== undefined;
+        return this.#crashedAt != null;
     }
 
     setChangingLanes(isChanging: boolean): void {
-        this._isChangingLanes = isChanging;
+        this.#isChangingLanes = isChanging;
         if (this.isChangingLanes()) {
-            this._changeLaneTime = this._simMgr.getTotalElapsed() + this.changeLaneDelay;
+            this.#changeLaneTime = this.map.simMgr.getTotalElapsed() + this.changeLaneDelay;
         }
     }
 
     isChangingLanes(): boolean {
-        return this._isChangingLanes;
+        return this.#isChangingLanes;
     }
 
     /**
@@ -198,20 +287,21 @@ export class Vehicle extends TrafficObject {
      * @param elapsedMs amount of time, in milliseconds, elapsed since last update
      */
     accelerate(elapsedMs: number): void {
-        let velKph: number = Utils.convertMetresPerSecToKmph(this.getVelocity());
-        if (velKph < this.maxSpeed && velKph < this.getSegment()?.speedLimit) {
+        const velKph: number = Utils.convertMetresPerSecToKmph(this.getVelocity());
+        const seg: RoadSegment = this.map.getSegmentById(this.getSegmentId());
+        if (velKph < this.maxSpeed && velKph < seg?.speedLimit) {
             let elapsedSeconds: number = Utils.convertMillisecondsToSeconds(elapsedMs);
-            this._velocity += this.acceleration * elapsedSeconds;
+            this.#velocity += this.acceleration * elapsedSeconds;
             this.getMaterial()?.color.setHex(0x66ff66); // green
         }
     }
 
     brake(elapsedMs: number): void {
         var elapsedSeconds = Utils.convertMillisecondsToSeconds(elapsedMs);
-        this._velocity -= this.deceleration * elapsedSeconds;
+        this.#velocity -= this.deceleration * elapsedSeconds;
         // prevent going backwards
         if (this.getVelocity() < 0) {
-            this._velocity = 0;
+            this.#velocity = 0;
         }
         if (this.isCrashed()) {
             this.getMaterial()?.color.setHex(0xff0000); // red
@@ -227,12 +317,12 @@ export class Vehicle extends TrafficObject {
         
         if (!skipCollisionCheck) {
             // perform collision check
-            var vehicles: Vehicle[] = this._simMgr.getMapManager().getVehiclesWithinRadius(this, this.length * 2);
+            var vehicles: Vehicle[] = this.map.getVehiclesWithinRadius(this, this.length * 2);
             vehicles.forEach((vehicle) => {
                 if (Utils.isCollidingWith(this, vehicle)) {
-                    console.warn(`crash of vehicle: ${this.id} at ${JSON.stringify(this.getLocation())} with vehicle: ${vehicle.id} at ${JSON.stringify(vehicle.getLocation())}`);
-                    if (!this.isCrashed()) { this.setCrashed(); }
-                    if (!vehicle.isCrashed()) { vehicle.setCrashed(); }
+                    this.map.simMgr.log(`crash of vehicle: ${this.id} at ${JSON.stringify(this.getLocation())} with vehicle: ${vehicle.id} at ${JSON.stringify(vehicle.getLocation())}`);
+                    if (!this.isCrashed()) { this.setCrashed(vehicle); }
+                    if (!vehicle.isCrashed()) { vehicle.setCrashed(this); }
                 }
             });
         }
@@ -243,11 +333,11 @@ export class Vehicle extends TrafficObject {
         }
         
         // check for vehicles in range
-        var foundV: ShouldStopResponse = this._simMgr.getMapManager().shouldStopForVehicles(this);
+        var foundV: ShouldStopResponse = this.map.shouldStopForVehicles(this);
         if (foundV && foundV.stop) {
             let lane: RoadSegment = this.shouldChangeLanes(foundV.id);
             if (lane) {
-                let changeLaneSegment: RoadSegment = this._simMgr.getMapManager().createChangeLaneSegment(this.getLocation(), lane);
+                let changeLaneSegment: RoadSegment = this.map.createChangeLaneSegment(this, lane);
                 if (changeLaneSegment) {
                     this.setChangingLanes(true);
                     changeLaneSegment.addVehicle(this);
@@ -258,14 +348,13 @@ export class Vehicle extends TrafficObject {
         }
 
         // check for traffic flow controllers in range that say "stop"
-        var foundTfc: ShouldStopResponse = this._simMgr.getMapManager().shouldStopForTfcs(this);
+        var foundTfc: ShouldStopResponse = this.map.shouldStopForTfcs(this);
         if (foundTfc && foundTfc.stop) {
-            // console.debug(`vehicle ${this.id} should stop for tfc ${foundTfc.id}`);
             return foundTfc.stop;
         }
 
         // check for corners
-        var foundCorner = this._simMgr.getMapManager().shouldSlowForCorner(this);
+        var foundCorner = this.map.shouldSlowForCorner(this);
         if (foundCorner && foundCorner.stop) { // and finally check for cornering in range
             return foundCorner.stop;
         }
@@ -273,13 +362,13 @@ export class Vehicle extends TrafficObject {
 
     shouldChangeLanes(obstructingVehicleId: number): RoadSegment {
         let newLane: RoadSegment;
-        if (! this.isChangingLanes() && this._changeLaneTime < this._simMgr.getTotalElapsed()) {
-            let availableLanes: RoadSegment[] = this._simMgr.getMapManager().getSimilarSegmentsInRoad(this.getSegment());
-            let obstructingVehicle: Vehicle = this._simMgr.getMapManager().getVehicleById(obstructingVehicleId);
+        if (!this.isChangingLanes() && this.#changeLaneTime < this.map.simMgr.getTotalElapsed()) {
+            let availableLanes: RoadSegment[] = this.map.getSimilarSegmentsInRoad(this.getSegmentId());
+            let obstructingVehicle: Vehicle = this.map.getVehicleById(obstructingVehicleId);
             for (var i=0; i<availableLanes.length; i++) {
                 let availableLane: RoadSegment = availableLanes[i];
                 // ensure availableLane is clear ahead
-                let vehicles: Vehicle[] = this._simMgr.getMapManager()
+                let vehicles: Vehicle[] = this.map
                     .getVehiclesWithinRadiusAhead(this.getLocation(), availableLane, this.getLookAheadDistance()).filter((veh) => {
                         return this.id != veh.id;
                     });
@@ -296,7 +385,7 @@ export class Vehicle extends TrafficObject {
                 }
                 if (newLane) {
                     // ensure no vehicles nearby in lane
-                    let nearby: Vehicle[] = this._simMgr.getMapManager()
+                    let nearby: Vehicle[] = this.map
                         .getVehiclesWithinRadius(this, this.getLookAheadDistance() * 2)
                         .filter((veh) => {
                             return veh.getSegmentId() != this.getSegmentId();
@@ -313,13 +402,14 @@ export class Vehicle extends TrafficObject {
     }
 
     hasInView(otherVehicle: Vehicle): boolean {
-        if (this.getSegment()) {
+        const segment: RoadSegment = this.map.getSegmentById(this.getSegmentId());
+        if (segment) {
             var maxAngle = 45;
-            if (this.getSegment()?.isInlet) {
+            if (segment?.isInlet) {
                 maxAngle = 90;
             }
             let otherLoc: Vector3 = otherVehicle.getLocation();
-            var headingLine = new Line3(this.getLocation(), this.getSegment()?.getEnd());
+            var headingLine = new Line3(this.getLocation(), segment?.getEnd());
             var headingToLocation = new Line3(this.getLocation(), otherLoc);
 
             if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {

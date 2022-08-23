@@ -1,20 +1,14 @@
+import { Utils } from "./helpers/utils";
 import { MapManager } from "./map/map-manager";
 import { RoadMap } from "./map/road-map";
-import { RoadSegment } from "./map/road-segment";
-import { RoadSegmentOptions } from "./map/road-segment-options";
-import { StopLight } from "./objects/traffic-controls/stop-light";
-import { StopLightOptions } from "./objects/traffic-controls/stop-light-options";
-import { TfcOptions } from "./objects/traffic-controls/tfc-options";
-import { TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
-import { Vehicle } from "./objects/vehicles/vehicle";
-import { VehicleGenerator } from "./objects/vehicles/vehicle-generator";
-import { VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator-options";
+import { RoadSegment, RoadSegmentOptions } from "./map/road-segment";
+import { StopLight, StopLightOptions } from "./objects/traffic-controls/stop-light";
+import { TfcOptions, TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
+import { VehicleGenerator, VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator";
+import { Renderable } from "./view/renderable";
 import { ViewManager } from "./view/view-manager";
 
 export class SimulationManager {
-    readonly CRASH_CLEANUP_MAX_DELAY: 300000; // 5 min
-    readonly CRASH_CLEANUP_MIN_DELAY: 60000; // 1 min
-    
     private _canvasId: string;
     private _startTime: number; // in milliseconds
     private _lastUpdate: number; // millisecond time
@@ -28,9 +22,10 @@ export class SimulationManager {
      */
     private _timeStep: number;
     private _frameId: number;
+    #debug: boolean;
 
-    private _mapManager: MapManager;
-    private _viewMgr: ViewManager;
+    #mapManager: MapManager;
+    #viewMgr: ViewManager;
 
     constructor(mapMgr?: MapManager, viewMgr?: ViewManager) {
         this._realtime = false;
@@ -38,12 +33,20 @@ export class SimulationManager {
         this._totalElapsedTime = 0;
         this._timeStep = 10;
 
-        this._mapManager = mapMgr || MapManager.inst;
-        this._viewMgr = viewMgr || ViewManager.inst;
+        this.#mapManager = mapMgr || new MapManager(this);
+        this.#viewMgr = viewMgr || ViewManager.inst;
 
         this._lastUpdate = 0;
 
         document.addEventListener("visibilitychange", () => this._handleBrowserVisibilityChange(), false);
+    }
+
+    get debug(): boolean {
+        return this.#debug || false;
+    }
+
+    toggleDebugging(): void {
+        this.#debug = !this.debug;
     }
 
 	init(canvasId: string): void {
@@ -52,8 +55,8 @@ export class SimulationManager {
     }
 
     reset(): void {
-        this._viewMgr.reset();
-        this._mapManager.reset();
+        this.#viewMgr.reset();
+        this.#mapManager.reset();
         this._totalElapsedTime = 0;
         this.init(this._canvasId);
     }
@@ -61,13 +64,13 @@ export class SimulationManager {
     destroy(): void {
         cancelAnimationFrame(this._frameId);
         this.stop();
-        this._viewMgr.destroy();
-        this._mapManager.destroy();
+        this.#viewMgr.destroy();
+        this.#mapManager.destroy();
     }
 
     private _initObjects(): void {
-        this._viewMgr.init(this._canvasId);
-        this._viewMgr.update();
+        this.#viewMgr.init(this._canvasId);
+        this.#viewMgr.update();
     }
 
     isRunning(): boolean {
@@ -86,12 +89,19 @@ export class SimulationManager {
         this._realtime = realtime;
     }
 
+    /**
+     * starts the simulation by calling the `update` function
+     * within a `requestAnimationFrame` call loop
+     */
     start(): void {
         this._startTime = (this._realtime) ? new Date().getTime() : 0;
         this._isRunning = true;
         this.update();
     }
 
+    /**
+     * stops the simulation
+     */
     stop(): void {
         this._isRunning = false;
         this._lastUpdate = null;
@@ -101,15 +111,14 @@ export class SimulationManager {
         if (this._isRunning) {
             let elapsed: number = this.getElapsed();
             this._totalElapsedTime += elapsed;
-            this._mapManager.update(elapsed);
+            this.#mapManager.update(elapsed);
 
             this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
 
             this._frameId = requestAnimationFrame(() => this.update());
         }
         
-        // console.debug(`updating view...`);
-        this._viewMgr.update();
+        this.#viewMgr.update();
     }
 
     /**
@@ -118,7 +127,7 @@ export class SimulationManager {
      */
     getElapsed(): number {
         if (this._realtime) {
-            let now: number = new Date().getTime();
+            let now: number = Date.now();
             if (!this._lastUpdate) {
                 this._lastUpdate = this._startTime;
             }
@@ -141,61 +150,92 @@ export class SimulationManager {
     }
 
     getMapManager(): MapManager {
-        return this._mapManager;
+        return this.#mapManager;
     }
 
     getViewManager(): ViewManager {
-        return this._viewMgr;
+        return this.#viewMgr;
     }
 
+    /**
+     * loads the passed in `RoadMap` adding the required IDs and `MapManager`
+     * references to the instantiation options
+     * @param map a `RoadMap` JSON object containing details to be loaded
+     */
     loadMap(map: RoadMap): void {
         if (map) {
             this.reset();
             // add segments
             for (var i=0; i<map.segments?.length; i++) {
-                let opts: RoadSegmentOptions = map.segments[i];
-                let s: RoadSegment = new RoadSegment(opts)
-                this.getMapManager().addSegment(s);
+                let opts: Partial<RoadSegmentOptions> = map.segments[i];
+                opts.id = Utils.getSegmentId();
+                opts.map = this.#mapManager;
+                let s: RoadSegment = new RoadSegment(opts as RoadSegmentOptions)
+                this.#mapManager.addSegment(s);
                 this.getViewManager().addRenderable(s);
             }
             // add TFCs
             for (var i=0; i<map.tfcs?.length; i++) {
-                let opts: TfcOptions = map.tfcs[i];
+                let opts: Partial<TfcOptions> = map.tfcs[i];
+                opts.id = Utils.getTfcId();
+                opts.map = this.#mapManager;
                 let tfc: TrafficFlowControl;
                 switch (opts.type.toLowerCase()) {
                     case 'stoplight':
-                        // console.debug(`tfc.startState: ${opts.startState}`);
                         tfc = new StopLight(opts as StopLightOptions);
                         break;
                 }
                 if (tfc) {
-                    let segment: RoadSegment = this.getMapManager().getSegmentsEndingAt(opts.location).find((seg) => {
+                    let segment: RoadSegment = this.#mapManager.getSegmentsEndingAt(opts.location).find((seg) => {
                         return seg.roadName.toLowerCase() == tfc.roadName.toLowerCase();
                     });
                     if (segment) {
-                        segment.addTfc(tfc);
+                        this.#mapManager.addTfc(tfc, segment, opts.location);
                         this.getViewManager().addRenderable(tfc);
                     }
                 }
             }
             // add vehicle generators
             for (var i=0; i<map.generators?.length; i++) {
-                let opts: VehicleGeneratorOptions = map.generators[i];
-                let g: VehicleGenerator = new VehicleGenerator(opts);
-                let segment: RoadSegment = this.getMapManager().getSegmentsStartingAt(opts.location).find((seg) => {
+                let opts: Partial<VehicleGeneratorOptions> = map.generators[i];
+                opts.id = Utils.getGeneratorId();
+                opts.map = this.#mapManager;
+                let g: VehicleGenerator = new VehicleGenerator(opts as VehicleGeneratorOptions);
+                let segment: RoadSegment = this.#mapManager.getSegmentsStartingAt(opts.location).find((seg) => {
                     return seg.roadName.toLowerCase() == g.roadName.toLowerCase();
                 });
                 if (segment) {
-                    segment.setVehicleGenerator(g);
+                    this.#mapManager.addGenerator(g, segment, opts.location);
                 }
             }
         }
     }
 
-    removeVehicle(vehicle: Vehicle) {
-        this._viewMgr.removeRenderable(vehicle);
-        vehicle.getSegment().removeVehicle(vehicle.id);
-        vehicle.disposeGeometry();
+    /**
+     * adds the passed in object to the `ViewManager` for rendering
+     * @param obj object implementing the `Renderable` interface
+     * @returns this
+     */
+    add(obj: Renderable): this {
+        this.#viewMgr.addRenderable(obj);
+        return this;
+    }
+
+    /**
+     * removes the passed in object from the `ViewManager` so it
+     * is no longer rendered
+     * @param obj object implementing the `Renderable` interface
+     * @returns this
+     */
+    remove(obj: Renderable): this {
+        this.#viewMgr.removeRenderable(obj);
+        return this;
+    }
+
+    log(message: string): void {
+        if (this.#debug) {
+            console.log(message);
+        }
     }
 
     private _handleBrowserVisibilityChange() {

@@ -1,40 +1,47 @@
-import { TrafficObjectOptions } from "./traffic-object-options";
 import { Box3, Material, Mesh, MeshBasicMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
-import { Utils } from "../helpers/utils";
-import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
-import { SimulationManager } from "../simulation-manager";
+import { MapManager } from '../map/map-manager';
+
+export type TrafficObjectOptions = {
+    id: number;
+    map: MapManager;
+    name?: string;
+    mesh?: Mesh;
+    material?: MeshBasicMaterial;
+    texture?: Texture;
+}
 
 export abstract class TrafficObject implements Renderable {
     readonly id: number;
+    readonly map: MapManager;
     readonly name: string;
     protected _obj3D: Object3D;
     protected _material: Material;
     protected _texture: Texture;
-    protected _segmentId: number;
-    protected _simMgr: SimulationManager;
+    #segmentId: number;
 
-    constructor(options?: TrafficObjectOptions, simMgr?: SimulationManager) {
-        this._simMgr = simMgr || SimulationManager.inst;
-        this.id = options?.id || Utils.getNewId();
-        this.name = options?.name || typeof this;
-        this._material = options?.material || new MeshBasicMaterial({
+    constructor(options: TrafficObjectOptions) {
+        this.id = options.id;
+        this.map = options.map;
+        this.name = options.name || typeof this;
+        this._material = options.material || new MeshBasicMaterial({
             color: 0xffffff, // white
             wireframe: true
         });
-        this._texture = options?.texture || new Texture();
+        this._texture = options.texture || new Texture();
     }
 
     setSegmentId(segmentId: number): void {
-        this._segmentId = segmentId;
+        this.#segmentId = segmentId;
     }
 
     getSegmentId(): number {
-        return this._segmentId;
+        return this.#segmentId;
     }
 
-    getSegment(): RoadSegment {
-        return this._simMgr.getMapManager().getSegmentById(this._segmentId);
+    destroy(): void {
+        this.map.simMgr.getViewManager().removeRenderable(this);
+        this.disposeGeometry();
     }
     
     protected abstract generateMesh(): Object3D;

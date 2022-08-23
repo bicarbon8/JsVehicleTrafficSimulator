@@ -1,128 +1,167 @@
 import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
+import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
-import { TrafficObject } from '../objects/traffic-object';
+import { TrafficObject, TrafficObjectOptions } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { VehicleGenerator } from '../objects/vehicles/vehicle-generator';
 import { SimulationManager } from '../simulation-manager';
-import { RoadSegmentOptions } from './road-segment-options';
+
+export type RoadSegmentOptions = TrafficObjectOptions & {
+    start: Vector3;
+    end: Vector3;
+    /**
+     * name of the road to which this `RoadSegment` belongs. 
+     * segments on the same `roadName` are lanes that vehicles
+     * can switch in to and out of
+     */
+    roadName?: string;
+    /**
+     * width of `RoadSegment` in Metres
+     */
+    width?: number;
+    /**
+     * maximum legal speed allowed on `RoadSegment` in Kilometres per Hour
+     */
+    speedLimit?: number;
+    /**
+     * indicates that this `RoadSegment` merges with other traffic so the
+     * collision detection should look across a wider range
+     */
+    isInlet?: boolean;
+}
 
 export class RoadSegment extends TrafficObject {
     readonly id: number;
     /**
-     * name of the road to which this {RoadSegment} belongs. this
+     * name of the road to which this `RoadSegment` belongs. this
      * is used in determining which lanes are available for change
      * lane manouvres
      */
     readonly roadName: string;
     /**
-     * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
+     * maximum legal speed allowed on `RoadSegment` in Kilometres per Hour
      */
     readonly speedLimit: number;
     /**
-     * width of {RoadSegment} in Metres
+     * width of `RoadSegment` in Metres
      */
     readonly width: number;
     /**
-     * indicates that this {RoadSegment} merges with other traffic so the
+     * indicates that this `RoadSegment` merges with other traffic so the
      * collision detection should look across a wider range
      */
     readonly isInlet: boolean;
 
-    private _line: Line3;
-    private _vehicles: Map<number, Vehicle>;
-    private _tfcs: Map<number, TrafficFlowControl>;
-    private _laneChangeLocations: Vector3[];
-    private _generator: VehicleGenerator;
+    #line: Line3;
+    #tfcIds: Array<number>;
+    #laneChangeLocations: Vector3[];
+    #generatorIds: Array<number>;
+    #vehicleIds: Array<number>;
 
-    constructor(options?: RoadSegmentOptions, simMgr?: SimulationManager) {
-        super(options, simMgr);
-        if (!options) {
-            options = {start: new Vector3(0, 0, 0), end: new Vector3(0, 0, 0)};
-        }
-        this.roadName = options?.roadName;
-        this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
-        this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
+    constructor(options: RoadSegmentOptions, simMgr?: SimulationManager) {
+        super(options);
+        this.roadName = options?.roadName || Utils.guid();
+        this.speedLimit = (options?.speedLimit == null) ? Infinity : options.speedLimit;
+        this.#line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
         this.width = options?.width || 5;
         this.isInlet = options?.isInlet || false;
-        this._vehicles = new Map<number, Vehicle>();
-        this._tfcs = new Map<number, TrafficFlowControl>();
-        this._laneChangeLocations = [];
+        this.#tfcIds = new Array<number>();
+        this.#laneChangeLocations = new Array<Vector3>();
+        this.#vehicleIds = new Array<number>();
+        this.#generatorIds = new Array<number>();
     }
 
     update(elapsedMs: number): void {
-        this.getTfcs().forEach((tfc) => {
-            tfc.update(elapsedMs);
-        });
-        this.getVehicleGenerator()?.update(elapsedMs);
-        this.getVehicles().forEach((veh) => {
-            veh.update(elapsedMs);
-        });
+        
     }
     
     getLaneChangePoints(): Vector3[] {
-        return this._laneChangeLocations;
+        return this.#laneChangeLocations;
     }
 
-    getVehicles(): Vehicle[] {
-        return Array.from(this._vehicles.values());
+    get vehicleIds(): Array<number> {
+        return this.#vehicleIds;
     }
 
-    getVehicleById(id: number): Vehicle {
-        return this._vehicles.get(id);
+    addVehicle(vehicle: Vehicle | number): this {
+        if (typeof vehicle === "number") {
+            this.#vehicleIds.push(vehicle);
+        } else {
+            this.#vehicleIds.push(vehicle.id);
+        }
+        return this;
     }
 
-    addVehicle(vehicle: Vehicle, location?: Vector3): void {
-        let l: Line3 = this.getLine();
-        let loc: Vector3 = location || l.start;
-        // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
-        vehicle.setPosition(loc);
-        vehicle.lookAt(l.end);
-        let oldSegment: RoadSegment = vehicle.getSegment();
-        if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
-        vehicle.setSegmentId(this.id);
-        this._vehicles.set(vehicle.id, vehicle);
+    removeVehicle(vehicle: Vehicle | number): this {
+        let index: number;
+        if (typeof vehicle === "number") {
+            index = this.#vehicleIds.findIndex(vid => vid === vehicle);
+        } else {
+            index = this.#vehicleIds.findIndex(vid => vid === vehicle.id);
+        }
+        if (index >= 0) {
+            this.#vehicleIds.splice(index, 1);
+        }
+        return this;
     }
 
-    removeVehicle(vehicleId: number): boolean {
-        // console.debug(`removing vehicle ${vehicleId} from segment ${this.id}`);
-        let v: Vehicle = this._vehicles.get(vehicleId);
-        v.setSegmentId(-1);
-        return this._vehicles.delete(vehicleId);
+    get tfcIds(): Array<number> {
+        return this.#tfcIds;
     }
 
-    getTfcs(): TrafficFlowControl[] {
-        return Array.from(this._tfcs.values());
+    addTfc(tfc: TrafficFlowControl | number): this {
+        if (typeof tfc === "number") {
+            this.#tfcIds.push(tfc);
+        } else {
+            this.#tfcIds.push(tfc.id);
+        }
+        return this;
     }
 
-    addTfc(tfc: TrafficFlowControl, location?: Vector3): void {
-        let l: Line3 = this.getLine();
-        let loc: Vector3 = location || l.end;
-        // console.debug(`adding tfc '${tfc.id}' with state '${tfc.getCurrentState()}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
-        tfc.setPosition(loc);
-        tfc.lookAt(l.start);
-        tfc.setSegmentId(this.id);
-        this._tfcs.set(tfc.id, tfc);
+    removeTfc(tfc: TrafficFlowControl | number): this {
+        let index: number;
+        if (typeof tfc === "number") {
+            index = this.#tfcIds.findIndex(id => id === tfc);
+        } else {
+            index = this.#tfcIds.findIndex(id => id === tfc.id);
+        }
+        if (index >= 0) {
+            this.#tfcIds.splice(index, 1);
+        }
+        return this;
     }
 
-    removeTfc(tfcId: number): boolean {
-        return this._tfcs.delete(tfcId);
+    get generatorIds(): Array<number> {
+        return this.#generatorIds;
     }
 
-    getVehicleGenerator(): VehicleGenerator {
-        return this._generator;
+    addGenerator(generator: VehicleGenerator | number): this {
+        if (typeof generator === "number") {
+            this.#generatorIds.push(generator);
+        } else {
+            this.#generatorIds.push(generator.id);
+        }
+        return this;
     }
 
-    setVehicleGenerator(generator: VehicleGenerator): void {
-        // console.debug(`setting generator '${generator.id}' on segment '${this.id}'`);
-        this._generator = generator;
-        this._generator.setSegmentId(this.id);
+    removeGenerator(generator: VehicleGenerator | number): this {
+        let index: number;
+        if (typeof generator === "number") {
+            index = this.#generatorIds.findIndex(id => id === generator);
+        } else {
+            index = this.#generatorIds.findIndex(id => id === generator.id);
+        }
+        if (index >= 0) {
+            this.#generatorIds.splice(index, 1);
+        }
+        return this;
     }
 
     protected generateMesh(): Object3D {
-        let lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
-        let line: Line3 = this.getLine();
-        var geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
-        let obj3D: Object3D = new Line(geometry, lineMat);
+        const lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
+        const line: Line3 = this.getLine();
+        const geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
+        const obj3D: Object3D = new Line(geometry, lineMat);
     
         var identity: string = this.id.toString();
         if (this.name && this.name != '') {
@@ -146,7 +185,7 @@ export class RoadSegment extends TrafficObject {
             sphere.position.set(l.start.x, l.start.y, l.start.z);
             sphere.lookAt(l.end);
             sphere.translateZ(i);
-            this._laneChangeLocations.push(sphere.position.clone());
+            this.#laneChangeLocations.push(sphere.position.clone());
         }
         sphere.geometry.dispose();
     }
@@ -160,7 +199,7 @@ export class RoadSegment extends TrafficObject {
     }
 
     getLine(): Line3 {
-        return this._line.clone();
+        return this.#line.clone();
     }
 
     getLength(): number {
@@ -181,6 +220,7 @@ export class RoadSegment extends TrafficObject {
     clone(): RoadSegment {
         let r = new RoadSegment({
             id: this.id,
+            map: this.map,
             name: this.name,
             width: this.width,
             start: this.getLine().start,
