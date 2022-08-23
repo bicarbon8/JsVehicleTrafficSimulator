@@ -148,7 +148,7 @@ export class MapManager {
      */
     getIntersectingVehicles(vehicle: Vehicle): Vehicle[] {
         let intersects: Vehicle[] = [];
-        let dist: number = vehicle.getLookAheadDistance();
+        let dist: number = vehicle.getStopDistance();
         let vehicles: Vehicle[] = this.getVehiclesWithinRadius(vehicle, dist);
         let vehicleBox: Box3 = vehicle.getLookAheadCollisionBox();
         
@@ -342,6 +342,18 @@ export class MapManager {
 	}
 
     shouldStopForVehicles(vehicle: Vehicle): ShouldStopResponse {
+        const ahead: Array<Vehicle> = this.getVehiclesWithinRadiusAhead(
+            vehicle.getLocation(), 
+            this.getSegmentById(vehicle.getSegmentId()), 
+            vehicle.getStopDistance()
+        );
+        for (var i=0; i<ahead.length; i++) {
+            let v = ahead[i];
+            if (v.getVelocity() < vehicle.getVelocity()) {
+                return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
+            }
+        }
+        
         var intersecting: Vehicle[] = this.getIntersectingVehicles(vehicle);
         for (var i=0; i<intersecting.length; i++) {
             let v: Vehicle = intersecting[i];
@@ -355,7 +367,7 @@ export class MapManager {
 
     shouldStopForTfcs(vehicle: Vehicle): ShouldStopResponse {
         const vehicleSegment: RoadSegment = this.getSegmentById(vehicle.getSegmentId());
-        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicleSegment, vehicle.getLookAheadDistance());
+        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicleSegment, vehicle.getStopDistance());
         for (var i=0; i<tfcs.length; i++) {
             var tfc = tfcs[i];
             if (tfc.shouldStop(vehicle)) {
@@ -369,7 +381,7 @@ export class MapManager {
     shouldSlowForCorner(vehicle: Vehicle): ShouldStopResponse {
         // slow down when the next segment is in range and has a different heading
         const vehicleSegment: RoadSegment = this.getSegmentById(vehicle.getSegmentId());
-        let distance: number = vehicle.getLookAheadDistance();
+        let distance: number = vehicle.getStopDistance();
         let segEnd: Vector3 = vehicleSegment.getEnd();
         var distanceToSegEnd = Utils.getLength(vehicle.getLocation(), segEnd);
         if (distanceToSegEnd < distance) {
@@ -435,5 +447,33 @@ export class MapManager {
         }
 
         return changeLaneSegment;
+    }
+
+    getTotalDistance(...segments: Array<RoadSegment | number>): number {
+        let totalDistance: number = 0;
+        if (segments?.length) {
+            for (var i=0; i<segments.length; i++) {
+                const segmentOrSegmentId = segments[i];
+                let seg: RoadSegment;
+                if (typeof segmentOrSegmentId === "number") {
+                    seg = this.getSegmentById(segmentOrSegmentId);
+                } else {
+                    seg = segmentOrSegmentId;
+                }
+                totalDistance += seg.getLength();
+            }
+        }
+        return totalDistance;
+    }
+
+    getNextSegment(currentSegmentOrId: RoadSegment | number): RoadSegment {
+        let seg: RoadSegment;
+        if (typeof currentSegmentOrId === "number") {
+            seg = this.getSegmentById(currentSegmentOrId);
+        } else {
+            seg = currentSegmentOrId;
+        }
+        const nextSegments: Array<RoadSegment> = this.getSegmentsStartingAt(seg.getEnd());
+        return nextSegments[Utils.getRandomInt(0, nextSegments.length)];
     }
 }

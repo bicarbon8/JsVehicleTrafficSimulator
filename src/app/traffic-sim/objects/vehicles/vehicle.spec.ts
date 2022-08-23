@@ -19,12 +19,12 @@ describe('Vehicle', () => {
             length: 4
         });
 
-        let actual: number = vehicle.getLookAheadDistance();
+        let actual: number = vehicle.getStopDistance();
         expect(6).toEqual(actual);
 
         vehicle.accelerate(1000); // speed should now be 1 Metre per Second
 
-        actual = vehicle.getLookAheadDistance();
+        actual = vehicle.getStopDistance();
         expect(6.75).toEqual(actual);
     });
 });

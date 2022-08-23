@@ -28,7 +28,11 @@ export class Utils {
         return uuid.v4();
     }
 
-    static getRandomBetween(min: number, max: number): number {
+    static getRandomInt(min: number, max: number): number {
+        return Math.floor(Utils.getRandomFloat(min, max));
+    }
+
+    static getRandomFloat(min: number, max: number): number {
 		return Math.random() * (max - min) + min;
 	}
 
