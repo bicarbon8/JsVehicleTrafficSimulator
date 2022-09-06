@@ -1,7 +1,8 @@
-import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D } from "three";
 import { Vehicle } from "../vehicles/vehicle";
 import { TfcState } from "./tfc-state";
 import { TfcOptions, TrafficFlowControl } from "./traffic-flow-control";
+import { Utils } from "../../helpers/utils";
+import { TrafficSimConstants } from "../../helpers/traffic-sim-constants";
 
 export type StopLightOptions = TfcOptions & {
     /**
@@ -18,25 +19,32 @@ export type StopLightOptions = TfcOptions & {
     redDuration?: number; // 60000 ms
 }
 
-export class StopLight extends TrafficFlowControl {
+export class StopLight extends TrafficFlowControl<Phaser.GameObjects.Ellipse> {
     /**
      * number of milliseconds the light remains green
      */
-    private readonly _greenDuration: number;
+    readonly greenDuration: number;
     /**
      * number of milliseconds the light remains yellow
      */
-    private readonly _yellowDuration: number;
+    readonly yellowDuration: number;
     /**
      * number of milliseconds the light remains red
      */
-    private readonly _redDuration: number;
+    readonly redDuration: number;
+
+    private _gameObj: Phaser.GameObjects.Ellipse;
+    #elapsed: number;
+
+    private readonly _scene: Phaser.Scene;
     
-    constructor(options?: StopLightOptions) {
+    constructor(options: StopLightOptions) {
         super(options);
-        this._greenDuration = (options?.greenDuration === undefined) ? 26000 : options?.greenDuration; // 24 seconds
-        this._yellowDuration = (options?.yellowDuration === undefined) ? 4000 : options?.yellowDuration; // 4 seconds
-        this._redDuration = (options?.redDuration === undefined) ? 30000 : options?.redDuration; // 30 seconds
+        this.#elapsed = 0;
+        this._scene = this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.simulationMap);
+        this.greenDuration = (options?.greenDuration === undefined) ? 26000 : options?.greenDuration; // 24 seconds
+        this.yellowDuration = (options?.yellowDuration === undefined) ? 4000 : options?.yellowDuration; // 4 seconds
+        this.redDuration = (options?.redDuration === undefined) ? 30000 : options?.redDuration; // 30 seconds
     }
 
     shouldStop(vehicle: Vehicle): boolean {
@@ -45,40 +53,35 @@ export class StopLight extends TrafficFlowControl {
         }
         return false;
     }
-    
-    protected generateMesh(): Object3D {
-        // z coordinate used for vertical height
-        var geometry = new SphereGeometry(1);
-        var material = new MeshBasicMaterial({
-            color: 0xffffff // white
-        });
-        return new Mesh(geometry, material);
-    }
 
-    update(elapsedMs?: number): void {
-        this.elapsed += elapsedMs;
+    update(time: number, delta: number): void {
+        this.#elapsed += delta;
         this._updateState();
         this._setColour();
+    }
+
+    override get location(): Phaser.Math.Vector2 {
+        return Utils.vector2(this.gameObj.x, this.gameObj.y);
     }
 
     private _updateState(): void {
         switch (this.currentState) {
             case TfcState.proceed:
-                if (this.elapsed >= this._greenDuration) {
+                if (this.#elapsed >= this.greenDuration) {
                     this.currentState = TfcState.caution;
-                    this.elapsed = 0;
+                    this.#elapsed -= this.greenDuration;
                 }
                 break;
             case TfcState.caution:
-                if (this.elapsed >= this._yellowDuration) {
+                if (this.#elapsed >= this.yellowDuration) {
                     this.currentState = TfcState.stop;
-                    this.elapsed = 0;
+                    this.#elapsed -= this.yellowDuration;
                 }
                 break;
             case TfcState.stop:
-                if (this.elapsed >= this._redDuration) {
+                if (this.#elapsed >= this.redDuration) {
                     this.currentState = TfcState.proceed;
-                    this.elapsed = 0;
+                    this.#elapsed -= this.redDuration;
                 }
                 break;
         }
@@ -87,14 +90,28 @@ export class StopLight extends TrafficFlowControl {
     private _setColour(): void {
         switch (this.currentState) {
             case TfcState.proceed:
-                this.getMaterial()?.color.setHex(0x00ff00); // green
+                this.gameObj.fillColor = 0x00ff00; // green
                 break;
             case TfcState.caution:
-                this.getMaterial()?.color.setHex(0xffff00); // yellow
+                this.gameObj.fillColor = 0xffff00; // yellow
                 break;
             case TfcState.stop:
-                this.getMaterial()?.color.setHex(0xff0000); // red
+                this.gameObj.fillColor = 0xff0000; // red
                 break;
         }
+    }
+
+    get gameObj(): Phaser.GameObjects.Ellipse {
+        if (!this._gameObj) {
+            this._gameObj = this.scene.add.ellipse(0, 0, this.length, this.width, 0x666666);
+            this._gameObj.setOrigin(0.5);
+            this._gameObj.setDepth(TrafficSimConstants.UI.Layers.TFCs.Depth);
+        }
+        return this._gameObj;
+    }
+
+    dispose(): void {
+        this._scene.children.remove(this.gameObj);
+        this.gameObj.destroy();
     }
 }

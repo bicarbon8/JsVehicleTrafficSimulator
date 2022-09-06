@@ -1,26 +1,25 @@
 import { Utils } from "../../helpers/utils";
 import { Vehicle } from "./vehicle";
-import { Line3, Mesh, Vector3 } from 'three';
-import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
-import { RoadSegment } from "../../map/road-segment";
+import { LaneSegment } from "../../map/lane-segment";
+import { TrafficSimConstants } from "../../helpers/traffic-sim-constants";
+import { ViewScene } from "../../view/view-scene";
+import { PositionableSimObj, PositionableSimObjOptions } from "../positionable-sim-obj";
 
-export type VehicleGeneratorOptions = TrafficObjectOptions & {
-    location: Vector3;
-    roadName: string;
+export type VehicleGeneratorOptions = PositionableSimObjOptions & {
     delay: number;
     max: number;
     startSpeedMax?: number;
     startSpeedMin?: number;
-}
+    laneSegment?: LaneSegment;
+};
 
-export class VehicleGenerator extends TrafficObject {
+export class VehicleGenerator extends PositionableSimObj<Phaser.GameObjects.Rectangle> {
     /**
      * minimum number of milliseconds that must elapse between generating vehicles
      * NOTE: if the {RoadSegment} is blocked at its start then no vehicles will be
      * added even if this time has elapsed
      */
     readonly delay: number;
-    readonly roadName: string;
     /**
      * maximum number of vehicles to generate
      */
@@ -34,30 +33,33 @@ export class VehicleGenerator extends TrafficObject {
      */
     readonly startSpeedMin: number;
     
-    private _elapsed: number;
-    private _nextVehicle: Vehicle;
-    private _count: number;
+    #elapsed: number;
+    #nextVehicle: Vehicle;
+    #count: number;
 
-    constructor(options?: VehicleGeneratorOptions) {
+    private _gameObj: Phaser.GameObjects.Rectangle;
+
+    laneSegment: LaneSegment;
+
+    constructor(options: VehicleGeneratorOptions) {
         super(options);
         this.delay = options?.delay || 0;
-        this.roadName = options?.roadName;
         this.max = options?.max || Infinity;
         this.startSpeedMax = options?.startSpeedMax || 0;
         this.startSpeedMin = options?.startSpeedMin || 0;
-        this._elapsed = 0;
-        this._count = 0;
-        this._nextVehicle = null;
+        this.#elapsed = 0;
+        this.#count = 0;
+        this.#nextVehicle = null;
     }
     
-    update(elapsedMs: number): void {
-        this._elapsed += elapsedMs;
-        if (this._nextVehicle && this._canAddToSegment(this._nextVehicle)) {
-            this._addToSegment(this._nextVehicle);
-            this._elapsed = 0;
+    update(time: number, delta: number): void {
+        this.#elapsed += delta;
+        if (this.#nextVehicle && this._canAddToSegment(this.#nextVehicle)) {
+            this._addToSegment(this.#nextVehicle);
+            this.#elapsed = 0;
         }
         if (this._shouldGenerate()) {
-            this._nextVehicle = this.generate();
+            this.#nextVehicle = this.generate();
         }
     }
 
@@ -66,48 +68,45 @@ export class VehicleGenerator extends TrafficObject {
      * @returns the number of vehicles generated
      */
     getCount(): number {
-        return this._count;
+        return this.#count;
     }
 
     generate(): Vehicle {
-        this._count++;
+        this.#count++;
+        const seg: LaneSegment = this.laneSegment;
         var v = new Vehicle({
-            id: Utils.getVehicleId(),
-            map: this.map,
-            width: Utils.getRandomFloat(2, 3),
-            height: Utils.getRandomFloat(1, 1.5),
-            length: Utils.getRandomFloat(3, 5),
-            acceleration: Utils.getRandomFloat(2.78, 6.95), // 0-100 in 4 to 10 seconds
-            deceleration: Utils.getRandomFloat(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
-            reactionTime: Utils.getRandomFloat(2500, 3500),
-            changeLaneDelay: Math.floor(Utils.getRandomFloat(30000, 60000)),
-            maxSpeed: Math.floor(Utils.getRandomFloat(200, 260)),
-            startingVelocity: Utils.getRandomFloat(this.startSpeedMin, this.startSpeedMax)
+            simulation: this.sim,
+            location: this.location,
+            width: Utils.getRandomFloat(TrafficSimConstants.Vehicles.Width.min, TrafficSimConstants.Vehicles.Width.max),
+            length: Utils.getRandomFloat(TrafficSimConstants.Vehicles.Length.min, TrafficSimConstants.Vehicles.Length.max),
+            acceleration: Utils.getRandomFloat(TrafficSimConstants.Vehicles.Acceleration.min, TrafficSimConstants.Vehicles.Acceleration.max),
+            deceleration: Utils.getRandomFloat(TrafficSimConstants.Vehicles.Deceleration.min, TrafficSimConstants.Vehicles.Deceleration.max),
+            reactionTime: Utils.getRandomFloat(TrafficSimConstants.Vehicles.ReactionTime.min, TrafficSimConstants.Vehicles.ReactionTime.max),
+            changeLaneDelay: Utils.getRandomFloat(TrafficSimConstants.Vehicles.ChangeLaneDelay.min, TrafficSimConstants.Vehicles.ChangeLaneDelay.max),
+            maxSpeed: Math.floor(Utils.getRandomFloat(200, 260))
         });
-        let seg: RoadSegment = this.map.getSegmentById(this.getSegmentId());
-        let line: Line3 = seg.getLine();
-        v.setPosition(line.start);
-        v.lookAt(line.end);
+        v.gameObj.setVisible(false);
+        v.lookAt(seg.end);
         return v;
     }
 
     reset(): void {
-        this._elapsed = 0;
-        this._count = 0;
+        this.#elapsed = 0;
+        this.#count = 0;
     }
 
     private _shouldGenerate(): boolean {
-        return (!this._nextVehicle
+        return (!this.#nextVehicle
             && this.getCount() < this.max
-            && this._elapsed >= this.delay);
+            && this.#elapsed >= this.delay);
     }
 
     private _canAddToSegment(vehicle: Vehicle): boolean {
-        const segment: RoadSegment = this.map.getSegmentById(this.getSegmentId());
-        const vehicles: Vehicle[] = this.map.getVehiclesWithinRadiusAhead(segment.getLine().start, segment, vehicle.length * 3);
+        const segment: LaneSegment = this.laneSegment;
+        const vehicles: Vehicle[] = segment.roadMap.getVehiclesWithinRadius(vehicle, TrafficSimConstants.Vehicles.Length.max);
         for (var i=0; i<vehicles.length; i++) {
             let v: Vehicle = vehicles[i];
-            if (Utils.isCollidingWith(vehicle, v)) {
+            if (this.scene.physics.overlap(vehicle.gameObj, v.gameObj)) {
                 return false;
             }
         }
@@ -116,14 +115,24 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _addToSegment(vehicle: Vehicle): void {
-        const segment: RoadSegment = this.map.getSegmentById(this.getSegmentId());
-        this.map.addVehicle(this._nextVehicle, segment, this.getLocation());
-        this.map.simMgr.add(this._nextVehicle);
-        this._nextVehicle = null;
+        const segment: LaneSegment = this.laneSegment;
+        segment.addVehicle(this.#nextVehicle, this.location);
+        this.#nextVehicle.gameObj.setVisible(true);
+        this.#nextVehicle = null;
+    }
+    
+    get gameObj(): Phaser.GameObjects.Rectangle {
+        if (!this._gameObj) {
+            this._gameObj = this.scene.add.rectangle(0, 0, this.width, this.length, 0x666666, 0);
+            this._gameObj.setVisible(false);
+        }
+        return this._gameObj;
     }
 
-    protected generateMesh(): Mesh {
-        /* Vehicle Generator has no mesh */
-        return null;
+    dispose(): void {
+        this.laneSegment.removeGenerator(this);
+        this.laneSegment = null;
+        this.scene.children.remove(this.gameObj);
+        this.gameObj.destroy();
     }
 }

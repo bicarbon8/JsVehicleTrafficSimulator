@@ -1,37 +1,31 @@
-import { Vector3 } from "three";
-import { SimulationManager } from "../../simulation-manager";
-import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
+import { GameObj, V2 } from "../../interfaces/custom-types";
+import { Positionable } from "../../interfaces/positionable";
+import { LaneSegment } from "../../map/lane-segment";
+import { ViewScene } from "../../view/view-scene";
+import { PositionableSimObj, PositionableSimObjOptions } from "../positionable-sim-obj";
+import { SimulationObject, SimulationObjectOptions } from "../simulation-object";
 import { Vehicle } from "../vehicles/vehicle";
 import { TfcState } from "./tfc-state";
 
-export type TfcOptions = TrafficObjectOptions & {
+export type TfcOptions = PositionableSimObjOptions & {
     startState?: TfcState;
     changeDelay?: number;
-    roadName?: string;
     type?: string;
-    location?: Vector3;
-}
+    laneSegment?: LaneSegment;
+};
 
-export abstract class TrafficFlowControl extends TrafficObject {
+export abstract class TrafficFlowControl<T extends GameObj> extends PositionableSimObj<T> {
     readonly startState: TfcState;
     readonly changeDelay: number;
-    readonly roadName: string;
     
-    protected currentState: TfcState;
-    protected elapsed: number;
+    currentState: TfcState;
 
-    constructor(options?: TfcOptions, simMgr?: SimulationManager) {
+    constructor(options: TfcOptions) {
         super(options);
         this.startState = (options?.startState === undefined) ? 2 : options?.startState;
         this.changeDelay = (options?.changeDelay === undefined) ? Infinity : options?.changeDelay;
-        this.roadName = options?.roadName;
         this.currentState = this.startState;
-        this.elapsed = 0;
     }
 
     abstract shouldStop(vehicle: Vehicle): boolean;
-
-    getCurrentState(): TfcState {
-        return this.currentState;
-    }
 }

@@ -8,7 +8,7 @@ describe('Vehicle', () => {
         });
         vehicle.accelerate(1000); // 1 second
 
-        let actual: number = vehicle.getVelocity();
+        let actual: number = vehicle.getSpeed();
         expect(100).toEqual(actual);
     });
 

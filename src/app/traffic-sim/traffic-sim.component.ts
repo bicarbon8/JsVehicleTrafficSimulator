@@ -1,9 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { Utils } from './helpers/utils';
-import { RoadMap } from './map/road-map';
-import { SimulationManager } from './simulation-manager';
+import { RoadMap, RoadMapOptions } from './map/road-map';
 import { environment } from '../../environments/environment';
+import { TrafficSim } from './view/traffic-sim';
 
 @Component({
   selector: 'app-traffic-sim',
@@ -11,8 +10,6 @@ import { environment } from '../../environments/environment';
   styleUrls: ['./traffic-sim.component.css']
 })
 export class TrafficSimComponent implements OnInit, OnDestroy {
-  #simMgr: SimulationManager;
-  
   runningState: string;
   elapsed: string;
 
@@ -21,17 +18,15 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
   }
   
   async ngOnInit(): Promise<void> {
-    this.#simMgr = SimulationManager.inst;
-    this.#simMgr.init('#traffic-sim');
-    let path: string = 'assets/maps/intersection.json';
-    await this.loadLocalMap(path);
+    const path: string = 'assets/maps/intersection.json';
     this.zone.runOutsideAngular(() => {
-      this.#simMgr.start();
+      TrafficSim.inst.start();
+      TrafficSim.inst.game.events.once(Phaser.Scenes.Events.READY, () => this.loadLocalMap(path));
     });
   }
 
   ngOnDestroy(): void {
-    this.#simMgr.destroy();
+    TrafficSim.inst.stop();
   }
 
   async loadLocalMap(lpath: string): Promise<void> {
@@ -41,8 +36,8 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
   async loadMap(fpath: string): Promise<void> {
     try {
       await new Promise<void>((resolve, reject) => {
-        this.httpClient.get(fpath).subscribe((data: RoadMap) =>{
-          this.#simMgr.loadMap(data);
+        this.httpClient.get(fpath).subscribe((data: RoadMapOptions) =>{
+          TrafficSim.inst.roadMap = new RoadMap(data);
           resolve();
         });
       });
@@ -52,32 +47,18 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
   }
 
   isRunning(): boolean {
-    return this.#simMgr.isRunning();
+    return TrafficSim.inst.game.isRunning;
   }
 
   async toggleAnimationState(): Promise<void> {
     if (this.isRunning()) {
       this.runningState = 'paused';
-      this.#simMgr.stop();
+      TrafficSim.inst.stop();
     } else {
       this.runningState = 'running';
       this.zone.runOutsideAngular(() => {
-        this.#simMgr.start();
+        TrafficSim.inst.start();
       });
     }
-  }
-
-  toggleDebug(): void {
-    this.#simMgr.toggleDebugging();
-  }
-
-  async updateTimeStep(step: number): Promise<void> {
-    if (!isNaN(step)) {
-      this.#simMgr.setTimestep(step);
-    }
-  }
-
-  getSimulationTimeElapsed(): string {
-    return Utils.convertMsToHumanReadable(this.#simMgr.getTotalElapsed());
   }
 }

@@ -17,6 +17,12 @@
                                     "location":{"x":3,"y":5},
                                     "startState": 0
                                 }
+                            ],
+                            "generators": [
+                                {
+                                    "location":{"x":3,"y":100},
+                                    "delay":5
+                                }
                             ]
                         }
                     ]
@@ -34,6 +40,12 @@
                                     "location":{"x":-3,"y":-5},
                                     "startState": 0
                                 }
+                            ],
+                            "generators": [
+                                {
+                                    "location":{"x":-3,"y":-100},
+                                    "delay":5
+                                }
                             ]
                         }
                     ]
@@ -43,6 +55,29 @@
         {
             "name": "East West",
             "lanes": [
+                {
+                    "name": "Eastbound",
+                    "segments": [
+                        {
+                            "start":{"x":-100,"y":3},
+                            "end":{"x":100,"y":3},
+                            "speedLimit":35,
+                            "tfcs": [
+                                {
+                                    "type":"stoplight",
+                                    "location":{"x":-5,"y":3},
+                                    "startState": 2
+                                }
+                            ],
+                            "generators": [
+                                {
+                                    "location":{"x":-100,"y":3},
+                                    "delay":5
+                                }
+                            ]
+                        }
+                    ]
+                },
                 {
                     "name": "Westbound",
                     "segments": [
@@ -60,8 +95,7 @@
                             "generators": [
                                 {
                                     "location":{"x":100,"y":-3},
-                                    "delay":5,
-                                    "max": 2
+                                    "delay":5
                                 }
                             ]
                         }
