@@ -3,16 +3,16 @@ import { Utils } from "../helpers/utils";
 import { GameObj, V2 } from "../interfaces/custom-types";
 import { GameObject } from "../interfaces/game-object";
 import { Positionable } from "../interfaces/positionable";
-import { SimulationObject, SimulationObjectOptions } from "./simulation-object";
+import { SimObj, SimObjOptions } from "./sim-obj";
 
-export type PositionableSimObjOptions = SimulationObjectOptions & {
+export type PositionableSimObjOptions = SimObjOptions & {
     length?: number;
     width?: number;
     location?: V2;
     rotation?: number;
 };
 
-export abstract class PositionableSimObj<T extends GameObj> extends SimulationObject implements GameObject<T>, Positionable {
+export abstract class PositionableSimObj<T extends GameObj> extends SimObj implements GameObject<T>, Positionable {
     constructor(options: PositionableSimObjOptions) {
         super(options);
         this.length = options.length || 1;
@@ -33,7 +33,7 @@ export abstract class PositionableSimObj<T extends GameObj> extends SimulationOb
         return this.gameObj.rotation;
     }
     get heading(): V2 {
-        return Utils.getHeading(Utils.rad2deg(this.rotation));
+        return Utils.getHeading(this.rotation);
     }
     setLocation(loc: V2): this {
         if (loc) {
@@ -61,6 +61,6 @@ export abstract class PositionableSimObj<T extends GameObj> extends SimulationOb
     /** GameObject */
     abstract get gameObj(): T;
     get scene(): Phaser.Scene {
-        return this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.simulationMap);
+        return this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.roadmapScene);
     }
 }

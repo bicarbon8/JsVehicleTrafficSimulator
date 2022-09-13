@@ -1,23 +1,20 @@
 import { Utils } from '../helpers/utils';
-import { GameObj, V2 } from '../interfaces/custom-types';
 import { Disposable } from '../interfaces/disposable';
-import { GameObject } from '../interfaces/game-object';
-import { Positionable } from '../interfaces/positionable';
 import { Updatable } from '../interfaces/updatable';
 import { TrafficSim } from '../view/traffic-sim';
 
-export type SimulationObjectOptions = {
+export type SimObjOptions = {
     simulation: TrafficSim;
     id?: string;
     name?: string;
 }
 
-export abstract class SimulationObject implements Updatable, Disposable {
+export abstract class SimObj implements Updatable, Disposable {
     readonly sim: TrafficSim;
     readonly id: string;
     readonly name: string;
 
-    constructor(options: SimulationObjectOptions) {
+    constructor(options: SimObjOptions) {
         this.sim = options.simulation || TrafficSim.inst;
         this.id = Utils.guid();
         this.name = options.name || typeof this;

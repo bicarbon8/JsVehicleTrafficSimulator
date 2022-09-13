@@ -6,12 +6,12 @@ import { V2 } from "../../interfaces/custom-types";
 import { Lane } from "../../map/lane";
 import { LaneSegment } from "../../map/lane-segment";
 import { Road } from "../../map/road";
-import { RoadMap } from "../../map/road-map";
+import { RoadMap } from "../../map/roadmap";
 import { TrafficFlowControl } from "../traffic-controls/traffic-flow-control";
 import { PositionableSimObj, PositionableSimObjOptions } from "../positionable-sim-obj";
 import { Physics } from "../../interfaces/physics";
 
-export type VehicleState = 'accelerating' | 'decelerating' | 'stopped' | 'coasting';
+export type VehicleState = 'accelerating' | 'decelerating' | 'stopped' | 'coasting' | 'crashed';
 
 export type VehicleOptions = PositionableSimObjOptions & {
     /**
@@ -119,8 +119,7 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
     }
     /** in Metres / second */
     get speed(): number {
-        const vel = this.velocity;
-        return Utils.vector2(vel).length();
+        return this.body.speed;
     }
     lookAt(location: V2): this {
         const pos = this.location;
@@ -147,12 +146,6 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
     applyForce(force: V2): this {
         const newV = Utils.vector2(this.velocity).add(force);
         this.body.setVelocity(newV.x, newV.y);
-        // prevent going backwards
-        const heading = this.heading;
-        const Hv = Utils.vector2(heading).add(this.velocity);
-        if (Math.abs(Hv.x) < Math.abs(heading.x) || Math.abs(Hv.y) < Math.abs(heading.y)) {
-            this.body.setVelocity(0);
-        }
         return this;
     }
 
@@ -173,7 +166,11 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
     }
     setSegment(segment: LaneSegment, location?: V2): this {
         if (segment) {
+            if (this.segment) {
+                this.segment.removeVehicle(this);
+            }
             this.#laneSegment = segment;
+            this.#laneSegment.addVehicle(this);
             if (location) {
                 this.setLocation(location);
             } else {
@@ -184,7 +181,20 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
     }
 
     #nextReactionAt: number = 0;
-    async update(time: number, delta: number): Promise<void> {
+    update(time: number, delta: number): void {
+        if (this._destroyed) {
+            return;
+        }
+        
+        if (this.isAtSegmentEnd()) {
+            const next = this.nextSegment;
+            if (next) {
+                this.setSegment(next, this.location);
+            } else {
+                this.dispose();
+            }
+        }
+
         if (this.segment) {
             this.lookAt(this.segment.end);
         }
@@ -194,16 +204,18 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
             this.#nextReactionAt = this.scene.time.now + this.reactionTime;
         }
 
-        if (this.isCrashed()) {
+        if (this.state === 'crashed') {
             // remove vehicle after appropriate time has passed
-            if (this.#crashedAt + this.#crashCleanupTime <= this.scene.time.now) {
+            if (this.timeUntilCrashCleanup <= 0) {
                 // remove self from the Simulation
                 // TODO: emit event
+                this.dispose();
                 return;
             }
         }
 
         this.updateSpeed(delta);
+        // this.preventSliding(delta);
         this.updateColour();
     }
 
@@ -212,12 +224,23 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
     }
 
     getDesiredState(): VehicleState {
+        if (this.isCrashed()) {
+            return 'crashed';
+        }
+
         if (this.shouldDecelerate()) {
+            if (Utils.isBetween(0, 0.01, this.speed)) {
+                return 'stopped';
+            }
             return 'decelerating';
         }
         
         if (this.shouldAccelerate()) {
             return 'accelerating';
+        }
+
+        if (Utils.isBetween(0, 0.01, this.speed)) {
+            return 'stopped';
         }
             
         return 'coasting';
@@ -228,8 +251,12 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
             case 'accelerating':
                 this.accelerate(elapsedMs);
                 break;
+            case 'crashed':
             case 'decelerating':
                 this.brake(elapsedMs);
+                break;
+            case 'stopped':
+                this.body.setVelocity(0, 0);
                 break;
             default:
                 break;
@@ -261,32 +288,68 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
         return this;
     }
 
-    setCrashed(vehicle: Vehicle): void {
-        if (!this.#crashedAt) {
-            this.#crashedAt = this.scene.time.now;
-            this.#crashCleanupTime = 5000;
-            // const maxVelocityMps: number = Math.max(this.getVelocity(), vehicle.getVelocity());
-            // if (maxVelocityMps < Utils.convertKmphToMetresPerSec(15)) {
-            //     this.#crashCleanupTime = Utils.getRandomFloat(
-            //         SimulationConstants.Vehicles.CrashCleanupDelay.LowSpeed.min,
-            //         SimulationConstants.Vehicles.CrashCleanupDelay.LowSpeed.max
-            //     );
-            // } else if (Utils.convertKmphToMetresPerSec(15) <= maxVelocityMps && maxVelocityMps < Utils.convertKmphToMetresPerSec(50)) {
-            //     this.#crashCleanupTime = Utils.getRandomFloat(
-            //         SimulationConstants.Vehicles.CrashCleanupDelay.MediumSpeed.min,
-            //         SimulationConstants.Vehicles.CrashCleanupDelay.MediumSpeed.max
-            //     );
-            // } else if (Utils.convertKmphToMetresPerSec(50) <= maxVelocityMps) {
-            //     this.#crashCleanupTime = Utils.getRandomFloat(
-            //         SimulationConstants.Vehicles.CrashCleanupDelay.HighSpeed.min,
-            //         SimulationConstants.Vehicles.CrashCleanupDelay.HighSpeed.max
-            //     );
-            // }
+    isAtSegmentEnd(): boolean {
+        if (this.segment) {
+            if (Utils.isWithinDistance(this.location, this.segment.end, this.length / 2)) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    /**
+     * gets the list of next available segments and picks one or returns `null`
+     * if none available
+     */
+    get nextSegment(): LaneSegment {
+        if (this.segment) {
+            const nextSegments = this.segment.nextSegments;
+            if (nextSegments?.length) {
+                const next = nextSegments[Utils.getRandomInt(0, nextSegments.length)];
+                if (next) {
+                    return next;
+                }
+            }
+        }
+        return null;
     }
 
     isCrashed(): boolean {
-        return this.#crashedAt != null;
+        return this.state === 'crashed';
+    }
+
+    setCrashed(): void {
+        if (this.state !== 'crashed') {
+            this.#crashedAt = this.scene.time.now;
+            this.#state = 'crashed';
+            const speed: number = this.speed;
+            if (speed < Utils.convertKmphToMetresPerSec(15)) {
+                this.#crashCleanupTime = Utils.getRandomFloat(
+                    TrafficSimConstants.Vehicles.CrashCleanupDelay.LowSpeed.min,
+                    TrafficSimConstants.Vehicles.CrashCleanupDelay.LowSpeed.max
+                );
+            } else if (Utils.convertKmphToMetresPerSec(15) <= speed && speed < Utils.convertKmphToMetresPerSec(50)) {
+                this.#crashCleanupTime = Utils.getRandomFloat(
+                    TrafficSimConstants.Vehicles.CrashCleanupDelay.MediumSpeed.min,
+                    TrafficSimConstants.Vehicles.CrashCleanupDelay.MediumSpeed.max
+                );
+            } else if (Utils.convertKmphToMetresPerSec(50) <= speed) {
+                this.#crashCleanupTime = Utils.getRandomFloat(
+                    TrafficSimConstants.Vehicles.CrashCleanupDelay.HighSpeed.min,
+                    TrafficSimConstants.Vehicles.CrashCleanupDelay.HighSpeed.max
+                );
+            }
+        }
+    }
+
+    /**
+     * the number of milliseconds remaining until this vehicle is removed from the simulation
+     */
+    get timeUntilCrashCleanup(): number {
+        if (this.state !== 'crashed') {
+            return Infinity;
+        }
+        return (this.#crashedAt + this.#crashCleanupTime) - this.scene.time.now
     }
 
     setChangingLanes(isChanging: boolean): void {
@@ -301,18 +364,65 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
     }
 
     accelerate(elapsedMs: number): void {
-        const calculatedAcceleration = (this.acceleration / 1000) * elapsedMs;
-        const force = Utils.vector2(this.heading).multiply(Utils.vector2(calculatedAcceleration));
+        const accOverTime = this.acceleration * (elapsedMs / 1000);
+        let force: V2;
+        if (this.speed > 0) {
+            if (Utils.getAngle(this.heading) != Utils.getAngle(this.velocity)) {
+                force = Utils.vector2(this.velocity)
+                    .mirror(Utils.vector2(this.heading))
+                    .normalize()
+                    .multiply(Utils.vector2(accOverTime));
+            } else {
+                force = Utils.vector2(this.heading)
+                    .multiply(Utils.vector2(accOverTime));
+            }
+        } else {
+            force = Utils.vector2(this.heading)
+                .multiply(Utils.vector2(accOverTime));
+        }
         this.applyForce(force);
     }
 
     brake(elapsedMs: number): void {
-        const calculatedDeceleration = (this.deceleration / 1000) * elapsedMs;
-        const force = Utils.vector2(this.heading).multiply(Utils.vector2(calculatedDeceleration)).negate();
-        this.applyForce(force);
+        if (Utils.isBetween(0, 0.2, this.speed)) {
+            this.body.setVelocity(0, 0);
+        }
+        const accOverTime = this.deceleration * (elapsedMs / 1000);
+        let force: V2;
+        if (this.speed > 0) {
+            if (Utils.getAngle(this.heading) != Utils.getAngle(this.velocity)) {
+                force = Utils.vector2(this.velocity)
+                    .mirror(Utils.vector2(this.heading))
+                    .normalize()
+                    .multiply(Utils.vector2(accOverTime))
+                    .negate()
+                    .mirror(Utils.vector2(this.heading));
+            } else {
+                force = Utils.vector2(this.heading)
+                    .multiply(Utils.vector2(accOverTime))
+                    .negate();
+            }
+            this.applyForce(force);
+        }
+    }
+
+    isMovingBackwards(): boolean {
+        if (this.speed > 0) {
+            const heading = this.heading;
+            const velocity = this.velocity;
+            const vNorm = Utils.vector2(velocity).normalize();
+            const diff = Utils.vector2(heading).subtract(vNorm);
+            if (diff.length() > 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     shouldDecelerate(): boolean {
+        if (this.isMovingBackwards()) {
+            return false;
+        }
         if (this.isCrashed()) {
             return true;
         }
@@ -331,7 +441,7 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
                 });
                 if (changeLaneSegment) {
                     this.setChangingLanes(true);
-                    changeLaneSegment.addVehicle(this, changeLaneSegment.start);
+                    this.setSegment(changeLaneSegment, changeLaneSegment.start);
                 }
             }
             return true;
@@ -366,7 +476,7 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
         const ahead: Array<Vehicle> = this.getVehiclesAhead(this.stopDistance) || [];
         for (var i=0; i<ahead.length; i++) {
             let v = ahead[i];
-            if (v.speed < this.speed) {
+            if (Utils.isBetween(0, 0.01, v.speed) || v.speed < this.speed) {
                 return true;
             }
         }
@@ -446,11 +556,11 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
      */
     getIntersectingVehicles(): Array<Vehicle> {
         const intersecting = new Array<Vehicle>();
-        const inView = this.roadMap.getVehiclesInView(this);
-        const onCollisionCourse = this.roadMap.getVehiclesWithIntersectingPaths(this, inView);
-        if (onCollisionCourse?.length) {
-            intersecting.splice(0, 0, ...onCollisionCourse);
-        }
+        // const inView = this.roadMap.getVehiclesInView(this);
+        // const onCollisionCourse = this.roadMap.getVehiclesWithIntersectingPaths(this, inView);
+        // if (onCollisionCourse?.length) {
+        //     intersecting.splice(0, 0, ...onCollisionCourse);
+        // }
         return intersecting;
     }
 
@@ -522,7 +632,7 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
         const reactionDist = speed * reactionTimeSec;
         const brakingTime = (speed - finalVel) / this.deceleration;
         const brakingDist = Utils.getDistanceTravelled(speed, brakingTime * 1000, finalVel);
-        return reactionDist + brakingDist + (TrafficSimConstants.Vehicles.Length.max * 1.5);
+        return reactionDist + brakingDist + (TrafficSimConstants.Vehicles.Length.max * 2);
     }
 
     get stopDistanceIntersectionLine(): Phaser.Geom.Line {
@@ -569,13 +679,12 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
         if (!this._gameObj) {
             this._gameObj = this.scene.add.rectangle(0, 0, this.length, this.width, 0x666666);
             this._gameObj.setOrigin(0.5);
-            this._gameObj.setDepth(TrafficSimConstants.UI.Layers.Vehicles.Depth);
+            this._gameObj.setDepth(TrafficSimConstants.UI.Layers.Vehicles.depth);
             this._gameObj.setInteractive();
             this._gameObj.on(Phaser.Input.Events.POINTER_DOWN, this._handleClick, this);
             this.scene.physics.add.existing(this._gameObj);
             this.body.setBounce(0.2, 0.2);
-            this.body.setMaxVelocity(TrafficSimConstants.Vehicles.Speed.max, TrafficSimConstants.Vehicles.Speed.max);
-            this.body.setDrag(1, 1);
+            this.body.setMaxSpeed(TrafficSimConstants.Vehicles.Speed.max);
         }
         return this._gameObj;
     }
@@ -595,7 +704,9 @@ export class Vehicle extends PositionableSimObj<Phaser.GameObjects.Rectangle> im
         }
     }
 
+    private _destroyed: boolean = false;
     dispose(): void {
+        this._destroyed = true;
         if (this.segment) {
             this.segment.removeVehicle(this);
         }

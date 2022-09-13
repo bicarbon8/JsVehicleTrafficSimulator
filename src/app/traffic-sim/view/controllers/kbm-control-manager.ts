@@ -1,6 +1,6 @@
 import { TrafficSimConstants } from "../../helpers/traffic-sim-constants";
 import { Controllable } from "../../interfaces/controllable";
-import { ViewScene } from "../view-scene";
+import { RoadmapScene } from "../scenes/roadmap-scene";
 import { ControlManager } from "./control-manager";
 
 export class KbmControlManager extends ControlManager {
@@ -9,14 +9,14 @@ export class KbmControlManager extends ControlManager {
     private _cameraLeftKey: Phaser.Input.Keyboard.Key;
     private _cameraRightKey: Phaser.Input.Keyboard.Key;
     
-    constructor(scene: ViewScene, ...controllables: Array<Controllable>) {
+    constructor(scene: RoadmapScene, ...controllables: Array<Controllable>) {
         super(scene, ...controllables);
 
         this._setupMouseBindings();
         this._setupKeyBindings();
     }
 
-    async update(time: number, delta: number): Promise<void> {
+    update(time: number, delta: number): void {
         if (this.active) {
             this._handleCameraScroll();
         }

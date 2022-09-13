@@ -1,16 +1,16 @@
 import { TrafficSimConstants } from "../helpers/traffic-sim-constants";
 import { Utils } from "../helpers/utils";
-import { SimulationObject, SimulationObjectOptions } from "../objects/simulation-object";
+import { SimObj, SimObjOptions } from "../objects/sim-obj";
 import { Vehicle } from "../objects/vehicles/vehicle";
 import { Lane } from "./lane";
 import { LaneSegment } from "./lane-segment";
 import { Road, RoadOptions } from "./road";
 
-export type RoadMapOptions = SimulationObjectOptions & {
+export type RoadMapOptions = SimObjOptions & {
     roads?: Array<RoadOptions>
 };
 
-export class RoadMap extends SimulationObject {
+export class RoadMap extends SimObj {
     #roads: Map<string, Road>;
     
     constructor(options: RoadMapOptions) {

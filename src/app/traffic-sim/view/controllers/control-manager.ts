@@ -1,6 +1,6 @@
 import { Controllable } from "../../interfaces/controllable";
 import { Updatable } from "../../interfaces/updatable";
-import { ViewScene } from "../view-scene";
+import { RoadmapScene } from "../scenes/roadmap-scene";
 
 export abstract class ControlManager implements Updatable {
     #scene: Phaser.Scene;
@@ -8,7 +8,7 @@ export abstract class ControlManager implements Updatable {
     
     active: boolean;
 
-    constructor(scene: ViewScene, ...controllables: Array<Controllable>) {
+    constructor(scene: RoadmapScene, ...controllables: Array<Controllable>) {
         this.#scene = scene;
         this.#controllables = controllables || new Array<Controllable>();
         this.active = true;
@@ -39,5 +39,5 @@ export abstract class ControlManager implements Updatable {
         return null;
     }
 
-    abstract update(time: number, delta: number): Promise<void>;
+    abstract update(time: number, delta: number): void;
 }

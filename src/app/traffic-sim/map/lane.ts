@@ -1,16 +1,16 @@
 import { Utils } from "../helpers/utils";
 import { V2 } from "../interfaces/custom-types";
-import { SimulationObject, SimulationObjectOptions } from "../objects/simulation-object";
+import { SimObj, SimObjOptions } from "../objects/sim-obj";
 import { LaneSegment, LaneSegmentOptions } from "./lane-segment";
 import { Road } from "./road";
-import { RoadMap } from "./road-map";
+import { RoadMap } from "./roadmap";
 
-export type LaneOptions = SimulationObjectOptions & {
+export type LaneOptions = SimObjOptions & {
     road?: Road;
     segments?: Array<LaneSegmentOptions>;
 };
 
-export class Lane extends SimulationObject {
+export class Lane extends SimObj {
     readonly road: Road;
 
     #segments: Map<string, LaneSegment>;

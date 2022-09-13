@@ -1,9 +1,9 @@
 import { GameObj, V2 } from "../../interfaces/custom-types";
 import { Positionable } from "../../interfaces/positionable";
 import { LaneSegment } from "../../map/lane-segment";
-import { ViewScene } from "../../view/view-scene";
+import { RoadmapScene } from "../../view/scenes/roadmap-scene";
 import { PositionableSimObj, PositionableSimObjOptions } from "../positionable-sim-obj";
-import { SimulationObject, SimulationObjectOptions } from "../simulation-object";
+import { SimObj, SimObjOptions } from "../sim-obj";
 import { Vehicle } from "../vehicles/vehicle";
 import { TfcState } from "./tfc-state";
 
@@ -17,11 +17,13 @@ export type TfcOptions = PositionableSimObjOptions & {
 export abstract class TrafficFlowControl<T extends GameObj> extends PositionableSimObj<T> {
     readonly startState: TfcState;
     readonly changeDelay: number;
+    laneSegment: LaneSegment;
     
     currentState: TfcState;
 
     constructor(options: TfcOptions) {
         super(options);
+        this.laneSegment = options.laneSegment;
         this.startState = (options?.startState === undefined) ? 2 : options?.startState;
         this.changeDelay = (options?.changeDelay === undefined) ? Infinity : options?.changeDelay;
         this.currentState = this.startState;

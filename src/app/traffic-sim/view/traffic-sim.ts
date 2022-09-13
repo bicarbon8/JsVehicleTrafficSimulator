@@ -1,7 +1,9 @@
 import * as Phaser from "phaser";
-import { RoadMap } from "../map/road-map";
+import { LaneSegment } from "../map/lane-segment";
+import { RoadMap } from "../map/roadmap";
 import { Vehicle } from "../objects/vehicles/vehicle";
-import { ViewScene } from "./view-scene";
+import { OverlayScene } from "./scenes/overlay-scene";
+import { RoadmapScene } from "./scenes/roadmap-scene";
 
 export type TrafficSimOptions = {
     debug?: boolean;
@@ -15,6 +17,7 @@ export class TrafficSim {
     #game: Phaser.Game;
 
     activeVehicle: Vehicle;
+    activeSegment: LaneSegment;
     roadMap: RoadMap;
 
     constructor(options?: TrafficSimOptions) {
@@ -36,7 +39,7 @@ export class TrafficSim {
                 }
             },
             roundPixels: true,
-            scene: [ViewScene]
+            scene: [RoadmapScene, OverlayScene]
         };
     }
 

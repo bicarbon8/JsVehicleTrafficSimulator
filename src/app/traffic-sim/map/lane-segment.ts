@@ -9,11 +9,11 @@ import { Vehicle } from '../objects/vehicles/vehicle';
 import { VehicleGenerator, VehicleGeneratorOptions } from '../objects/vehicles/vehicle-generator';
 import { Lane } from "./lane";
 import { Road } from "./road";
-import { RoadMap } from "./road-map";
+import { RoadMap } from "./roadmap";
 
 export type LaneSegmentOptions = PositionableSimObjOptions & {
-    start: Phaser.Math.Vector2;
-    end: Phaser.Math.Vector2;
+    start: V2;
+    end: V2;
     /**
      * width of `LaneSegment` in Metres
      */
@@ -114,8 +114,7 @@ export class LaneSegment extends PositionableSimObj<Phaser.GameObjects.Line> {
         return this.#laneChangeLocations;
     }
 
-    addVehicle(vehicle: Vehicle, location?: V2): this {
-        vehicle.setSegment(this, location);
+    addVehicle(vehicle: Vehicle): this {
         this.#vehicles.set(vehicle.id, vehicle);
         return this;
     }
@@ -232,15 +231,28 @@ export class LaneSegment extends PositionableSimObj<Phaser.GameObjects.Line> {
         if (!this.#gameObj) {
             this.#gameObj = this.scene.add.line(0, 0, this.start.x, this.start.y, this.end.x, this.end.y, 0x0066ff);
             this.#gameObj.setOrigin(0, 0);
-            this.scene.add.circle(this.start.x, this.start.y, this.width, 0x00ff00);
+            this.#gameObj.setInteractive();
+            this.#gameObj.on(Phaser.Input.Events.POINTER_DOWN, this._handleClick, this);
         }
         return this.#gameObj;
     }
     get scene(): Phaser.Scene {
-        return this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.simulationMap);
+        return this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.roadmapScene);
+    }
+
+    private _handleClick(): void {
+        if (this.sim.activeSegment?.id === this.id) {
+            this.sim.activeSegment = null;
+        } else {
+            this.sim.activeSegment = this;
+        }
     }
 
     dispose(): void {
+        this.#generators.forEach(g => g.dispose());
         this.#vehicles.forEach(v => v.dispose());
+        this.#tfcs.forEach(t => t.dispose());
+        this.scene.children.remove(this.#gameObj);
+        this.#gameObj.destroy();
     }
 }

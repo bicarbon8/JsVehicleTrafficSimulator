@@ -1,23 +1,24 @@
 export module TrafficSimConstants {
     export module UI {
         export module Scenes {
-            export const simulationMap = 'simulation-map';
+            export const roadmapScene = 'roadmap-scene';
+            export const overlayScene = 'overlay-scene';
         }
         export module Layers {
             export module Background {
-                export const Depth = 0;
+                export const depth = 0;
             }
             export module Roads {
-                export const Depth = 1;
+                export const depth = 1;
             }
             export module Vehicles {
-                export const Depth = 2;
+                export const depth = 2;
             }
             export module TFCs {
-                export const Depth = 3;
+                export const depth = 3;
             }
             export module Hud {
-                export const Depth = 4;
+                export const depth = 4;
             }
         }
         export module Camera {
@@ -29,6 +30,7 @@ export module TrafficSimConstants {
         }
     }
     export module Vehicles {
+        export const lateralFriction = 5;
         export module Width {
             export const min = 2;
             export const max = 3;
@@ -49,8 +51,8 @@ export module TrafficSimConstants {
             export const max = 3; // metres / sec
         }
         export module Deceleration {
-            export const min = 2; // metres / sec
-            export const max = 3; // metres / sec
+            export const min = 3; // metres / sec
+            export const max = 4; // metres / sec
         }
         export module ChangeLaneDelay {
             export const min = 30000; // 30 seconds

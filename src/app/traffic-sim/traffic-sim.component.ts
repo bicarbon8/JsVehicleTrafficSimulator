@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { RoadMap, RoadMapOptions } from './map/road-map';
+import { RoadMap, RoadMapOptions } from './map/roadmap';
 import { environment } from '../../environments/environment';
 import { TrafficSim } from './view/traffic-sim';
 
@@ -17,7 +17,7 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
     this.runningState = 'running';
   }
   
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     const path: string = 'assets/maps/intersection.json';
     this.zone.runOutsideAngular(() => {
       TrafficSim.inst.start();
@@ -37,6 +37,9 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
     try {
       await new Promise<void>((resolve, reject) => {
         this.httpClient.get(fpath).subscribe((data: RoadMapOptions) =>{
+          if (TrafficSim.inst.roadMap) {
+            TrafficSim.inst.roadMap.dispose();
+          }
           TrafficSim.inst.roadMap = new RoadMap(data);
           resolve();
         });
@@ -50,7 +53,7 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
     return TrafficSim.inst.game.isRunning;
   }
 
-  async toggleAnimationState(): Promise<void> {
+  toggleAnimationState(): void {
     if (this.isRunning()) {
       this.runningState = 'paused';
       TrafficSim.inst.stop();

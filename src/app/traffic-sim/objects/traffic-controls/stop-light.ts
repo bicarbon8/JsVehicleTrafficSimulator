@@ -41,7 +41,7 @@ export class StopLight extends TrafficFlowControl<Phaser.GameObjects.Ellipse> {
     constructor(options: StopLightOptions) {
         super(options);
         this.#elapsed = 0;
-        this._scene = this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.simulationMap);
+        this._scene = this.sim.game.scene.getScene(TrafficSimConstants.UI.Scenes.roadmapScene);
         this.greenDuration = (options?.greenDuration === undefined) ? 26000 : options?.greenDuration; // 24 seconds
         this.yellowDuration = (options?.yellowDuration === undefined) ? 4000 : options?.yellowDuration; // 4 seconds
         this.redDuration = (options?.redDuration === undefined) ? 30000 : options?.redDuration; // 30 seconds
@@ -105,13 +105,14 @@ export class StopLight extends TrafficFlowControl<Phaser.GameObjects.Ellipse> {
         if (!this._gameObj) {
             this._gameObj = this.scene.add.ellipse(0, 0, this.length, this.width, 0x666666);
             this._gameObj.setOrigin(0.5);
-            this._gameObj.setDepth(TrafficSimConstants.UI.Layers.TFCs.Depth);
+            this._gameObj.setDepth(TrafficSimConstants.UI.Layers.TFCs.depth);
         }
         return this._gameObj;
     }
 
     dispose(): void {
-        this._scene.children.remove(this.gameObj);
-        this.gameObj.destroy();
+        this.laneSegment?.removeTfc(this);
+        this._scene.children.remove(this._gameObj);
+        this._gameObj.destroy();
     }
 }

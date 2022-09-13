@@ -2,8 +2,10 @@ import { Utils } from "../../helpers/utils";
 import { Vehicle } from "./vehicle";
 import { LaneSegment } from "../../map/lane-segment";
 import { TrafficSimConstants } from "../../helpers/traffic-sim-constants";
-import { ViewScene } from "../../view/view-scene";
 import { PositionableSimObj, PositionableSimObjOptions } from "../positionable-sim-obj";
+import { Lane } from "../../map/lane";
+import { Road } from "../../map/road";
+import { RoadMap } from "../../map/roadmap";
 
 export type VehicleGeneratorOptions = PositionableSimObjOptions & {
     delay: number;
@@ -38,6 +40,18 @@ export class VehicleGenerator extends PositionableSimObj<Phaser.GameObjects.Rect
     #count: number;
 
     private _gameObj: Phaser.GameObjects.Rectangle;
+
+    get roadMap(): RoadMap {
+        return this.road?.roadMap;
+    }
+
+    get road(): Road {
+        return this.lane?.road;
+    }
+
+    get lane(): Lane {
+        return this.laneSegment?.lane;
+    }
 
     laneSegment: LaneSegment;
 
@@ -115,9 +129,18 @@ export class VehicleGenerator extends PositionableSimObj<Phaser.GameObjects.Rect
     }
 
     private _addToSegment(vehicle: Vehicle): void {
+        const nextV = this.#nextVehicle;
         const segment: LaneSegment = this.laneSegment;
-        segment.addVehicle(this.#nextVehicle, this.location);
-        this.#nextVehicle.gameObj.setVisible(true);
+        nextV.setSegment(segment, this.location);
+        nextV.gameObj.setVisible(true);
+        this.roadMap.vehicles
+            .filter(v => v.id !== nextV.id)
+            .forEach(v => {
+                this.scene.physics.add.collider(nextV.gameObj, v.gameObj, () => {
+                    nextV.setCrashed();
+                    v.setCrashed();
+                });
+            });
         this.#nextVehicle = null;
     }
     
