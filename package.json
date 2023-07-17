@@ -4,7 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build:dev": "ng build --output-path ./docs",
+    "build": "ng build --configuration production --output-path ./docs",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
