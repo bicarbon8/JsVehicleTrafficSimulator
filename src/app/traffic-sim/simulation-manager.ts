@@ -12,9 +12,6 @@ import { VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator-op
 import { ViewManager } from "./view/view-manager";
 
 export class SimulationManager {
-    readonly CRASH_CLEANUP_MAX_DELAY: 300000; // 5 min
-    readonly CRASH_CLEANUP_MIN_DELAY: 60000; // 1 min
-    
     private _canvasId: string;
     private _startTime: number; // in milliseconds
     private _lastUpdate: number; // millisecond time
@@ -216,4 +213,8 @@ export class SimulationManager {
 
 export module SimulationManager {
     export var inst = new SimulationManager();
+    export var Constants = Object.freeze({
+        CRASH_CLEANUP_MAX_DELAY: 300000, // 5 min
+        CRASH_CLEANUP_MIN_DELAY: 60000,  // 1 min
+    })
 }
