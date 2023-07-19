@@ -205,7 +205,7 @@ export class MapManager {
         for (var i=0; i<intersecting.length; i++) {
             let v: Vehicle = intersecting[i];
             if (vehicle.hasInView(v)) {
-                return {stop:true, type: ShouldStopType.vehicle, segmentId: v.getSegmentId(), id: v.id};
+                return {stop:true, type: ShouldStopType.vehicle, segmentId: v.segmentId, id: v.id};
             }
         }
     
@@ -213,11 +213,11 @@ export class MapManager {
     }
 
     shouldStopForTfcs(vehicle: Vehicle): ShouldStopResponse {
-        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.getSegment(), vehicle.getLookAheadDistance());
+        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.segment, vehicle.getLookAheadDistance());
         for (var i=0; i<tfcs.length; i++) {
             var tfc = tfcs[i];
             if (tfc.shouldStop(vehicle)) {
-                return {stop: true, type: ShouldStopType.tfc, segmentId: tfc.getSegmentId(), id: tfc.id};
+                return {stop: true, type: ShouldStopType.tfc, segmentId: tfc.segmentId, id: tfc.id};
             }
         }
     
@@ -227,12 +227,12 @@ export class MapManager {
     shouldSlowForCorner(vehicle: Vehicle): ShouldStopResponse {
         // slow down when the next segment is in range and has a different heading
         let distance: number = vehicle.getLookAheadDistance();
-        let segEnd: Vector3 = vehicle.getSegment().getEnd();
+        let segEnd: Vector3 = vehicle.segment.getEnd();
         var distanceToSegEnd = Utils.getLength(vehicle.getLocation(), segEnd);
         if (distanceToSegEnd < distance) {
             // base the amount on how different the heading is
             var headingDiff = 0;
-            var line1: Line3 = vehicle.getSegment().getLine();
+            var line1: Line3 = vehicle.segment.getLine();
             var nextSegments: RoadSegment[] = this.getSegmentsStartingAt(segEnd);
             // TODO: only calculate for next segment on choosen path
             for (var i in nextSegments) {

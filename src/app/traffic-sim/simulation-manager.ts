@@ -1,14 +1,10 @@
 import { MapManager } from "./map/map-manager";
 import { RoadMap } from "./map/road-map";
-import { RoadSegment } from "./map/road-segment";
-import { RoadSegmentOptions } from "./map/road-segment-options";
+import { RoadSegment, RoadSegmentOptions } from "./map/road-segment";
 import { StopLight } from "./objects/traffic-controls/stop-light";
-import { StopLightOptions } from "./objects/traffic-controls/stop-light-options";
-import { TfcOptions } from "./objects/traffic-controls/tfc-options";
-import { TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
+import { TfcOptions, TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
 import { Vehicle } from "./objects/vehicles/vehicle";
-import { VehicleGenerator } from "./objects/vehicles/vehicle-generator";
-import { VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator-options";
+import { VehicleGenerator, VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator";
 import { ViewManager } from "./view/view-manager";
 
 export class SimulationManager {
@@ -162,7 +158,7 @@ export class SimulationManager {
                 switch (opts.type.toLowerCase()) {
                     case 'stoplight':
                         // console.debug(`tfc.startState: ${opts.startState}`);
-                        tfc = new StopLight(opts as StopLightOptions);
+                        tfc = new StopLight(opts);
                         break;
                 }
                 if (tfc) {
@@ -191,7 +187,7 @@ export class SimulationManager {
 
     removeVehicle(vehicle: Vehicle) {
         this._viewMgr.removeRenderable(vehicle);
-        vehicle.getSegment().removeVehicle(vehicle.id);
+        vehicle.segment.removeVehicle(vehicle.id);
         vehicle.disposeGeometry();
     }
 

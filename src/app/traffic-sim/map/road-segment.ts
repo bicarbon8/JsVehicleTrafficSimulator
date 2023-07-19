@@ -1,10 +1,33 @@
 import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
-import { TrafficObject } from '../objects/traffic-object';
+import { TrafficObject, TrafficObjectOptions } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { VehicleGenerator } from '../objects/vehicles/vehicle-generator';
 import { SimulationManager } from '../simulation-manager';
-import { RoadSegmentOptions } from './road-segment-options';
+
+export type RoadSegmentOptions = TrafficObjectOptions & {
+    start: Vector3;
+    end: Vector3;
+    /**
+     * name of the road to which this {RoadSegment} belongs. 
+     * segments on the same {roadName} are lanes that vehicles
+     * can switch in to and out of
+     */
+    roadName?: string;
+    /**
+     * width of {RoadSegment} in Metres
+     */
+    width?: number;
+    /**
+     * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
+     */
+    speedLimit?: number;
+    /**
+     * indicates that this {RoadSegment} merges with other traffic so the
+     * collision detection should look across a wider range
+     */
+    isInlet?: boolean;
+}
 
 export class RoadSegment extends TrafficObject {
     readonly id: number;
@@ -77,16 +100,16 @@ export class RoadSegment extends TrafficObject {
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
         vehicle.setPosition(loc);
         vehicle.lookAt(l.end);
-        let oldSegment: RoadSegment = vehicle.getSegment();
+        let oldSegment: RoadSegment = vehicle.segment;
         if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
-        vehicle.setSegmentId(this.id);
+        vehicle.segmentId = this.id;
         this._vehicles.set(vehicle.id, vehicle);
     }
 
     removeVehicle(vehicleId: number): boolean {
         // console.debug(`removing vehicle ${vehicleId} from segment ${this.id}`);
         let v: Vehicle = this._vehicles.get(vehicleId);
-        v.setSegmentId(-1);
+        v.segmentId = -1;
         return this._vehicles.delete(vehicleId);
     }
 
@@ -100,7 +123,7 @@ export class RoadSegment extends TrafficObject {
         // console.debug(`adding tfc '${tfc.id}' with state '${tfc.getCurrentState()}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
         tfc.setPosition(loc);
         tfc.lookAt(l.start);
-        tfc.setSegmentId(this.id);
+        tfc.segmentId = this.id;
         this._tfcs.set(tfc.id, tfc);
     }
 
@@ -115,7 +138,7 @@ export class RoadSegment extends TrafficObject {
     setVehicleGenerator(generator: VehicleGenerator): void {
         // console.debug(`setting generator '${generator.id}' on segment '${this.id}'`);
         this._generator = generator;
-        this._generator.setSegmentId(this.id);
+        this._generator.segmentId = this.id;
     }
 
     protected generateMesh(): Object3D {

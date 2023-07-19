@@ -1,40 +1,50 @@
-import { TrafficObjectOptions } from "./traffic-object-options";
 import { Box3, Material, Mesh, MeshBasicMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
 import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
 
+export type TrafficObjectOptions = {
+    id?: number;
+    name?: string;
+    mesh?: Mesh;
+    material?: MeshBasicMaterial;
+    texture?: Texture;
+};
+
 export abstract class TrafficObject implements Renderable {
     readonly id: number;
     readonly name: string;
+    readonly simMgr: SimulationManager;
+
     protected _obj3D: Object3D;
     protected _material: Material;
     protected _texture: Texture;
-    protected _segmentId: number;
-    protected _simMgr: SimulationManager;
 
+    /**
+     * the `id` of the `RoadSegment` on which this `TrafficObject` is placed
+     */
+    public segmentId: number;
+    
     constructor(options?: TrafficObjectOptions, simMgr?: SimulationManager) {
-        this._simMgr = simMgr || SimulationManager.inst;
-        this.id = options?.id || Utils.getNewId();
-        this.name = options?.name || typeof this;
-        this._material = options?.material || new MeshBasicMaterial({
+        this.simMgr = simMgr ?? SimulationManager.inst;
+        this.id = options?.id ?? Utils.getNewId();
+        this.name = options?.name ?? `${this.constructor.name}-${this.id}`;
+        this._material = options?.material ?? new MeshBasicMaterial({
             color: 0xffffff, // white
             wireframe: true
         });
-        this._texture = options?.texture || new Texture();
+        this._texture = options?.texture ?? new Texture();
     }
 
-    setSegmentId(segmentId: number): void {
-        this._segmentId = segmentId;
-    }
-
-    getSegmentId(): number {
-        return this._segmentId;
-    }
-
-    getSegment(): RoadSegment {
-        return this._simMgr.getMapManager().getSegmentById(this._segmentId);
+    /**
+     * performs a lookup in the `MapManager` of this object's `SimulationManager`
+     * for the `RoadSegment` referenced by this object's `segmentId`. this is a
+     * fast lookup because the `MapManager` uses a hashmap to store all the
+     * `RoadSegments` by id
+     */
+    get segment(): RoadSegment {
+        return this.simMgr.getMapManager().getSegmentById(this.segmentId);
     }
     
     protected abstract generateMesh(): Object3D;
@@ -72,7 +82,7 @@ export abstract class TrafficObject implements Renderable {
      * this.getMesh().geometry.verticesNeedUpdate = true;
      * this.getMesh().geometry.normalsNeedUpdate = true;
      */
-    isUpdated(): void {
+    forceUpdate(): void {
         this.getObj3D()?.updateMatrix();
         this.getObj3D()?.updateMatrixWorld();
     }
@@ -82,7 +92,7 @@ export abstract class TrafficObject implements Renderable {
             this.getObj3D()?.position.set(location.x, location.y, location.z);
         }
         
-        this.isUpdated();
+        this.forceUpdate();
     }
 
     /**
@@ -94,7 +104,7 @@ export abstract class TrafficObject implements Renderable {
             this.getObj3D()?.translateZ(distance);
         }
 
-        this.isUpdated();
+        this.forceUpdate();
     }
 
     getLocation(): Vector3 {
@@ -112,7 +122,7 @@ export abstract class TrafficObject implements Renderable {
             this.getObj3D()?.lookAt(location);
         }
 
-        this.isUpdated();
+        this.forceUpdate();
     }
 
     getRotation(): Quaternion {
