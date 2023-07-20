@@ -1,10 +1,10 @@
 import { Box3, Mesh, MeshBasicMaterial, Object3D } from "three";
 
 export interface Renderable {
-    getObj3D(): Object3D;
-    getMesh(): Mesh;
-    getBoundingBox(): Box3;
-    getMaterial(): MeshBasicMaterial;
+    readonly obj3D: Object3D;
+    readonly mesh: Mesh;
+    readonly boundingBox: Box3;
+    readonly material: MeshBasicMaterial;
     update(elapsedMs: number): void;
     disposeGeometry(): void;
 }

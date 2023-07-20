@@ -70,7 +70,6 @@ export class VehicleGenerator extends TrafficObject {
         return this._count;
     }
 
-
     generate(): Vehicle {
         this._count++;
         var v = new Vehicle({
@@ -84,7 +83,7 @@ export class VehicleGenerator extends TrafficObject {
             maxSpeed: Math.floor(Utils.getRandomRealBetween(200, 260)),
             startingVelocity: Utils.getRandomRealBetween(this.startSpeedMin, this.startSpeedMax)
         });
-        v.setPosition(this.segment.start);
+        v.location = this.segment.start;
         v.lookAt(this.segment.end);
         return v;
     }
@@ -118,7 +117,7 @@ export class VehicleGenerator extends TrafficObject {
         this._nextVehicle = null; // allow the next vehicle to be generated
     }
 
-    protected generateMesh(): Mesh {
+    protected generateObj3D(): Mesh {
         /* Vehicle Generator has no mesh */
         return null;
     }

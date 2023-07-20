@@ -64,7 +64,7 @@ export class MapManager {
 
     getVehiclesWithinRadius(vehicle: Vehicle, distance: number): Vehicle[] {
         const withinRadius = this.vehicles.filter((v) => {
-            return v.id != vehicle.id && (Utils.getLength(vehicle.getLocation(), v.getLocation()) <= distance);
+            return v.id != vehicle.id && (Utils.getLength(vehicle.location, v.location) <= distance);
         });
         return withinRadius;
     }
@@ -72,9 +72,9 @@ export class MapManager {
     getVehiclesWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): Vehicle[] {
         let distanceToEnd: number = Utils.getLength(location, segment.end);
         let vehicles: Vehicle[] = segment.vehicles.filter((v) => {
-            let distToVeh: number = Utils.getLength(location, v.getLocation());
+            let distToVeh: number = Utils.getLength(location, v.location);
             if (distToVeh <= distance) {
-                return (Utils.getLength(v.getLocation(), segment.end) <= distanceToEnd);
+                return (Utils.getLength(v.location, segment.end) <= distanceToEnd);
             }
             return false;
         });
@@ -88,17 +88,27 @@ export class MapManager {
         return vehicles;
     }
 
+    /**
+     * calculates where the passed in `vehicle` will be travelling and 
+     * compares this with the trajectories of other nearby vehicles that
+     * can be seen from the supplied `vehicle`
+     * @param vehicle the `Vehicle` used to compare with other vehicles
+     * @returns an array of vehicles who have intersecting trajectories
+     */
     getIntersectingVehicles(vehicle: Vehicle): Vehicle[] {
-        let intersects: Vehicle[] = [];
-        let dist: number = vehicle.getLookAheadDistance();
-        let vehicles: Vehicle[] = this.getVehiclesWithinRadius(vehicle, dist);
-        let vehicleBox: Box3 = vehicle.getLookAheadCollisionBox();
-        
-        for (var i=0; i<vehicles.length; i++) {
-            let v: Vehicle = vehicles[i];
-            let vBox: Box3 = v.getLookAheadCollisionBox();
-            if (vehicleBox.intersectsBox(vBox)) {
-                intersects.push(v);
+        const intersects: Vehicle[] = [];
+        const dist: number = vehicle.getLookAheadDistance();
+        const vehicles: Vehicle[] = this.getVehiclesWithinRadius(vehicle, dist)
+            .filter(v => vehicle.hasInViewAhead(v));
+        if (vehicles?.length) {
+            const vehicleBox: Box3 = vehicle.getLookAheadCollisionBox();
+            
+            for (var i=0; i<vehicles.length; i++) {
+                let v: Vehicle = vehicles[i];
+                let vBoxAhead: Box3 = v.getLookAheadCollisionBox();
+                if (vehicleBox.intersectsBox(vBoxAhead)) {
+                    intersects.push(v);
+                }
             }
         }
 
@@ -106,8 +116,8 @@ export class MapManager {
     }
 
     get trafficFlowControls(): TrafficFlowControl[] {
-        let allTfcs: TrafficFlowControl[] = [];
-        let segments: RoadSegment[] = this.segments;
+        const allTfcs: TrafficFlowControl[] = [];
+        const segments: RoadSegment[] = this.segments;
         for (var i=0; i<segments.length; i++) {
             let segment: RoadSegment = segments[i];
             let tfcs: TrafficFlowControl[] = segment.trafficFlowControls;
@@ -119,9 +129,9 @@ export class MapManager {
     getTfcsWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): TrafficFlowControl[] {
         let distanceToEnd: number = Utils.getLength(location, segment.end);
         let tfcs: TrafficFlowControl[] = segment.trafficFlowControls.filter((tfc) => {
-            let distToTfc: number = Utils.getLength(location, tfc.getLocation());
+            let distToTfc: number = Utils.getLength(location, tfc.location);
             if (distToTfc <= distance) {
-                return (Utils.getLength(tfc.getLocation(), segment.end) <= distanceToEnd);
+                return (Utils.getLength(tfc.location, segment.end) <= distanceToEnd);
             }
             return false;
         });
@@ -209,11 +219,16 @@ export class MapManager {
 	}
 
     shouldStopForVehicles(vehicle: Vehicle): Vehicle {
-        var intersecting: Vehicle[] = this.getIntersectingVehicles(vehicle);
-        for (var i=0; i<intersecting.length; i++) {
-            let v: Vehicle = intersecting[i];
-            if (vehicle.hasInView(v)) {
-                return v;
+        const dist = vehicle.getLookAheadDistance();
+        const vehicles = this.getVehiclesWithinRadius(vehicle, dist)
+            .filter(v => vehicle.hasInViewAhead(v));
+        if (vehicles?.length) {
+            const v1TrajectoryBox = vehicle.getLookAheadCollisionBox();
+            for (let v of vehicles) {
+                let v2TrajectoryBox = v.getLookAheadCollisionBox();
+                if (v1TrajectoryBox.containsBox(v2TrajectoryBox) || v1TrajectoryBox.containsBox(v.boundingBox)) {
+                    return v;
+                }
             }
         }
     
@@ -229,7 +244,7 @@ export class MapManager {
      * `null` if the vehicle should not slow down
      */
     shouldStopForTfcs(vehicle: Vehicle): TrafficFlowControl {
-        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.getLocation(), vehicle.segment, vehicle.getLookAheadDistance());
+        var tfcs = this.getTfcsWithinRadiusAhead(vehicle.location, vehicle.segment, vehicle.getLookAheadDistance());
         for (var i=0; i<tfcs.length; i++) {
             var tfc = tfcs[i];
             if (tfc.shouldStop(vehicle)) {
@@ -251,7 +266,7 @@ export class MapManager {
         // slow down when the next segment is in range and has a different heading
         let distance: number = vehicle.getLookAheadDistance();
         let segEnd: Vector3 = vehicle.segment.end;
-        var distanceToSegEnd = Utils.getLength(vehicle.getLocation(), segEnd);
+        var distanceToSegEnd = Utils.getLength(vehicle.location, segEnd);
         if (distanceToSegEnd < distance) {
             // base the amount on how different the heading is
             var headingDiff = 0;

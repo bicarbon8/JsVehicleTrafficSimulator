@@ -97,7 +97,7 @@ export class RoadSegment extends TrafficObject {
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
         let loc: Vector3 = location ?? this.start;
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
-        vehicle.setPosition(loc);
+        vehicle.location = loc;
         vehicle.lookAt(this.end);
         let oldSegment: RoadSegment = vehicle.segment;
         if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
@@ -119,7 +119,7 @@ export class RoadSegment extends TrafficObject {
     addTrafficFlowControl(tfc: TrafficFlowControl, location?: Vector3): void {
         let loc: Vector3 = location || this.end;
         // console.debug(`adding tfc '${tfc.id}' with state '${tfc.getCurrentState()}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
-        tfc.setPosition(loc);
+        tfc.location = loc;
         tfc.lookAt(this.start);
         tfc.segmentId = this.id;
         this._tfcs.set(tfc.id, tfc);
@@ -139,16 +139,11 @@ export class RoadSegment extends TrafficObject {
         this._generator.segmentId = this.id;
     }
 
-    protected generateMesh(): Object3D {
-        let lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
-        let line: Line3 = this.line;
-        var geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
-        let obj3D: Object3D = new Line(geometry, lineMat);
-    
-        var identity: string = this.id.toString();
-        if (this.name && this.name != '') {
-            identity = this.name;
-        }
+    protected generateObj3D(): Object3D {
+        const lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
+        const line: Line3 = this.line;
+        const geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
+        const obj3D: Object3D = new Line(geometry, lineMat);
         
         this._generateLaneChangePoints();
 
@@ -156,18 +151,16 @@ export class RoadSegment extends TrafficObject {
     }
 
     private _generateLaneChangePoints(): void {
-        var point = new SphereGeometry(1);
-        var pointMat = new MeshBasicMaterial();
-        var sphere = new Mesh(point, pointMat);
-        
-        // place point every [spacing] units (metres)
-        var spacing = 1;
+        const point = new SphereGeometry(1);
+        const pointMat = new MeshBasicMaterial();
+        const sphere = new Mesh(point, pointMat);
+        const spacing = 1;
         const length = this.length;
+        sphere.position.set(this.start.x, this.start.y, this.start.z);
+        sphere.lookAt(this.end);
+        // place point every [spacing] units (metres)
         for (var i=spacing; i<length; i+=spacing) {
-            let l: Line3 = this.line;
-            sphere.position.set(l.start.x, l.start.y, l.start.z);
-            sphere.lookAt(l.end);
-            sphere.translateZ(i);
+            sphere.translateZ(spacing);
             this._laneChangeLocations.push(sphere.position.clone());
         }
         sphere.geometry.dispose();
@@ -190,18 +183,18 @@ export class RoadSegment extends TrafficObject {
     }
 
     get center(): Vector3 {
-        let v: Vector3 = new Vector3();
+        const v: Vector3 = new Vector3();
         this.line.getCenter(v) ?? new Vector3();
         return v;
     }
 
     get tangent(): Vector3 {
-        let s: LineCurve3 = new LineCurve3(this.line.start, this.line.end);
+        const s: LineCurve3 = new LineCurve3(this.line.start, this.line.end);
         return s.getTangent(0);
     }
 
     clone(): RoadSegment {
-        let r = new RoadSegment({
+        const r = new RoadSegment({
             id: this.id,
             name: this.name,
             width: this.width,
@@ -209,8 +202,8 @@ export class RoadSegment extends TrafficObject {
             end: this.line.end,
             speedLimit: this.speedLimit
         });
-        r.setPosition(this.getLocation());
-        r.setRotation(this.getRotation());
+        r.location = this.location;
+        r.rotation = this.rotation;
 
         return r;
     }

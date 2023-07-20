@@ -40,8 +40,8 @@ export module Utils {
 
     export function isCollidingWith<T extends Renderable>(obj1: T, obj2: T): boolean {
         if (obj1 && obj2) {
-            let b1: Box3 = new Box3().setFromObject(obj1.getMesh());
-            let b2: Box3 = new Box3().setFromObject(obj2.getMesh());
+            let b1: Box3 = new Box3().setFromObject(obj1.mesh);
+            let b2: Box3 = new Box3().setFromObject(obj2.mesh);
             return b1.intersectsBox(b2);
         }
         return false;

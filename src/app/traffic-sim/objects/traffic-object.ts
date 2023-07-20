@@ -1,4 +1,4 @@
-import { Box3, Material, Mesh, MeshBasicMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
+import { Box3, Group, Material, Mesh, MeshBasicMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
 import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
@@ -47,94 +47,101 @@ export abstract class TrafficObject implements Renderable {
         return this.simMgr.mapManager.getSegmentById(this.segmentId);
     }
     
-    getObj3D(): Object3D {
+    get obj3D(): Object3D {
         if (!this._obj3D) {
-            this._obj3D = this.generateMesh();
+            this._obj3D = this.generateObj3D();
         }
         return this._obj3D;
     }
 
-    getMesh(): Mesh {
-        let obj: Object3D = this.getObj3D();
-        if (obj instanceof Mesh) {
-            return obj as Mesh;
+    /**
+     * @returns `this.obj3D as Mesh` if it is an instance of `Mesh`,
+     * otherwise `null`
+     */
+    get mesh(): Mesh {
+        if (this.obj3D instanceof Mesh) {
+            return this.obj3D as Mesh;
         }
         return null;
     }
 
-    getBoundingBox(): Box3 {
-        let mesh = this.getMesh();
-        if (mesh) {
-            var bbox = new Box3().setFromObject(mesh);
-            bbox.min.sub(mesh?.position);
-            bbox.max.sub(mesh?.position);
+    get boundingBox(): Box3 {
+        if (this.mesh) {
+            var bbox = new Box3().setFromObject(this.mesh);
+            bbox.min.sub(this.mesh?.position);
+            bbox.max.sub(this.mesh?.position);
             return bbox;
         }
         return null;
     }
 
-    getMaterial(): MeshBasicMaterial {
-        return this.getMesh()?.material as MeshBasicMaterial;
+    get material(): MeshBasicMaterial {
+        return this.mesh?.material as MeshBasicMaterial;
     }
 
-    setPosition(location: Vector3): void {
+    get location(): Vector3 {
+        return this.obj3D?.position.clone();
+    }
+
+    set location(location: Vector3) {
         if (location) {
-            this.getObj3D()?.position.set(location.x, location.y, location.z);
+            this.obj3D?.position.set(location.x, location.y, location.z);
         }
         
         this._forceMeshUpdate();
     }
 
+    get rotation(): Quaternion {
+        return this.obj3D?.quaternion.clone();
+    }
+
+    set rotation(rotation: Quaternion) {
+        if (rotation) {
+            this.obj3D?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+        }
+    }
+
     /**
-     * moves this object along it's z-axis by the specified {distance}
+     * moves this object group along it's z-axis by the specified {distance}
      * @param distance distance to move forward by
      */
     moveForwardBy(distance: number): void {
         if (distance > 0) {
-            this.getObj3D()?.translateZ(distance);
+            this.obj3D?.translateZ(distance);
         }
 
         this._forceMeshUpdate();
-    }
-
-    getLocation(): Vector3 {
-        return this.getObj3D()?.position.clone();
-    }
-
-    setRotation(rotation: Quaternion): void {
-        if (rotation) {
-            this.getObj3D()?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-        }
     }
 
     lookAt(location: Vector3): void {
         if (location) {
-            this.getObj3D()?.lookAt(location);
+            this.obj3D?.lookAt(location);
         }
 
         this._forceMeshUpdate();
     }
 
-    getRotation(): Quaternion {
-        return this.getObj3D()?.quaternion.clone();
-    }
-
     disposeGeometry(): void {
-        this.getMesh()?.geometry?.dispose();
+        for (let m of this.obj3D?.children) {
+            if (m instanceof Mesh) {
+                m.geometry?.dispose();
+            }
+        }
+        this._obj3D = null;
     }
 
     /**
      * let THREE know to update the mesh data because we've changed
-     * this.getMesh().geometry.dynamic = true;
-     * this.getMesh().geometry.verticesNeedUpdate = true;
-     * this.getMesh().geometry.normalsNeedUpdate = true;
+     * this.mesh.geometry.dynamic = true;
+     * this.mesh.geometry.verticesNeedUpdate = true;
+     * this.mesh.geometry.normalsNeedUpdate = true;
      */
     protected _forceMeshUpdate(): void {
-        this.getObj3D()?.updateMatrix();
-        this.getObj3D()?.updateMatrixWorld();
+        this.mesh?.updateMatrix();
+        this.mesh?.updateMatrixWorld();
     }
 
-    protected abstract generateMesh(): Object3D;
+    protected abstract generateObj3D(): Object3D;
 
     abstract update(elapsedMs: number): void;
 }

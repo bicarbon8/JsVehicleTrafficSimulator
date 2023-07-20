@@ -86,12 +86,10 @@ export class Vehicle extends TrafficObject {
      * time when we should consider changing lanes again if blocked
      */
     private _changeLaneTime: number;
-    /**
-     * velocity in Metres per Second
-     */
-    private _velocity: number;
-    private _crashedAt: number;
-    private _crashCleanupTime: number;
+    private _velocity: number; // see: {get velocity()}
+    private _crashedAt: number; // see: {get crashedAt()}
+    private _crashCleanupTime: number; // see: {get crashCleanupTime()}
+    private _lookAheadMesh: Mesh; // see: {getLookaheadCollisionBox()}
 
     constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
@@ -152,8 +150,8 @@ export class Vehicle extends TrafficObject {
             maxSpeed: this.maxSpeed,
             startingVelocity: this.velocity
         });
-        v.setPosition(this.getLocation());
-        v.setRotation(this.getRotation());
+        v.location = this.location;
+        v.rotation = this.rotation;
 
         return v;
     }
@@ -170,8 +168,8 @@ export class Vehicle extends TrafficObject {
                  * stationary objects without collision detection being alerted. TODO: fix using line
                  * projections in the future
                  */
-                while (distTravelled >= Utils.getLength(this.getLocation(), this.segment.end)) {
-                    distTravelled -= Utils.getLength(this.getLocation(), this.segment.end);
+                while (distTravelled >= Utils.getLength(this.location, this.segment.end)) {
+                    distTravelled -= Utils.getLength(this.location, this.segment.end);
                     const nextSegments = this.simMgr.mapManager.getSegmentsStartingAt(this.segment.end);
                     // if there is a next Segment
                     if(nextSegments?.length) {
@@ -225,7 +223,7 @@ export class Vehicle extends TrafficObject {
         }
 
         this._crashedAt = this.simMgr.totalElapsed;
-        this.getMaterial().color.setHex(0xff0000); // red
+        this.material.color.setHex(0xff0000); // red
         this._crashCleanupTime = this._crashedAt
             + Utils.getRandomRealBetween(
                 SimulationManager.Constants.CRASH_CLEANUP_MIN_DELAY, 
@@ -259,7 +257,7 @@ export class Vehicle extends TrafficObject {
         if (velKph < this.maxSpeed && velKph < this.segment?.speedLimit) {
             let elapsedSeconds: number = Utils.convertMillisecondsToSeconds(elapsedMs);
             this._velocity += this.acceleration * elapsedSeconds;
-            this.getMaterial()?.color.setHex(0x66ff66); // green
+            this.material?.color.setHex(0x66ff66); // green
         }
     }
 
@@ -271,9 +269,9 @@ export class Vehicle extends TrafficObject {
             this._velocity = 0;
         }
         if (this.isCrashed()) {
-            this.getMaterial()?.color.setHex(0xff0000); // red
+            this.material?.color.setHex(0xff0000); // red
         } else {
-            this.getMaterial()?.color.setHex(0xffff00); // yellow
+            this.material?.color.setHex(0xffff00); // yellow
         }
     }
 
@@ -287,7 +285,7 @@ export class Vehicle extends TrafficObject {
             var vehicles: Vehicle[] = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
             vehicles.forEach((vehicle) => {
                 if (Utils.isCollidingWith(this, vehicle)) {
-                    console.warn(`crash of vehicle: ${this.id} at ${JSON.stringify(this.getLocation())} with vehicle: ${vehicle.id} at ${JSON.stringify(vehicle.getLocation())}`);
+                    console.warn(`crash of vehicle: ${this.id} at ${JSON.stringify(this.location)} with vehicle: ${vehicle.id} at ${JSON.stringify(vehicle.location)}`);
                     this.setCrashed();
                     vehicle.setCrashed();
                 }
@@ -304,7 +302,7 @@ export class Vehicle extends TrafficObject {
         if (foundV) {
             let lane: RoadSegment = this.shouldChangeLanes(foundV);
             if (lane) {
-                let changeLaneSegment: RoadSegment = this.simMgr.mapManager.createChangeLaneSegment(this.getLocation(), lane);
+                let changeLaneSegment: RoadSegment = this.simMgr.mapManager.createChangeLaneSegment(this.location, lane);
                 if (changeLaneSegment) {
                     this.setChangingLanes();
                     changeLaneSegment.addVehicle(this);
@@ -336,7 +334,7 @@ export class Vehicle extends TrafficObject {
                 let availableLane: RoadSegment = availableLanes[i];
                 // ensure availableLane is clear ahead
                 let vehicles: Vehicle[] = this.simMgr.mapManager
-                    .getVehiclesWithinRadiusAhead(this.getLocation(), availableLane, this.getLookAheadDistance()).filter((veh) => {
+                    .getVehiclesWithinRadiusAhead(this.location, availableLane, this.getLookAheadDistance()).filter((veh) => {
                         return this.id != veh.id;
                     });
                 if (vehicles.length > 0) {
@@ -368,21 +366,41 @@ export class Vehicle extends TrafficObject {
         return newLane;
     }
 
-    hasInView(otherVehicle: Vehicle): boolean {
+    /**
+     * gets the current heading and compares it against the heading to the centre
+     * of the supplied `obj` and if it is less than 45 degrees (90 degrees for inlet
+     * roads) returns `true`, otherwise `false`
+     * 
+     * TODO: include speed-based narrowing of vision
+     * TODO: use `hasInViewLeft` and `hasInViewRight` when on inlet instead
+     * @param obj the `TrafficObject` to check if is in view
+     * @returns `true` if the passed in `obj` can be "seen", otherwise `false`
+     */
+    hasInViewAhead(obj: TrafficObject): boolean {
         if (this.segment) {
             var maxAngle = 45;
             if (this.segment?.isInlet) {
                 maxAngle = 90;
             }
-            let otherLoc: Vector3 = otherVehicle.getLocation();
-            var headingLine = new Line3(this.getLocation(), this.segment?.end);
-            var headingToLocation = new Line3(this.getLocation(), otherLoc);
+            let otherLoc: Vector3 = obj.location;
+            var headingLine = new Line3(this.location, this.segment?.end);
+            var headingToLocation = new Line3(this.location, otherLoc);
 
             if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
                 return true;
             }
         }
         return false;
+    }
+
+    hasInViewLeft(obj: TrafficObject): boolean {
+        // TODO: implement
+        throw '[hasInViewLeft] needs to be implemented';
+    }
+
+    hasInViewRight(obj: TrafficObject): boolean {
+        // TODO: implement
+        throw '[hasInViewRight] needs to be implemented';
     }
 
     /**
@@ -407,25 +425,38 @@ export class Vehicle extends TrafficObject {
         return total;
     }
 
+    /**
+     * a somewhat expensive call that creates a new `Box3` which
+     * can be used to perform collision detection checks with
+     * other vehicle's look-ahead collision boxes to determine if
+     * the vehicles are on a collision course. use sparingly
+     * @returns a `Box3` starting from the centre of this vehicle to the
+     * look-ahead distance
+     */
     getLookAheadCollisionBox(): Box3 {
-        let dist: number = this.getLookAheadDistance();
-        let mesh: Mesh = new Mesh(new BoxGeometry(this.width, this.height, dist));
-        let pos: Vector3 = this.getLocation();
-        let rot: Quaternion = this.getRotation();
+        const dist: number = this.getLookAheadDistance();
+        const mesh = new Mesh(new BoxGeometry(this.width, this.height, dist));
+        const pos = this.location;
+        const rot = this.rotation;
         mesh.position.set(pos.x, pos.y, pos.z);
         mesh.rotation.setFromQuaternion(rot);
         mesh.translateZ(dist / 2);
-        let lookAheadCollisionBox: Box3 = new Box3().setFromObject(mesh);
+        const box = new Box3().setFromObject(mesh);
         mesh.geometry.dispose();
-        return lookAheadCollisionBox;
+        return box;
     }
 
-    protected generateMesh(): Object3D {
+    protected generateObj3D(): Object3D {
         if (!this._obj3D) {
             var geometry = new BoxGeometry(this.width, this.height, this.length);
             var mesh = new Mesh(geometry, this._material);
             this._obj3D = mesh;
         }
         return this._obj3D;
+    }
+
+    override disposeGeometry(): void {
+        super.disposeGeometry();
+        this._lookAheadMesh = null;
     }
 }

@@ -47,7 +47,7 @@ export class StopLight extends TrafficFlowControl {
         return false;
     }
     
-    protected generateMesh(): Object3D {
+    protected generateObj3D(): Object3D {
         // z coordinate used for vertical height
         var geometry = new SphereGeometry(1);
         var material = new MeshBasicMaterial({
@@ -88,13 +88,13 @@ export class StopLight extends TrafficFlowControl {
     private _setColour(): void {
         switch (this.currentState) {
             case TfcState.proceed:
-                this.getMaterial()?.color.setHex(0x00ff00); // green
+                this.material?.color.setHex(0x00ff00); // green
                 break;
             case TfcState.caution:
-                this.getMaterial()?.color.setHex(0xffff00); // yellow
+                this.material?.color.setHex(0xffff00); // yellow
                 break;
             case TfcState.stop:
-                this.getMaterial()?.color.setHex(0xff0000); // red
+                this.material?.color.setHex(0xff0000); // red
                 break;
         }
     }
