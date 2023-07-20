@@ -44,11 +44,9 @@ export abstract class TrafficObject implements Renderable {
      * `RoadSegments` by id
      */
     get segment(): RoadSegment {
-        return this.simMgr.getMapManager().getSegmentById(this.segmentId);
+        return this.simMgr.mapManager.getSegmentById(this.segmentId);
     }
     
-    protected abstract generateMesh(): Object3D;
-
     getObj3D(): Object3D {
         if (!this._obj3D) {
             this._obj3D = this.generateMesh();
@@ -66,25 +64,17 @@ export abstract class TrafficObject implements Renderable {
 
     getBoundingBox(): Box3 {
         let mesh = this.getMesh();
-        var bbox = new Box3().setFromObject(mesh);
-        bbox.min.sub(mesh?.position);
-        bbox.max.sub(mesh?.position);
-        return bbox;
+        if (mesh) {
+            var bbox = new Box3().setFromObject(mesh);
+            bbox.min.sub(mesh?.position);
+            bbox.max.sub(mesh?.position);
+            return bbox;
+        }
+        return null;
     }
 
     getMaterial(): MeshBasicMaterial {
-        return this.getMesh().material as MeshBasicMaterial;
-    }
-
-    /**
-     * indicate that we've updated
-     * this.getMesh().geometry.dynamic = true;
-     * this.getMesh().geometry.verticesNeedUpdate = true;
-     * this.getMesh().geometry.normalsNeedUpdate = true;
-     */
-    forceUpdate(): void {
-        this.getObj3D()?.updateMatrix();
-        this.getObj3D()?.updateMatrixWorld();
+        return this.getMesh()?.material as MeshBasicMaterial;
     }
 
     setPosition(location: Vector3): void {
@@ -92,7 +82,7 @@ export abstract class TrafficObject implements Renderable {
             this.getObj3D()?.position.set(location.x, location.y, location.z);
         }
         
-        this.forceUpdate();
+        this._forceMeshUpdate();
     }
 
     /**
@@ -104,7 +94,7 @@ export abstract class TrafficObject implements Renderable {
             this.getObj3D()?.translateZ(distance);
         }
 
-        this.forceUpdate();
+        this._forceMeshUpdate();
     }
 
     getLocation(): Vector3 {
@@ -122,16 +112,29 @@ export abstract class TrafficObject implements Renderable {
             this.getObj3D()?.lookAt(location);
         }
 
-        this.forceUpdate();
+        this._forceMeshUpdate();
     }
 
     getRotation(): Quaternion {
         return this.getObj3D()?.quaternion.clone();
     }
 
-    abstract update(elapsedMs: number): void;
-
     disposeGeometry(): void {
         this.getMesh()?.geometry?.dispose();
     }
+
+    /**
+     * let THREE know to update the mesh data because we've changed
+     * this.getMesh().geometry.dynamic = true;
+     * this.getMesh().geometry.verticesNeedUpdate = true;
+     * this.getMesh().geometry.normalsNeedUpdate = true;
+     */
+    protected _forceMeshUpdate(): void {
+        this.getObj3D()?.updateMatrix();
+        this.getObj3D()?.updateMatrixWorld();
+    }
+
+    protected abstract generateMesh(): Object3D;
+
+    abstract update(elapsedMs: number): void;
 }

@@ -73,20 +73,20 @@ export class RoadSegment extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-        this.getTfcs().forEach((tfc) => {
+        this.trafficFlowControls.forEach((tfc) => {
             tfc.update(elapsedMs);
         });
-        this.getVehicleGenerator()?.update(elapsedMs);
-        this.getVehicles().forEach((veh) => {
+        this.vehicleGenerator?.update(elapsedMs);
+        this.vehicles.forEach((veh) => {
             veh.update(elapsedMs);
         });
     }
     
-    getLaneChangePoints(): Vector3[] {
+    get laneChangePoints(): Vector3[] {
         return this._laneChangeLocations;
     }
 
-    getVehicles(): Vehicle[] {
+    get vehicles(): Vehicle[] {
         return Array.from(this._vehicles.values());
     }
 
@@ -95,11 +95,10 @@ export class RoadSegment extends TrafficObject {
     }
 
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
-        let l: Line3 = this.getLine();
-        let loc: Vector3 = location || l.start;
+        let loc: Vector3 = location ?? this.start;
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
         vehicle.setPosition(loc);
-        vehicle.lookAt(l.end);
+        vehicle.lookAt(this.end);
         let oldSegment: RoadSegment = vehicle.segment;
         if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
         vehicle.segmentId = this.id;
@@ -113,29 +112,28 @@ export class RoadSegment extends TrafficObject {
         return this._vehicles.delete(vehicleId);
     }
 
-    getTfcs(): TrafficFlowControl[] {
+    get trafficFlowControls(): TrafficFlowControl[] {
         return Array.from(this._tfcs.values());
     }
 
-    addTfc(tfc: TrafficFlowControl, location?: Vector3): void {
-        let l: Line3 = this.getLine();
-        let loc: Vector3 = location || l.end;
+    addTrafficFlowControl(tfc: TrafficFlowControl, location?: Vector3): void {
+        let loc: Vector3 = location || this.end;
         // console.debug(`adding tfc '${tfc.id}' with state '${tfc.getCurrentState()}' at '${JSON.stringify(loc)}' to segment '${this.id}'`);
         tfc.setPosition(loc);
-        tfc.lookAt(l.start);
+        tfc.lookAt(this.start);
         tfc.segmentId = this.id;
         this._tfcs.set(tfc.id, tfc);
     }
 
-    removeTfc(tfcId: number): boolean {
+    removeTrafficFlowControl(tfcId: number): boolean {
         return this._tfcs.delete(tfcId);
     }
 
-    getVehicleGenerator(): VehicleGenerator {
+    get vehicleGenerator(): VehicleGenerator {
         return this._generator;
     }
 
-    setVehicleGenerator(generator: VehicleGenerator): void {
+    set vehicleGenerator(generator: VehicleGenerator) {
         // console.debug(`setting generator '${generator.id}' on segment '${this.id}'`);
         this._generator = generator;
         this._generator.segmentId = this.id;
@@ -143,7 +141,7 @@ export class RoadSegment extends TrafficObject {
 
     protected generateMesh(): Object3D {
         let lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
-        let line: Line3 = this.getLine();
+        let line: Line3 = this.line;
         var geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
         let obj3D: Object3D = new Line(geometry, lineMat);
     
@@ -164,8 +162,9 @@ export class RoadSegment extends TrafficObject {
         
         // place point every [spacing] units (metres)
         var spacing = 1;
-        for (var i=spacing; i<this.getLength(); i+=spacing) {
-            let l: Line3 = this.getLine();
+        const length = this.length;
+        for (var i=spacing; i<length; i+=spacing) {
+            let l: Line3 = this.line;
             sphere.position.set(l.start.x, l.start.y, l.start.z);
             sphere.lookAt(l.end);
             sphere.translateZ(i);
@@ -174,30 +173,30 @@ export class RoadSegment extends TrafficObject {
         sphere.geometry.dispose();
     }
 
-    getStart(): Vector3 {
-        return this.getLine().start;
+    get start(): Vector3 {
+        return this.line.start;
     }
 
-    getEnd(): Vector3 {
-        return this.getLine().end;
+    get end(): Vector3 {
+        return this.line.end;
     }
 
-    getLine(): Line3 {
+    get line(): Line3 {
         return this._line.clone();
     }
 
-    getLength(): number {
-        return this.getLine().distance() || 0;
+    get length(): number {
+        return this.line.distance() || 0;
     }
 
-    getCenter(): Vector3 {
+    get center(): Vector3 {
         let v: Vector3 = new Vector3();
-        this.getLine().getCenter(v) || new Vector3();
+        this.line.getCenter(v) ?? new Vector3();
         return v;
     }
 
-    getTangent(): Vector3 {
-        let s: LineCurve3 = new LineCurve3(this.getLine().start, this.getLine().end);
+    get tangent(): Vector3 {
+        let s: LineCurve3 = new LineCurve3(this.line.start, this.line.end);
         return s.getTangent(0);
     }
 
@@ -206,8 +205,8 @@ export class RoadSegment extends TrafficObject {
             id: this.id,
             name: this.name,
             width: this.width,
-            start: this.getLine().start,
-            end: this.getLine().end,
+            start: this.line.start,
+            end: this.line.end,
             speedLimit: this.speedLimit
         });
         r.setPosition(this.getLocation());

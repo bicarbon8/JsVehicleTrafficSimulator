@@ -118,26 +118,26 @@ export class SimulationManager {
             let elapsed: number = now - this._lastUpdate;
             return elapsed;
         }
-        return this.getTimestep();
+        return this.timestep;
     }
 
-    setTimestep(timestep: number): void {
-        this._timeStep = timestep;
+    set timestep(step: number) {
+        this._timeStep = step;
     }
 
-    getTimestep(): number {
+    get timestep(): number {
         return this._timeStep;
     }
 
-    getTotalElapsed(): number {
+    get totalElapsed(): number {
         return this._totalElapsedTime;
     }
 
-    getMapManager(): MapManager {
+    get mapManager(): MapManager {
         return this._mapManager;
     }
 
-    getViewManager(): ViewManager {
+    get viewManager(): ViewManager {
         return this._viewMgr;
     }
 
@@ -148,8 +148,8 @@ export class SimulationManager {
             for (var i=0; i<map.segments?.length; i++) {
                 let opts: RoadSegmentOptions = map.segments[i];
                 let s: RoadSegment = new RoadSegment(opts)
-                this.getMapManager().addSegment(s);
-                this.getViewManager().addRenderable(s);
+                this.mapManager.addSegment(s);
+                this.viewManager.addRenderable(s);
             }
             // add TFCs
             for (var i=0; i<map.tfcs?.length; i++) {
@@ -162,12 +162,12 @@ export class SimulationManager {
                         break;
                 }
                 if (tfc) {
-                    let segment: RoadSegment = this.getMapManager().getSegmentsEndingAt(opts.location).find((seg) => {
+                    let segment: RoadSegment = this.mapManager.getSegmentsEndingAt(opts.location).find((seg) => {
                         return seg.roadName.toLowerCase() == tfc.roadName.toLowerCase();
                     });
                     if (segment) {
-                        segment.addTfc(tfc);
-                        this.getViewManager().addRenderable(tfc);
+                        segment.addTrafficFlowControl(tfc);
+                        this.viewManager.addRenderable(tfc);
                     }
                 }
             }
@@ -175,11 +175,11 @@ export class SimulationManager {
             for (var i=0; i<map.generators?.length; i++) {
                 let opts: VehicleGeneratorOptions = map.generators[i];
                 let g: VehicleGenerator = new VehicleGenerator(opts);
-                let segment: RoadSegment = this.getMapManager().getSegmentsStartingAt(opts.location).find((seg) => {
+                let segment: RoadSegment = this.mapManager.getSegmentsStartingAt(opts.location).find((seg) => {
                     return seg.roadName.toLowerCase() == g.roadName.toLowerCase();
                 });
                 if (segment) {
-                    segment.setVehicleGenerator(g);
+                    segment.vehicleGenerator = g;
                 }
             }
         }

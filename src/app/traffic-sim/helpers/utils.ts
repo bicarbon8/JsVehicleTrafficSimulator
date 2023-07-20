@@ -8,9 +8,25 @@ export module Utils {
         return _id++;
     }
 
-    export function getRandomBetween(min: number, max: number): number {
+    /**
+     * generates a random real number between the `min` (inclusive) and `max` (exclusive)
+     * @param min lowest possible number that can be returned (inclusive)
+     * @param max maximum limit used in selecting a random number (exclusive)
+     * @returns a real (fractional) number between `min` (inclusive) and `max` (exclusive)
+     */
+    export function getRandomRealBetween(min: number, max: number): number {
 		return Math.random() * (max - min) + min;
 	}
+
+    /**
+     * generates a random integer between the `min` (inclusive) and `max` (exclusive)
+     * @param min lowest possible integer that can be returned (inclusive)
+     * @param max maximum limit used in selecting a random integer (exclusive)
+     * @returns an integer between `min` (inclusive) and `max` (exclusive)
+     */
+    export function getRandomIntBetween(min: number, max: number): number {
+        return Math.floor(Utils.getRandomRealBetween(Math.ceil(min), Math.floor(max)));
+    }
 
 	export function getLength(p1: Vector3, p2: Vector3): number {
         return new Line3(p1, p2).distance();

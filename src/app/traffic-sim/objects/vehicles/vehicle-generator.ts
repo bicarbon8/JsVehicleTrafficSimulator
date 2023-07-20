@@ -74,20 +74,18 @@ export class VehicleGenerator extends TrafficObject {
     generate(): Vehicle {
         this._count++;
         var v = new Vehicle({
-            width: Utils.getRandomBetween(2, 3),
-            height: Utils.getRandomBetween(1, 1.5),
-            length: Utils.getRandomBetween(3, 5),
-            acceleration: Utils.getRandomBetween(2.78, 6.95), // 0-100 in 4 to 10 seconds
-            deceleration: Utils.getRandomBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
-            reactionTime: Utils.getRandomBetween(2500, 3500),
-            changeLaneDelay: Math.floor(Utils.getRandomBetween(30000, 60000)),
-            maxSpeed: Math.floor(Utils.getRandomBetween(200, 260)),
-            startingVelocity: Utils.getRandomBetween(this.startSpeedMin, this.startSpeedMax)
+            width: Utils.getRandomRealBetween(2, 3),
+            height: Utils.getRandomRealBetween(1, 1.5),
+            length: Utils.getRandomRealBetween(3, 5),
+            acceleration: Utils.getRandomRealBetween(2.78, 6.95), // 0-100 in 4 to 10 seconds
+            deceleration: Utils.getRandomRealBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
+            reactionTime: Utils.getRandomRealBetween(2500, 3500),
+            changeLaneDelay: Math.floor(Utils.getRandomRealBetween(30000, 60000)),
+            maxSpeed: Math.floor(Utils.getRandomRealBetween(200, 260)),
+            startingVelocity: Utils.getRandomRealBetween(this.startSpeedMin, this.startSpeedMax)
         });
-        let seg: RoadSegment = this.segment;
-        let line: Line3 = seg.getLine();
-        v.setPosition(line.start);
-        v.lookAt(line.end);
+        v.setPosition(this.segment.start);
+        v.lookAt(this.segment.end);
         return v;
     }
 
@@ -103,10 +101,8 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _canAddToSegment(vehicle: Vehicle): boolean {
-        let segment: RoadSegment = this.segment;
-        let vehicles: Vehicle[] = this.simMgr.getMapManager().getVehiclesWithinRadiusAhead(segment.getLine().start, segment, vehicle.length * 3);
-        for (var i=0; i<vehicles.length; i++) {
-            let v: Vehicle = vehicles[i];
+        let vehicles: Vehicle[] = this.simMgr.mapManager.getVehiclesWithinRadiusAhead(this.segment.start, this.segment, vehicle.length * 3);
+        for (let v of vehicles) {
             if (Utils.isCollidingWith(vehicle, v)) {
                 return false;
             }
@@ -116,10 +112,10 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _addToSegment(vehicle: Vehicle): void {
-        this.segment.addVehicle(this._nextVehicle);
-        this.simMgr.getViewManager().addRenderable(this._nextVehicle);
+        this.segment.addVehicle(vehicle);
+        this.simMgr.viewManager.addRenderable(vehicle);
         // console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.segment.id}'`);
-        this._nextVehicle = null;
+        this._nextVehicle = null; // allow the next vehicle to be generated
     }
 
     protected generateMesh(): Mesh {

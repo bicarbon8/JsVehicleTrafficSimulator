@@ -69,11 +69,11 @@ export class TrafficSimComponent implements OnInit, OnDestroy {
 
   async updateTimeStep(step: number): Promise<void> {
     if (!isNaN(step)) {
-      this._simMgr.setTimestep(step);
+      this._simMgr.timestep = step;
     }
   }
 
   getSimulationTimeElapsed(): string {
-    return Utils.convertMsToHumanReadable(this._simMgr.getTotalElapsed());
+    return Utils.convertMsToHumanReadable(this._simMgr.totalElapsed);
   }
 }
