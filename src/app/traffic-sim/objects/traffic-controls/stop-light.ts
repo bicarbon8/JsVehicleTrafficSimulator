@@ -50,10 +50,9 @@ export class StopLight extends TrafficFlowControl {
     protected generateObj3D(): Object3D {
         // z coordinate used for vertical height
         var geometry = new SphereGeometry(1);
-        var material = new MeshBasicMaterial({
-            color: 0xffffff // white
-        });
-        return new Mesh(geometry, material);
+        const mesh = new Mesh(geometry, this.material);
+        mesh.translateY(-2);
+        return mesh;
     }
 
     update(elapsedMs?: number): void {

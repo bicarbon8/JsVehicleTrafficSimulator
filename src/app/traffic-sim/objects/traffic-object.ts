@@ -1,4 +1,4 @@
-import { Box3, Group, Material, Mesh, MeshBasicMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
+import { Box3, Group, Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
 import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
@@ -8,7 +8,7 @@ export type TrafficObjectOptions = {
     id?: number;
     name?: string;
     mesh?: Mesh;
-    material?: MeshBasicMaterial;
+    material?: MeshStandardMaterial;
     texture?: Texture;
 };
 
@@ -17,9 +17,9 @@ export abstract class TrafficObject implements Renderable {
     readonly name: string;
     readonly simMgr: SimulationManager;
 
-    protected _obj3D: Object3D;
-    protected _material: Material;
-    protected _texture: Texture;
+    private _obj3D: Object3D;
+    private _material: MeshStandardMaterial;
+    private _texture: Texture;
 
     /**
      * the `id` of the `RoadSegment` on which this `TrafficObject` is placed
@@ -30,9 +30,9 @@ export abstract class TrafficObject implements Renderable {
         this.simMgr = simMgr ?? SimulationManager.inst;
         this.id = options?.id ?? Utils.getNewId();
         this.name = options?.name ?? `${this.constructor.name}-${this.id}`;
-        this._material = options?.material ?? new MeshBasicMaterial({
-            color: 0xffffff, // white
-            wireframe: true
+        this._material = options?.material ?? new MeshStandardMaterial({
+            color: 0xffffff, // white,
+            flatShading: true
         });
         this._texture = options?.texture ?? new Texture();
     }
@@ -75,8 +75,8 @@ export abstract class TrafficObject implements Renderable {
         return null;
     }
 
-    get material(): MeshBasicMaterial {
-        return this.mesh?.material as MeshBasicMaterial;
+    get material(): MeshStandardMaterial {
+        return this._material;
     }
 
     get location(): Vector3 {

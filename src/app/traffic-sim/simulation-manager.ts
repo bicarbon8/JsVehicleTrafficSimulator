@@ -187,7 +187,7 @@ export class SimulationManager {
 
     removeVehicle(vehicle: Vehicle) {
         this._viewMgr.removeRenderable(vehicle);
-        vehicle.segment.removeVehicle(vehicle.id);
+        vehicle.segment?.removeVehicle(vehicle.id);
         vehicle.disposeGeometry();
     }
 

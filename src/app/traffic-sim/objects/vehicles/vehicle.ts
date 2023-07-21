@@ -1,4 +1,4 @@
-import { Mesh, BoxGeometry, Line3, Vector3, Object3D, Box3, Quaternion } from "three";
+import { Mesh, BoxGeometry, Line3, Vector3, Object3D, Box3, Quaternion, ConeGeometry, Group, MathUtils, Material, MeshBasicMaterial, CylinderGeometry } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
@@ -89,7 +89,9 @@ export class Vehicle extends TrafficObject {
     private _velocity: number; // see: {get velocity()}
     private _crashedAt: number; // see: {get crashedAt()}
     private _crashCleanupTime: number; // see: {get crashCleanupTime()}
-    private _lookAheadMesh: Mesh; // see: {getLookaheadCollisionBox()}
+    private _vehicleMesh: Mesh;
+    private _driverViewMesh: Mesh;
+    private _viewMaterial: Material;
 
     constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
@@ -104,6 +106,10 @@ export class Vehicle extends TrafficObject {
         
         this._velocity = options?.startingVelocity || 0; // Metres per Second
         this._changeLaneTime = this.changeLaneDelay;
+        this._viewMaterial = new MeshBasicMaterial({
+            color: 0xc6c6c6, // gray
+            wireframe: true
+        });
     }
 
     /**
@@ -377,20 +383,22 @@ export class Vehicle extends TrafficObject {
      * @returns `true` if the passed in `obj` can be "seen", otherwise `false`
      */
     hasInViewAhead(obj: TrafficObject): boolean {
-        if (this.segment) {
-            var maxAngle = 45;
-            if (this.segment?.isInlet) {
-                maxAngle = 90;
-            }
-            let otherLoc: Vector3 = obj.location;
-            var headingLine = new Line3(this.location, this.segment?.end);
-            var headingToLocation = new Line3(this.location, otherLoc);
+        const view = this.getLookAheadCollisionBox();
+        return view.containsBox(obj.boundingBox);
+        // if (this.segment) {
+        //     var maxAngle = 45;
+        //     if (this.segment?.isInlet) {
+        //         maxAngle = 90;
+        //     }
+        //     let otherLoc: Vector3 = obj.location;
+        //     var headingLine = new Line3(this.location, this.segment?.end);
+        //     var headingToLocation = new Line3(this.location, otherLoc);
 
-            if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
-                return true;
-            }
-        }
-        return false;
+        //     if (Math.abs(Utils.angleFormedBy(headingLine, headingToLocation)) <= maxAngle) {
+        //         return true;
+        //     }
+        // }
+        // return false;
     }
 
     hasInViewLeft(obj: TrafficObject): boolean {
@@ -434,29 +442,45 @@ export class Vehicle extends TrafficObject {
      * look-ahead distance
      */
     getLookAheadCollisionBox(): Box3 {
-        const dist: number = this.getLookAheadDistance();
-        const mesh = new Mesh(new BoxGeometry(this.width, this.height, dist));
-        const pos = this.location;
-        const rot = this.rotation;
-        mesh.position.set(pos.x, pos.y, pos.z);
-        mesh.rotation.setFromQuaternion(rot);
-        mesh.translateZ(dist / 2);
-        const box = new Box3().setFromObject(mesh);
-        mesh.geometry.dispose();
-        return box;
+        // const dist: number = this.getLookAheadDistance();
+        // const mesh = new Mesh(new BoxGeometry(this.width, this.height, dist));
+        // const pos = this.location;
+        // const rot = this.rotation;
+        // mesh.position.set(pos.x, pos.y, pos.z);
+        // mesh.rotation.setFromQuaternion(rot);
+        // mesh.translateZ(dist / 2);
+        // const box = new Box3().setFromObject(mesh);
+        // mesh.geometry.dispose();
+        // return box;
+        return new Box3().setFromObject(this._driverViewMesh, true);
     }
 
     protected generateObj3D(): Object3D {
-        if (!this._obj3D) {
-            var geometry = new BoxGeometry(this.width, this.height, this.length);
-            var mesh = new Mesh(geometry, this._material);
-            this._obj3D = mesh;
-        }
-        return this._obj3D;
+        const group = new Group();
+        
+        // create vehicle mesh
+        const vehicleGeometry = new BoxGeometry(this.width, this.height, this.length);
+        this._vehicleMesh = new Mesh(vehicleGeometry, this.material);
+        this._vehicleMesh.translateY(this.height / 2);
+        
+        // create driver view mesh
+        const viewGeometry = new CylinderGeometry(this.width / 2, this.width * 2, this.length * 4, 6);
+        this._driverViewMesh = new Mesh(viewGeometry, this._viewMaterial);
+        this._driverViewMesh.visible = false;
+        this._driverViewMesh.translateY(this.height / 2);
+        this._driverViewMesh.translateY(-(this.length * 2));
+        Utils.rotateAround(this._driverViewMesh, new Vector3(0, (this.height / 2), 0), new Vector3(1, 0, 0).normalize(), MathUtils.DEG2RAD * -90);
+        
+        group.add(this._vehicleMesh);
+        group.add(this._driverViewMesh);
+        return group;
+    }
+
+    override get mesh(): Mesh {
+        return this._vehicleMesh;
     }
 
     override disposeGeometry(): void {
         super.disposeGeometry();
-        this._lookAheadMesh = null;
     }
 }

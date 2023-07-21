@@ -100,14 +100,10 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _canAddToSegment(vehicle: Vehicle): boolean {
-        let vehicles: Vehicle[] = this.simMgr.mapManager.getVehiclesWithinRadiusAhead(this.segment.start, this.segment, vehicle.length * 3);
-        for (let v of vehicles) {
-            if (Utils.isCollidingWith(vehicle, v)) {
-                return false;
-            }
-        }
-
-        return true;
+        let vehicles = this.simMgr.mapManager
+            .getVehiclesWithinRadiusAhead(vehicle.location, this.segment, vehicle.length * 3)
+            .filter(v => v.id !== vehicle.id);
+        return vehicles?.length == 0;
     }
 
     private _addToSegment(vehicle: Vehicle): void {

@@ -1,4 +1,4 @@
-import { Box3, Line3, Vector3 } from 'three';
+import { Box3, Line3, Object3D, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
 
 export module Utils {
@@ -118,5 +118,20 @@ export module Utils {
      */
     export function getDistanceTravelled(velocity: number, elapsedMs: number): number {
         return velocity * convertMillisecondsToSeconds(elapsedMs);
+    }
+
+    /**
+     * rotates the supplied `obj` around the `centre` point by the supplied `radians` using
+     * the supplied `axis`
+     * @param obj the `Object3D` to rotate
+     * @param centre the point around which to rotate
+     * @param axis a normalised `Vector3` indicating the axis of rotation
+     * @param radians the radians to rotate
+     */
+    export function rotateAround(obj: Object3D, centre: Vector3, axis: Vector3, radians: number): void {
+        obj.position.sub(centre);
+        obj.position.applyAxisAngle(axis, radians);
+        obj.position.add(centre);
+        obj.rotateOnAxis(axis, radians);
     }
 }

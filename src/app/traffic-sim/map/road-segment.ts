@@ -94,6 +94,12 @@ export class RoadSegment extends TrafficObject {
         return this._vehicles.get(id);
     }
 
+    /**
+     * removes the supplied `Vehicle` from any current `RoadSegment` and then adds it
+     * to this one making sure to set it's heading towards the end point.
+     * @param vehicle the `Vehicle` to add to this `RoadSegment`
+     * @param location an optional `Vector3` used to position the `Vehicle` @default `this.start`
+     */
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
         let loc: Vector3 = location ?? this.start;
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
@@ -105,6 +111,12 @@ export class RoadSegment extends TrafficObject {
         this._vehicles.set(vehicle.id, vehicle);
     }
 
+    /**
+     * removes the `Vehicle` associated with the supplied id from this `RoadSegment`
+     * also setting the `Vehicle.segmentId` to `-1`
+     * @param vehicleId the id of the `Vehicle` to remove
+     * @returns `true` if successfully removed, otherwise `false`
+     */
     removeVehicle(vehicleId: number): boolean {
         // console.debug(`removing vehicle ${vehicleId} from segment ${this.id}`);
         let v: Vehicle = this._vehicles.get(vehicleId);
