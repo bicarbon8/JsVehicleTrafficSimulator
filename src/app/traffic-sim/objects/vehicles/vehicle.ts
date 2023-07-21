@@ -168,15 +168,17 @@ export class Vehicle extends TrafficObject {
         let distTravelled: number = Utils.getDistanceTravelled(this.velocity, elapsedMs);
         // check if we should move to next RoadSegment or remove vehicle from the simulation
         if (distTravelled > 0) {
-            if (this.segmentId) {
+            if (this.segment) {
                 /**
                  * NOTE: skipping ahead like this means that at high enough speeds we can pass through
                  * stationary objects without collision detection being alerted. TODO: fix using line
                  * projections in the future
                  */
-                while (distTravelled >= Utils.getLength(this.location, this.segment.end)) {
+                while (this.segment && distTravelled >= Utils.getLength(this.location, this.segment.end)) {
                     distTravelled -= Utils.getLength(this.location, this.segment.end);
-                    const nextSegments = this.simMgr.mapManager.getSegmentsStartingAt(this.segment.end);
+                    // get all segments we could enter (except the one we're already on)
+                    const nextSegments = this.simMgr.mapManager.getSegmentsContainingPoint(this.segment.end)
+                        .filter(s => s.id != this.segmentId);
                     // if there is a next Segment
                     if(nextSegments?.length) {
                         // move to segment (pick randomly)
@@ -185,11 +187,12 @@ export class Vehicle extends TrafficObject {
                         var nextSeg: RoadSegment = nextSegments[randIndex];
                         nextSeg.addVehicle(this, this.segment.end);
                     }
-                    if (this.isChangingLanes) { // then we've finished changing lanes
+                    if (this.isChangingLanes) {
+                        // then we've finished changing lanes
                         this._isChangingLanes = false;
                         this.simMgr.mapManager.removeSegment(this.segmentId);
                     }
-                    if (!nextSegments?.length) {
+                    if (!nextSegments.length) {
                         // end of Road reached... remove vehicle from Simulation
                         this.simMgr.removeVehicle(this);
                         return;
@@ -197,10 +200,16 @@ export class Vehicle extends TrafficObject {
                 }
             }
         }
+        if (!this.segment) {
+            // end of Road reached... remove vehicle from Simulation
+            this.simMgr.removeVehicle(this);
+            return;
+        }
         
         if (this.isCrashed()) {
             // remove vehicle after appropriate time has passed
             if (this.crashCleanupTime <= this.simMgr.totalElapsed) {
+                console.info('cleaning up crashed vehicle', this.name);
                 // remove self from the Simulation
                 this.simMgr.removeVehicle(this);
                 return;
@@ -291,8 +300,9 @@ export class Vehicle extends TrafficObject {
             var vehicles: Vehicle[] = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
             vehicles.forEach((vehicle) => {
                 if (Utils.isCollidingWith(this, vehicle)) {
-                    console.warn(`crash of vehicle: ${this.id} at ${JSON.stringify(this.location)} with vehicle: ${vehicle.id} at ${JSON.stringify(vehicle.location)}`);
                     this.setCrashed();
+                    console.warn('crash of vehicle:', this.name, 'at', this.location, 'with vehicle:', 
+                        vehicle.name, '. cleanup at', Utils.convertMsToHumanReadable(this._crashCleanupTime));
                     vehicle.setCrashed();
                 }
             });
