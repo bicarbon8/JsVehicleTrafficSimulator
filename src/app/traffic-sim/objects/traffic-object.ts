@@ -1,8 +1,9 @@
-import { Box3, Group, Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
+import { Box3, Mesh, MeshStandardMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
 import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
+import { Body, Box, Vec3, Quaternion as Quat4 } from 'cannon-es';
 
 export type TrafficObjectOptions = {
     id?: number;
@@ -18,6 +19,7 @@ export abstract class TrafficObject implements Renderable {
     readonly simMgr: SimulationManager;
 
     private _obj3D: Object3D;
+    private _body: Body;
     private _material: MeshStandardMaterial;
     private _texture: Texture;
 
@@ -25,6 +27,11 @@ export abstract class TrafficObject implements Renderable {
      * the `id` of the `RoadSegment` on which this `TrafficObject` is placed
      */
     public segmentId: number;
+    /**
+     * indicates if this object is subjected to physics simulation (collisions,
+     * gravity)
+     */
+    public hasPhysics: boolean;
     
     constructor(options?: TrafficObjectOptions, simMgr?: SimulationManager) {
         this.simMgr = simMgr ?? SimulationManager.inst;
@@ -65,6 +72,30 @@ export abstract class TrafficObject implements Renderable {
         return null;
     }
 
+    get body(): Body {
+        if (this.hasPhysics) {
+            if (!this._body) {
+                const size = new Vector3(0, 0, 0);
+                this.boundingBox.getSize(size);
+                const width = size.x;
+                const height = size.y;
+                const depth = size.z;
+                const loc = this.location;
+                const quat = this.rotation;
+                this._body = new Body({
+                    mass: 1000, // kg; TODO: get mass from obj props
+                    shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
+                    position: new Vec3(loc.x, loc.y, loc.z), // m
+                    quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
+                });
+                this.simMgr.physicsManager.addBody(this.body);
+            }
+            return this._body;
+        }
+
+        return null;
+    }
+
     get boundingBox(): Box3 {
         if (this.mesh) {
             var bbox = new Box3().setFromObject(this.mesh);
@@ -86,6 +117,7 @@ export abstract class TrafficObject implements Renderable {
     set location(location: Vector3) {
         if (location) {
             this.obj3D?.position.set(location.x, location.y, location.z);
+            this.body?.position.set(location.x, location.y, location.z);
         }
         
         this._forceMeshUpdate();
@@ -98,6 +130,7 @@ export abstract class TrafficObject implements Renderable {
     set rotation(rotation: Quaternion) {
         if (rotation) {
             this.obj3D?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+            this.body?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
         }
     }
 
@@ -108,6 +141,8 @@ export abstract class TrafficObject implements Renderable {
     moveForwardBy(distance: number): void {
         if (distance > 0) {
             this.obj3D?.translateZ(distance);
+            const loc = this.location;
+            this.body?.position.set(loc.x, loc.y, loc.z);
         }
 
         this._forceMeshUpdate();
@@ -116,6 +151,8 @@ export abstract class TrafficObject implements Renderable {
     lookAt(location: Vector3): void {
         if (location) {
             this.obj3D?.lookAt(location);
+            const q = this.rotation;
+            this.body?.quaternion.set(q.x, q.y, q.z, q.w);
         }
 
         this._forceMeshUpdate();

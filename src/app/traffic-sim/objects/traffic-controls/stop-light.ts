@@ -1,4 +1,4 @@
-import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D } from "three";
+import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D, Group } from "three";
 import { SimulationManager } from "../../simulation-manager";
 import { Vehicle } from "../vehicles/vehicle";
 import { TfcState } from "./tfc-state";
@@ -48,11 +48,12 @@ export class StopLight extends TrafficFlowControl {
     }
     
     protected generateObj3D(): Object3D {
-        // z coordinate used for vertical height
+        const group = new Group();
         var geometry = new SphereGeometry(1);
         const mesh = new Mesh(geometry, this.material);
-        mesh.translateY(-2);
-        return mesh;
+        mesh.translateY(4);
+        group.add(mesh);
+        return group;
     }
 
     update(elapsedMs?: number): void {
@@ -88,12 +89,15 @@ export class StopLight extends TrafficFlowControl {
         switch (this.currentState) {
             case TfcState.proceed:
                 this.material?.color.setHex(0x00ff00); // green
+                this.material?.emissive.setHex(0x00ff00);
                 break;
             case TfcState.caution:
                 this.material?.color.setHex(0xffff00); // yellow
+                this.material?.emissive.setHex(0xffff00);
                 break;
             case TfcState.stop:
                 this.material?.color.setHex(0xff0000); // red
+                this.material?.emissive.setHex(0xff0000);
                 break;
         }
     }

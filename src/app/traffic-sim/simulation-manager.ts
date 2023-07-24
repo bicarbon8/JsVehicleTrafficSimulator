@@ -5,6 +5,7 @@ import { StopLight } from "./objects/traffic-controls/stop-light";
 import { TfcOptions, TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
 import { Vehicle } from "./objects/vehicles/vehicle";
 import { VehicleGenerator, VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator";
+import { PhysicsManager } from "./physics-manager";
 import { ViewManager } from "./view/view-manager";
 
 export class SimulationManager {
@@ -24,8 +25,9 @@ export class SimulationManager {
 
     private _mapManager: MapManager;
     private _viewMgr: ViewManager;
+    private _physicsMgr: PhysicsManager;
 
-    constructor(mapMgr?: MapManager, viewMgr?: ViewManager) {
+    constructor(mapMgr?: MapManager, viewMgr?: ViewManager, physicsMgr?: PhysicsManager) {
         this._realtime = false;
         this._isRunning = false;
         this._totalElapsedTime = 0;
@@ -33,6 +35,7 @@ export class SimulationManager {
 
         this._mapManager = mapMgr || MapManager.inst;
         this._viewMgr = viewMgr || ViewManager.inst;
+        this._physicsMgr = physicsMgr ?? PhysicsManager.inst;
 
         this._lastUpdate = 0;
 
@@ -94,6 +97,7 @@ export class SimulationManager {
         if (this._isRunning) {
             let elapsed: number = this.getElapsed();
             this._totalElapsedTime += elapsed;
+            this._physicsMgr.update(elapsed);
             this._mapManager.update(elapsed);
 
             this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
@@ -139,6 +143,10 @@ export class SimulationManager {
 
     get viewManager(): ViewManager {
         return this._viewMgr;
+    }
+
+    get physicsManager(): PhysicsManager {
+        return this._physicsMgr;
     }
 
     loadMap(map: RoadMap): void {

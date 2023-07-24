@@ -22,12 +22,12 @@ export class ViewManager {
 
     private _initRenderer(canvasId: string): void {
         this._canvas = document.querySelector<HTMLCanvasElement>(canvasId);
-        this._renderer = new WebGLRenderer({canvas: this._canvas});
+        this._renderer = new WebGLRenderer({ canvas: this._canvas });
         this._renderer.setSize(this.getWidth(), this.getHeight());
         window.addEventListener('resize', () => {
             this.resize();
             this.update();
-        }, {capture: false});
+        }, { capture: false });
     }
 
     private _initLight(): void {
@@ -43,7 +43,7 @@ export class ViewManager {
         let aspectRatio = this.getWidth() / this.getHeight();
         let nearClip = 0.1;
         let farClip = 10000;
-        this._camera = new PerspectiveCamera(viewAngle,aspectRatio,nearClip,farClip);
+        this._camera = new PerspectiveCamera(viewAngle, aspectRatio, nearClip, farClip);
         this._camera.position.set(200, 200, 200);
         this._camera.lookAt(new Vector3(0, 0, 0));
     }

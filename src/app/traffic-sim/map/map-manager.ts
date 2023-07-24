@@ -284,7 +284,7 @@ export class MapManager {
 
             var corneringSpeed: number = Utils.corneringSpeedCalculator(headingDiff);
             // begin slowing down
-            if (vehicle.velocity > corneringSpeed) {
+            if (vehicle.speed > corneringSpeed) {
                 return headingDiff;
             }
         }

@@ -43,7 +43,7 @@ export class VehicleGenerator extends TrafficObject {
         super(options, simMgr);
         this.delay = options?.delay || 0;
         this.roadName = options?.roadName;
-        this.max = options?.max || Infinity;
+        this.max = 1; //options?.max || Infinity;
         this.startSpeedMax = options?.startSpeedMax || 0;
         this.startSpeedMin = options?.startSpeedMin || 0;
         this._elapsed = 0;
@@ -72,7 +72,7 @@ export class VehicleGenerator extends TrafficObject {
 
     generate(): Vehicle {
         this._count++;
-        var v = new Vehicle({
+        const v = new Vehicle({
             width: Utils.getRandomRealBetween(2, 3),
             height: Utils.getRandomRealBetween(1, 1.5),
             length: Utils.getRandomRealBetween(3, 5),
@@ -100,7 +100,7 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _canAddToSegment(vehicle: Vehicle): boolean {
-        let vehicles = this.simMgr.mapManager
+        const vehicles = this.simMgr.mapManager
             .getVehiclesWithinRadiusAhead(vehicle.location, this.segment, vehicle.length * 3)
             .filter(v => v.id !== vehicle.id);
         return vehicles?.length == 0;
@@ -109,6 +109,7 @@ export class VehicleGenerator extends TrafficObject {
     private _addToSegment(vehicle: Vehicle): void {
         this.segment.addVehicle(vehicle);
         this.simMgr.viewManager.addRenderable(vehicle);
+        vehicle.hasPhysics = true;
         // console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.segment.id}'`);
         this._nextVehicle = null; // allow the next vehicle to be generated
     }

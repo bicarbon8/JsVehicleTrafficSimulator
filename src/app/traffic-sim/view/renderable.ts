@@ -5,6 +5,7 @@ export interface Renderable {
     readonly mesh: Mesh;
     readonly boundingBox: Box3;
     readonly material: MeshStandardMaterial;
+    hasPhysics: boolean;
     update(elapsedMs: number): void;
     disposeGeometry(): void;
 }
