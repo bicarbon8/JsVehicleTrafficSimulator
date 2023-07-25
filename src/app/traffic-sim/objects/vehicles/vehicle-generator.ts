@@ -43,7 +43,7 @@ export class VehicleGenerator extends TrafficObject {
         super(options, simMgr);
         this.delay = options?.delay || 0;
         this.roadName = options?.roadName;
-        this.max = 1; //options?.max || Infinity;
+        this.max = options?.max || Infinity;
         this.startSpeedMax = options?.startSpeedMax || 0;
         this.startSpeedMin = options?.startSpeedMin || 0;
         this._elapsed = 0;

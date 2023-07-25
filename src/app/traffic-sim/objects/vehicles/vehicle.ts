@@ -209,7 +209,9 @@ export class Vehicle extends TrafficObject {
 
     update(elapsedMs: number): void {
         if (this.segment) {
-            this.lookAt(this.segment.end);
+            const look = this.segment.end.clone();
+            look.y = this.location.y;
+            this.lookAt(look);
         }
         const pos = this.body.position;
         const loc = this.location;

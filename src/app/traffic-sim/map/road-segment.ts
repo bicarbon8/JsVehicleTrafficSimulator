@@ -93,7 +93,7 @@ export class RoadSegment extends TrafficObject {
                 const loc = this.location;
                 const quat = this.rotation;
                 this._body = new Body({
-                    mass: 100, // kg; TODO: get mass from obj props
+                    mass: 0, // kg; TODO: get mass from obj props
                     shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
                     position: new Vec3(loc.x, loc.y, loc.z), // m
                     quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
