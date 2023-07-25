@@ -1,7 +1,6 @@
-import { Mesh, SphereGeometry, MeshBasicMaterial, Object3D, Group } from "three";
+import { Mesh, SphereGeometry, Object3D, Group } from "three";
 import { SimulationManager } from "../../simulation-manager";
 import { Vehicle } from "../vehicles/vehicle";
-import { TfcState } from "./tfc-state";
 import { TfcOptions, TrafficFlowControl } from "./traffic-flow-control";
 
 export type StopLightOptions = TfcOptions & {
@@ -41,7 +40,7 @@ export class StopLight extends TrafficFlowControl {
     }
 
     shouldStop(vehicle: Vehicle): boolean {
-        if (this.currentState == TfcState.caution || this.currentState == TfcState.stop) {
+        if (this.state == 'caution' || this.state == 'stop') {
             return true;
         }
         return false;
@@ -56,48 +55,51 @@ export class StopLight extends TrafficFlowControl {
         return group;
     }
 
-    update(elapsedMs?: number): void {
-        this.elapsed += elapsedMs;
+    override update(elapsedMs?: number): void {
+        super.update(elapsedMs);
         this._updateState();
         this._setColour();
     }
 
     private _updateState(): void {
-        switch (this.currentState) {
-            case TfcState.proceed:
+        switch (this.state) {
+            case 'proceed':
                 if (this.elapsed >= this._greenDuration) {
-                    this.currentState = TfcState.caution;
-                    this.elapsed = 0;
+                    this.setState('caution');
+                    this.resetElapsed();
                 }
                 break;
-            case TfcState.caution:
+            case 'caution':
                 if (this.elapsed >= this._yellowDuration) {
-                    this.currentState = TfcState.stop;
-                    this.elapsed = 0;
+                    this.setState('stop');
+                    this.resetElapsed();
                 }
                 break;
-            case TfcState.stop:
+            case 'stop':
                 if (this.elapsed >= this._redDuration) {
-                    this.currentState = TfcState.proceed;
-                    this.elapsed = 0;
+                    this.setState('proceed');
+                    this.resetElapsed();
                 }
                 break;
         }
     }
 
     private _setColour(): void {
-        switch (this.currentState) {
-            case TfcState.proceed:
+        switch (this.state) {
+            case 'proceed':
                 this.material?.color.setHex(0x00ff00); // green
                 this.material?.emissive.setHex(0x00ff00);
                 break;
-            case TfcState.caution:
+            case 'caution':
                 this.material?.color.setHex(0xffff00); // yellow
                 this.material?.emissive.setHex(0xffff00);
                 break;
-            case TfcState.stop:
+            case 'stop':
                 this.material?.color.setHex(0xff0000); // red
                 this.material?.emissive.setHex(0xff0000);
+                break;
+            default:
+                console.error('invalid TfcState of', this.state, 'for id', this.id);
                 break;
         }
     }

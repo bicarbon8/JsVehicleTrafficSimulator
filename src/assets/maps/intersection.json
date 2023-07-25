@@ -47,12 +47,12 @@
             "type":"stoplight",
             "location":{"x":-3,"y":0,"z":-5},
             "roadName":"Road 1 Southbound",
-            "startState":0
+            "startState":"proceed"
         }, {
             "type":"stoplight",
             "location":{"x":3,"y":0,"z":5},
             "roadName":"Road 1 Northbound",
-            "startState":0
+            "startState":"proceed"
         }, {
             "type":"stoplight",
             "location":{"x":-5,"y":0,"z":3},

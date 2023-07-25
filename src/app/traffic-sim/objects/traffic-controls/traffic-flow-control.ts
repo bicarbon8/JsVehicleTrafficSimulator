@@ -2,7 +2,8 @@ import { Vector3 } from "three";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
 import { Vehicle } from "../vehicles/vehicle";
-import { TfcState } from "./tfc-state";
+
+export type TfcState = 'proceed' | 'caution' | 'stop';
 
 export type TfcOptions = TrafficObjectOptions & {
     startState?: TfcState;
@@ -17,21 +18,37 @@ export abstract class TrafficFlowControl extends TrafficObject {
     readonly changeDelay: number;
     readonly roadName: string;
     
-    protected currentState: TfcState;
-    protected elapsed: number;
+    private _state: TfcState;
+    private _elapsed: number;
 
     constructor(options?: TfcOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
-        this.startState = (options?.startState === undefined) ? 2 : options?.startState;
-        this.changeDelay = (options?.changeDelay === undefined) ? Infinity : options?.changeDelay;
+        this.startState = options?.startState ?? 'stop';
+        this.changeDelay = options?.changeDelay ?? Infinity;
         this.roadName = options?.roadName;
-        this.currentState = this.startState;
-        this.elapsed = 0;
+        this._state = this.startState;
+        this._elapsed = 0;
+    }
+
+    update(elapsedMs: number): void {
+        this._elapsed += elapsedMs;
     }
 
     abstract shouldStop(vehicle: Vehicle): boolean;
 
-    getCurrentState(): TfcState {
-        return this.currentState;
+    get state(): TfcState {
+        return this._state;
+    }
+
+    public setState(state: TfcState): void {
+        this._state = state ?? 'stop';
+    }
+
+    get elapsed(): number {
+        return this._elapsed;
+    }
+
+    public resetElapsed(): void {
+        this._elapsed = 0;
     }
 }

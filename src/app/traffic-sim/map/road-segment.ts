@@ -1,9 +1,10 @@
-import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh } from 'three';
+import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh, Group, BoxGeometry } from 'three';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { TrafficObject, TrafficObjectOptions } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { VehicleGenerator } from '../objects/vehicles/vehicle-generator';
 import { SimulationManager } from '../simulation-manager';
+import { Body, Box, Vec3, Quaternion as Quat4 } from 'cannon-es';
 
 export type RoadSegmentOptions = TrafficObjectOptions & {
     start: Vector3;
@@ -56,6 +57,8 @@ export class RoadSegment extends TrafficObject {
     private _tfcs: Map<number, TrafficFlowControl>;
     private _laneChangeLocations: Vector3[];
     private _generator: VehicleGenerator;
+    private _body: Body;
+    private _roadSurfaceMesh: Mesh;
 
     constructor(options?: RoadSegmentOptions, simMgr?: SimulationManager) {
         super(options, simMgr);
@@ -70,6 +73,36 @@ export class RoadSegment extends TrafficObject {
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
+    }
+
+    override get mesh(): Mesh {
+        if (!this._roadSurfaceMesh) {
+            const obj = this.obj3D; // force creation
+        }
+        return this._roadSurfaceMesh;
+    }
+
+    override get body(): Body {
+        if (this.hasPhysics) {
+            if (!this._body) {
+                const size = new Vector3(0, 0, 0);
+                this.boundingBox.getSize(size);
+                const width = size.x;
+                const height = size.y;
+                const depth = size.z;
+                const loc = this.location;
+                const quat = this.rotation;
+                this._body = new Body({
+                    mass: 100, // kg; TODO: get mass from obj props
+                    shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
+                    position: new Vec3(loc.x, loc.y, loc.z), // m
+                    quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
+                });
+                this.simMgr.physicsManager.addBody(this.body);
+            }
+            return this._body;
+        }
+        return super.body;
     }
 
     update(elapsedMs: number): void {
@@ -103,7 +136,7 @@ export class RoadSegment extends TrafficObject {
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
         let loc: Vector3 = location ?? this.start;
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
-        vehicle.location = loc;
+        // vehicle.location = loc;
         vehicle.lookAt(this.end);
         let oldSegment: RoadSegment = vehicle.segment;
         if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
@@ -152,20 +185,27 @@ export class RoadSegment extends TrafficObject {
     }
 
     protected generateObj3D(): Object3D {
-        const lineMat = new LineBasicMaterial({color: 0x0000ff, linewidth: this.width});
-        const line: Line3 = this.line;
-        const geometry = new BufferGeometry().setFromPoints([line.start, line.end]);
-        const obj3D: Object3D = new Line(geometry, lineMat);
-        
+        const group = new Group();
+        const length = this.line.distance();
+        const centre = new Vector3(); 
+        this.line.getCenter(centre);
+        const width = 3.7; // standard US lane width
+        const depth = 0.5;
+        const box = new BoxGeometry(width, depth, length);
+        this._roadSurfaceMesh = new Mesh(box, this.material);
+        this._roadSurfaceMesh.position.set(centre.x, centre.y - depth, centre.z);
+        const look = this.line.end.clone();
+        look.y -= 0.5;
+        this._roadSurfaceMesh.lookAt(look);
+        this._forceMeshUpdate();
         this._generateLaneChangePoints();
-
-        return obj3D;
+        group.add(this._roadSurfaceMesh);
+        return group;
     }
 
     private _generateLaneChangePoints(): void {
         const point = new SphereGeometry(1);
-        const pointMat = new MeshBasicMaterial();
-        const sphere = new Mesh(point, pointMat);
+        const sphere = new Mesh(point);
         const spacing = 1;
         const length = this.length;
         sphere.position.set(this.start.x, this.start.y, this.start.z);

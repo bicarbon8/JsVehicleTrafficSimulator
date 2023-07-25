@@ -3,7 +3,7 @@ import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
-import { Body, Box, Vec3, Quaternion as Quat4 } from 'cannon-es';
+import { Body } from 'cannon-es';
 
 export type TrafficObjectOptions = {
     id?: number;
@@ -19,9 +19,7 @@ export abstract class TrafficObject implements Renderable {
     readonly simMgr: SimulationManager;
 
     private _obj3D: Object3D;
-    private _body: Body;
     private _material: MeshStandardMaterial;
-    private _texture: Texture;
 
     /**
      * the `id` of the `RoadSegment` on which this `TrafficObject` is placed
@@ -41,7 +39,6 @@ export abstract class TrafficObject implements Renderable {
             color: 0xffffff, // white,
             flatShading: true
         });
-        this._texture = options?.texture ?? new Texture();
     }
 
     /**
@@ -73,26 +70,6 @@ export abstract class TrafficObject implements Renderable {
     }
 
     get body(): Body {
-        if (this.hasPhysics) {
-            if (!this._body) {
-                const size = new Vector3(0, 0, 0);
-                this.boundingBox.getSize(size);
-                const width = size.x;
-                const height = size.y;
-                const depth = size.z;
-                const loc = this.location;
-                const quat = this.rotation;
-                this._body = new Body({
-                    mass: 1000, // kg; TODO: get mass from obj props
-                    shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
-                    position: new Vec3(loc.x, loc.y, loc.z), // m
-                    quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
-                });
-                this.simMgr.physicsManager.addBody(this.body);
-            }
-            return this._body;
-        }
-
         return null;
     }
 

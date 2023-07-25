@@ -171,7 +171,7 @@
             "type":"stoplight",
             "location":{"x":-100,"y":0,"z":140},
             "roadName":"Entrance Lower",
-            "startState":0,
+            "startState":"proceed",
             "greenDuration":2000,
             "yellowDuration":2000,
             "redDuration":4000
@@ -179,7 +179,7 @@
             "type":"stoplight",
             "location":{"x":-100,"y":0,"z":135},
             "roadName":"Entrance Lower",
-            "startState":2,
+            "startState":"stop",
             "greenDuration":2000,
             "yellowDuration":2000,
             "redDuration":4000

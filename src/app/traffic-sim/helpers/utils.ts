@@ -1,4 +1,4 @@
-import { Box3, Line3, Object3D, Vector3 } from 'three';
+import { Box3, Line3, Mesh, Object3D, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
 
 export module Utils {
@@ -38,11 +38,19 @@ export module Utils {
         return (Math.acos(a.dot(b))*(180/Math.PI));
     }
 
-    export function isCollidingWith<T extends Renderable>(obj1: T, obj2: T): boolean {
+    export function isCollidingWith<T extends Mesh>(obj1: T, obj2: T): boolean {
         if (obj1 && obj2) {
-            let b1: Box3 = new Box3().setFromObject(obj1.mesh);
-            let b2: Box3 = new Box3().setFromObject(obj2.mesh);
+            const b1: Box3 = new Box3().setFromObject(obj1);
+            const b2: Box3 = new Box3().setFromObject(obj2);
             return b1.intersectsBox(b2);
+        }
+        return false;
+    }
+
+    export function isContaining<T extends Renderable>(obj: T, point: Vector3): boolean {
+        if (obj && point) {
+            const box = new Box3().setFromObject(obj.mesh);
+            return box.containsPoint(point);
         }
         return false;
     }
