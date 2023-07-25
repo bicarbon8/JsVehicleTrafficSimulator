@@ -208,26 +208,29 @@ export class Vehicle extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-        // move mesh to physicsbody location
-        const p = this.body.position;
-        this.obj3D.position.set(p.x, p.y, p.z);
-
         if (this.segment) {
             this.lookAt(this.segment.end);
         }
-
+        const pos = this.body.position;
+        const loc = this.location;
         let force: number = 0;
         this._state = this.decisionEng.getDesiredState();
         switch(this.state) {
             case 'accelerating':
+                // set mesh position from physics body
+                this.obj3D.position.set(pos.x, pos.y, pos.z);
                 this.accelerate(elapsedMs);
                 force = 2;
                 break;
             case 'decelerating':
+                // set mesh position from physics body
+                this.obj3D.position.set(pos.x, pos.y, pos.z);
                 this.brake(elapsedMs);
                 force = -0.5;
                 break;
             case 'stopped':
+                // set physics body position from mesh (prevent sliding while stopped)
+                this.body.position.set(loc.x, loc.y, loc.z);
                 this._speed = 0;
                 this.body.velocity.set(0, 0, 0);
                 break;
@@ -329,11 +332,6 @@ export class Vehicle extends TrafficObject {
         } else {
             acceleration = this.accelerate(elapsedMs);
         }
-        if (acceleration >= 0) {
-            
-        } else {
-            
-        }
         
         // prevent going backwards
         if (this.speed < 0) {
@@ -346,25 +344,21 @@ export class Vehicle extends TrafficObject {
         return acceleration;
     }
 
-    /**
-     * if not already set, sets the `_crashedAt` and `_crashCleanupTime` properties,
-     * otherwise does nothing
-     */
-    setCrashed(): void {
-        if (this.isCrashed()) {
-            return;
-        }
-
-        this._crashedAt = this.simMgr.totalElapsed;
-        this.material.color.setHex(0xff0000); // red
-        this._crashCleanupTime = this._crashedAt
-            + Utils.getRandomRealBetween(
-                SimulationManager.Constants.CRASH_CLEANUP_MIN_DELAY, 
-                SimulationManager.Constants.CRASH_CLEANUP_MAX_DELAY);
-    }
-
     isCrashed(): boolean {
-        return this._crashedAt != null;
+        if (this._crashedAt != null) {
+            return true;
+        }
+        const nearbyVehicles = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
+        if (nearbyVehicles.some(v => Utils.isCollidingWith(this.mesh, v.mesh))) {
+            this._crashedAt = this.simMgr.totalElapsed;
+            this.material.color.setHex(0xff0000); // red
+            this._crashCleanupTime = this._crashedAt
+                + Utils.getRandomRealBetween(
+                    SimulationManager.Constants.CRASH_CLEANUP_MIN_DELAY, 
+                    SimulationManager.Constants.CRASH_CLEANUP_MAX_DELAY);
+            return true;
+        }
+        return false;
     }
 
     setChangingLanes(): void {
@@ -416,20 +410,9 @@ export class Vehicle extends TrafficObject {
         
         if (!skipCollisionCheck) {
             // perform collision check
-            var vehicles: Vehicle[] = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
-            vehicles.forEach((vehicle) => {
-                if (Utils.isCollidingWith(this.mesh, vehicle.mesh)) {
-                    this.setCrashed();
-                    console.warn('crash of vehicle:', this.name, 'at', this.location, 'with vehicle:', 
-                        vehicle.name, '. cleanup at', Utils.convertMsToHumanReadable(this._crashCleanupTime));
-                    vehicle.setCrashed();
-                }
-            });
-        }
-
-        // check again as we may have crashed
-        if (this.isCrashed()) {
-            return true;
+            if (this.isCrashed()) {
+                return true;
+            }
         }
         
         // check for vehicles in range

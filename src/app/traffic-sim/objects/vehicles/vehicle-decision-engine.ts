@@ -1,4 +1,5 @@
 import { Utils } from "../../helpers/utils";
+import { RoadSegment } from "../../map/road-segment";
 import { TrafficFlowControl } from "../traffic-controls/traffic-flow-control";
 import { Vehicle, VehicleState } from "./vehicle";
 
@@ -58,6 +59,13 @@ export class VehicleDecisionEngine {
             }
         }
 
+        const segments = this.segmentsAhead();
+        if (segments.length > 0) {
+            if (segments.some(s => this._vehicle.speed > Utils.corneringSpeedCalculator(Utils.angleFormedBy(this._vehicle.segment.line, s.line)))) {
+                return 'decelerating';
+            }
+        }
+
         if (this.isAboveSpeedLimit() || this.isAboveMaxSpeed()) {
             return 'decelerating';
         }
@@ -86,6 +94,13 @@ export class VehicleDecisionEngine {
             }
         }
 
+        const segments = this.segmentsAhead();
+        if (segments.length > 0) {
+            if (segments.some(s => this._vehicle.speed > Utils.corneringSpeedCalculator(Utils.angleFormedBy(this._vehicle.segment.line, s.line)))) {
+                return 'decelerating';
+            }
+        }
+
         if (this.isAboveSpeedLimit() || this.isAboveMaxSpeed()) {
             return 'decelerating';
         }
@@ -102,7 +117,7 @@ export class VehicleDecisionEngine {
 
     public vehiclesAhead(): Array<Vehicle> {
         const ahead = this._vehicle.simMgr.mapManager.getVehiclesWithinRadius(this._vehicle, this._vehicle.getLookAheadDistance())
-            .filter(v => Utils.isCollidingWith(this._vehicle.driverView, v.driverView));
+            .filter(v => this._vehicle.hasInViewAhead(v));
 
         return ahead;
     }
@@ -110,6 +125,30 @@ export class VehicleDecisionEngine {
     public tfcsAhead(): Array<TrafficFlowControl> {
         const ahead = this._vehicle.simMgr.mapManager.getTfcsWithinRadiusAhead(this._vehicle.location, this._vehicle.segment, this._vehicle.getLookAheadDistance());
 
+        return ahead;
+    }
+
+    public segmentsAhead(): Array<RoadSegment> {
+        const ahead = new Array<RoadSegment>();
+        let remainingDist = this._vehicle.getLookAheadDistance();
+        let pos = this._vehicle.location;
+        let segment = this._vehicle.segment;
+        while (segment && remainingDist > 0) {
+            ahead.push(segment);
+            const dist = Utils.getLength(pos, segment.end);
+            remainingDist -= dist;
+            if (remainingDist > 0) {
+                const nextSegments = this._vehicle.simMgr.mapManager.getSegmentsStartingAt(segment.end);
+                if (nextSegments?.length) {
+                    segment = nextSegments[Utils.getRandomIntBetween(0, nextSegments.length)];
+                    pos = segment.start;
+                } else {
+                    segment = null;
+                }
+            } else {
+                segment = null;
+            }
+        }
         return ahead;
     }
 
@@ -135,5 +174,9 @@ export class VehicleDecisionEngine {
 
     public isAboveMaxSpeed(): boolean {
         return this._vehicle.speed > this._vehicle.maxSpeed;
+    }
+
+    public getAngleDiff(segment: RoadSegment): number {
+        return Utils.angleFormedBy(this._vehicle.segment.line, segment.line);
     }
 }
