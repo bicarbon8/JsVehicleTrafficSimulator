@@ -73,6 +73,7 @@ export class RoadSegment extends TrafficObject {
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
+        this.hasPhysics = true;
     }
 
     override get mesh(): Mesh {
@@ -93,7 +94,8 @@ export class RoadSegment extends TrafficObject {
                 const loc = this.location;
                 const quat = this.rotation;
                 this._body = new Body({
-                    mass: 0, // kg; TODO: get mass from obj props
+                    type: Body.STATIC,
+                    mass: 0,
                     shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
                     position: new Vec3(loc.x, loc.y, loc.z), // m
                     quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
@@ -134,14 +136,14 @@ export class RoadSegment extends TrafficObject {
      * @param location an optional `Vector3` used to position the `Vehicle` @default `this.start`
      */
     addVehicle(vehicle: Vehicle, location?: Vector3): void {
-        let loc: Vector3 = location ?? this.start;
         // console.debug(`adding vehicle '${vehicle.id}' at '${JSON.stringify(loc)}'`);
-        // vehicle.location = loc;
-        vehicle.lookAt(this.end);
         let oldSegment: RoadSegment = vehicle.segment;
         if (oldSegment) { oldSegment.removeVehicle(vehicle.id); }
         vehicle.segmentId = this.id;
         this._vehicles.set(vehicle.id, vehicle);
+        if (location) {
+            vehicle.location = location;
+        }
     }
 
     /**
@@ -189,13 +191,13 @@ export class RoadSegment extends TrafficObject {
         const length = this.line.distance();
         const centre = new Vector3(); 
         this.line.getCenter(centre);
-        const width = 3.7; // standard US lane width
+        const width = 6; // standard US lane width = 3.7
         const depth = 0.5;
         const box = new BoxGeometry(width, depth, length);
         this._roadSurfaceMesh = new Mesh(box, this.material);
         this._roadSurfaceMesh.position.set(centre.x, centre.y - depth, centre.z);
         const look = this.line.end.clone();
-        look.y -= 0.5;
+        look.y -= depth;
         this._roadSurfaceMesh.lookAt(look);
         this._forceMeshUpdate();
         this._generateLaneChangePoints();

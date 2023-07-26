@@ -21,6 +21,8 @@ export class VehicleDecisionEngine {
                 return this.getAcceleratingDesiredState();
             case 'decelerating':
                 return this.getDeceleratingDesiredState();
+            case 'changinglane':
+                return this.getAcceleratingDesiredState();
             default:
                 return this._vehicle.state;
         }
@@ -48,6 +50,11 @@ export class VehicleDecisionEngine {
         const vehicles = this.vehiclesAhead();
         if (vehicles.length > 0) {
             if (vehicles.some(v => v.state === 'stopped' || this.isVehicleSlower(v))) {
+                if (this._vehicle.canChangeLanes()) {
+                    if (this.shouldChangeLanes()) {
+                        return 'changinglane';
+                    }
+                }
                 return 'decelerating';
             }
         }
@@ -77,6 +84,11 @@ export class VehicleDecisionEngine {
         const vehicles = this.vehiclesAhead();
         if (vehicles.length > 0) {
             if (vehicles.some(v => v.state === 'stopped' || this.isVehicleSlower(v))) {
+                if (this._vehicle.canChangeLanes()) {
+                    if (this.shouldChangeLanes()) {
+                        return 'changinglane';
+                    }
+                }
                 if (this.isNearlyStopped()) {
                     return 'stopped';
                 }
@@ -108,6 +120,21 @@ export class VehicleDecisionEngine {
         return 'accelerating';
     }
 
+    public shouldChangeLanes(): boolean {
+        const similar = this._vehicle.simMgr.mapManager.getSimilarSegmentsInRoad(this._vehicle.segment);
+        return similar.some(s => {
+            // if vehicles ahead on new lanes
+            const vehs = this.vechiclesAheadOn(s);
+            // and if those vehicles are stopped or slower
+            if (vehs.some(v => v.state === 'stopped' || this.isVehicleSlower(v))) {
+                // don't change lanes
+                return false;
+            }
+            // otherwise change lanes
+            return true;
+        });
+    }
+
     public getCrashedDesiredState(): VehicleState {
         if (this.isNearlyStopped()) {
             return 'stopped';
@@ -118,6 +145,13 @@ export class VehicleDecisionEngine {
     public vehiclesAhead(): Array<Vehicle> {
         const ahead = this._vehicle.simMgr.mapManager.getVehiclesWithinRadius(this._vehicle, this._vehicle.getLookAheadDistance())
             .filter(v => this._vehicle.hasInViewAhead(v));
+
+        return ahead;
+    }
+
+    public vechiclesAheadOn(segment: RoadSegment): Array<Vehicle> {
+        const ahead = this._vehicle.simMgr.mapManager.getVehiclesWithinRadius(this._vehicle, this._vehicle.getLookAheadDistance())
+            .filter(v => v.segmentId === segment.id);
 
         return ahead;
     }

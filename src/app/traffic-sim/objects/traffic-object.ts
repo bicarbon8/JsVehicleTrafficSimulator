@@ -120,9 +120,9 @@ export abstract class TrafficObject implements Renderable {
             this.obj3D?.translateZ(distance);
             const loc = this.location;
             this.body?.position.set(loc.x, loc.y, loc.z);
-        }
 
-        this._forceMeshUpdate();
+            this._forceMeshUpdate();
+        }
     }
 
     lookAt(location: Vector3): void {
@@ -130,9 +130,9 @@ export abstract class TrafficObject implements Renderable {
             this.obj3D?.lookAt(location);
             const q = this.rotation;
             this.body?.quaternion.set(q.x, q.y, q.z, q.w);
-        }
 
-        this._forceMeshUpdate();
+            this._forceMeshUpdate();
+        }
     }
 
     disposeGeometry(): void {

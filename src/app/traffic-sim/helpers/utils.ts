@@ -32,6 +32,12 @@ export module Utils {
         return new Line3(p1, p2).distance();
     }
 
+    /**
+     * 
+     * @param line1 
+     * @param line2 
+     * @returns the angle in degrees that each line differs by
+     */
     export function angleFormedBy(line1: Line3, line2: Line3): number {
         var a = line1.end.clone().sub(line1.start.clone()).normalize();
         var b = line2.end.clone().sub(line2.start.clone()).normalize();
@@ -47,9 +53,9 @@ export module Utils {
         return false;
     }
 
-    export function isContaining<T extends Renderable>(obj: T, point: Vector3): boolean {
+    export function containsPoint<T extends Mesh>(obj: T, point: Vector3): boolean {
         if (obj && point) {
-            const box = new Box3().setFromObject(obj.mesh);
+            const box = new Box3().setFromObject(obj);
             return box.containsPoint(point);
         }
         return false;
@@ -113,6 +119,27 @@ export module Utils {
         }
     }
 
+    export function turnRateCalculator(speed: number): number {
+        if (speed > 150) {
+            return 12;
+        }
+        if (speed > 100) {
+            return 25;
+        }
+        if (speed > 30) {
+            return 45;
+        }
+        if (speed > 10) {
+            return 90;
+        }
+        if (speed > 5) {
+            return 135
+        }
+        if (speed <= 5) {
+            return 180;
+        }
+    }
+
     /**
      * returns the distance based on the below formula
      * `d = v * t`
@@ -129,6 +156,34 @@ export module Utils {
     }
 
     /**
+     * calculates the location of a point some distance between `pointA` and `pointB` starting
+     * from `pointA`
+     * @param pointA starting point
+     * @param pointB end point
+     * @param distance the distance from the starting point to go
+     * @returns a `Vector3` that lies some `distance` in between `pointA` and `pointB`
+     */
+    export function getPointInBetweenByDistance(pointA: Vector3, pointB: Vector3, distance: number): Vector3 {
+        const dir = pointB.clone().sub(pointA).normalize().multiplyScalar(distance);
+        return pointA.clone().add(dir);
+    }
+
+    /**
+     * calculates the location of a point some percentage distance between `pointA` and
+     * `pointB` starting from `pointA`
+     * @param pointA starting point
+     * @param pointB end point
+     * @param percentage the percentage from the starting point to go
+     * @returns a `Vector3` that lies some `percentage` distance in between `pointA` and `pointB`
+     */
+    export function getPointInBetweenByPercent(pointA: Vector3, pointB: Vector3, percentage: number): Vector3 {
+        const delta = pointB.clone().sub(pointA);
+        const len = delta.length();
+        const dir = delta.normalize().multiplyScalar(len * percentage);
+        return pointA.clone().add(dir);
+    }
+
+    /**
      * rotates the supplied `obj` around the `centre` point by the supplied `radians` using
      * the supplied `axis`
      * @param obj the `Object3D` to rotate
@@ -141,5 +196,31 @@ export module Utils {
         obj.position.applyAxisAngle(axis, radians);
         obj.position.add(centre);
         obj.rotateOnAxis(axis, radians);
+    }
+
+    /**
+     * assumes that the +z direction is forwards and uses this to get the
+     * heading of an `Object3D` based on it's rotation (the location of it's
+     * +z face(s))
+     * @param obj the `Object3D` to get a heading from
+     * @returns a `Vector3` representing the heading as a normalised vector
+     */
+    export function getHeading(obj: Object3D): Vector3 {
+        // TODO: WARNING! this doesn't seem to be correct
+        return new Vector3(0, 0, 1).applyQuaternion(obj.quaternion).normalize();
+    }
+
+    /**
+     * assumes that the +z direction is forwards and uses this to get the
+     * heading of an `Object3D` based on it's rotation (the location of it's
+     * +z face(s))
+     * @param obj the `Object3D` to get a heading line from
+     * @returns a `Line3` representing a ray direction
+     */
+    export function getHeadingLine(obj: Object3D): Line3 {
+        const dir = Utils.getHeading(obj);
+        const start = new Vector3(0, 0, 0);
+        const end = start.clone().addScaledVector(dir, 1);
+        return new Line3(start, end);
     }
 }

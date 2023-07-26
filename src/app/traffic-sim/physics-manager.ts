@@ -11,7 +11,8 @@ export class PhysicsManager {
     
     constructor(world?: World) {
         this._world = world ?? new World({
-            gravity: new Vec3(0, PhysicsManager.GRAVITY_CONSTANT, 0)
+            gravity: new Vec3(0, PhysicsManager.GRAVITY_CONSTANT, 0),
+            frictionGravity: new Vec3(0, PhysicsManager.GRAVITY_CONSTANT, 0)
         });
         this._ground = new Body({
             type: Body.STATIC,

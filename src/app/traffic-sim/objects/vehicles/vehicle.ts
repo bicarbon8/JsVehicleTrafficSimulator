@@ -1,9 +1,8 @@
-import { Mesh, BoxGeometry, Vector3, Object3D, Box3, Group, MathUtils, Material, MeshBasicMaterial, CylinderGeometry } from "three";
+import { Mesh, BoxGeometry, Vector3, Object3D, Box3, Group, MathUtils, Material, MeshBasicMaterial, CylinderGeometry, Line3 } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
-import { TrafficFlowControl } from "../traffic-controls/traffic-flow-control";
 import { Body, Box, Vec3, Quaternion as Quat4 } from "cannon-es";
 import { VehicleDecisionEngine } from "./vehicle-decision-engine";
 
@@ -50,7 +49,7 @@ export type VehicleOptions = TrafficObjectOptions & {
     startingState?: VehicleState;
 }
 
-export type VehicleState = 'decelerating' | 'accelerating' | 'stopped';
+export type VehicleState = 'decelerating' | 'accelerating' | 'stopped' | 'changinglane';
 
 export class Vehicle extends TrafficObject {
     /**
@@ -137,16 +136,11 @@ export class Vehicle extends TrafficObject {
     override get body(): Body {
         if (this.hasPhysics) {
             if (!this._body) {
-                const size = new Vector3(0, 0, 0);
-                this.boundingBox.getSize(size);
-                const width = size.x;
-                const height = size.y;
-                const depth = size.z;
                 const loc = this.location;
                 const quat = this.rotation;
                 this._body = new Body({
                     mass: 100, // kg; TODO: get mass from obj props
-                    shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
+                    shape: new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)),
                     position: new Vec3(loc.x, loc.y, loc.z), // m
                     quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
                 });
@@ -208,44 +202,33 @@ export class Vehicle extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-        if (this.segment) {
-            const look = this.segment.end.clone();
-            look.y = this.location.y;
-            this.lookAt(look);
+        if (this.body?.position?.y > 0) {
+            // debugger;
+            // console.warn(this.name, 'body.position is too high', this.body.position);
         }
-        const pos = this.body.position;
-        const loc = this.location;
-        let force: number = 0;
-        this._state = this.decisionEng.getDesiredState();
-        switch(this.state) {
-            case 'accelerating':
-                // set mesh position from physics body
-                this.obj3D.position.set(pos.x, pos.y, pos.z);
-                this.accelerate(elapsedMs);
-                force = 2;
-                break;
-            case 'decelerating':
-                // set mesh position from physics body
-                this.obj3D.position.set(pos.x, pos.y, pos.z);
-                this.brake(elapsedMs);
-                force = -0.5;
-                break;
-            case 'stopped':
-                // set physics body position from mesh (prevent sliding while stopped)
-                this.body.position.set(loc.x, loc.y, loc.z);
-                this._speed = 0;
-                this.body.velocity.set(0, 0, 0);
-                break;
+        if (this.location.y > 0) {
+            // debugger;
+            // console.warn(this.name, 'location is too high', this.location);
         }
-        const heading = new Vector3(0, 0, 1).applyQuaternion(this.rotation).normalize();
-        const deltaV = heading.clone().multiply(new Vector3(force, force, force));
-        this.body.applyForce(new Vec3(deltaV.x, deltaV.y, deltaV.z));
+        if (!this.segment) {
+            // end of Road reached... remove vehicle from Simulation
+            this.simMgr.removeVehicle(this);
+            return;
+        }
 
-        // console.info(`velocity: ${this.velocity}`);
-        let distTravelled: number = Utils.getDistanceTravelled(this.speed, elapsedMs);
-        // check if we should move to next RoadSegment or remove vehicle from the simulation
-        if (distTravelled > 0) {
-            if (this.segment && Utils.isContaining(this, this.segment.end)) {
+        if (this.isCrashed()) {
+            // remove vehicle after appropriate time has passed
+            if (this.crashCleanupTime <= this.simMgr.totalElapsed) {
+                console.info('cleaning up crashed vehicle', this.name);
+                // remove self from the Simulation
+                this.simMgr.removeVehicle(this);
+                return;
+            }
+        }
+
+        if (this.segment) {
+            // if we've reached the end of our current `RoadSegment`
+            if (Utils.containsPoint(this.mesh, this.segment.end)) {
                 // get all segments we could enter (except the one we're already on)
                 const nextSegments = this.simMgr.mapManager.getSegmentsContainingPoint(this.segment.end)
                     .filter(s => s.id != this.segmentId);
@@ -255,7 +238,7 @@ export class Vehicle extends TrafficObject {
                     // TODO: lookup values from vehicle's choosen path
                     var randIndex = Utils.getRandomIntBetween(0, nextSegments.length);
                     var nextSeg: RoadSegment = nextSegments[randIndex];
-                    nextSeg.addVehicle(this, this.segment.end);
+                    nextSeg.addVehicle(this);
                 }
                 if (this.isChangingLanes) {
                     // then we've finished changing lanes
@@ -267,83 +250,64 @@ export class Vehicle extends TrafficObject {
                     this.simMgr.removeVehicle(this);
                     return;
                 }
-                // /**
-                //  * NOTE: skipping ahead like this means that at high enough speeds we can pass through
-                //  * stationary objects without collision detection being alerted. TODO: fix using line
-                //  * projections in the future
-                //  */
-                // while (this.segment && distTravelled >= Utils.getLength(this.location, this.segment.end)) {
-                //     distTravelled -= Utils.getLength(this.location, this.segment.end);
-                //     // get all segments we could enter (except the one we're already on)
-                //     const nextSegments = this.simMgr.mapManager.getSegmentsContainingPoint(this.segment.end)
-                //         .filter(s => s.id != this.segmentId);
-                //     // if there is a next Segment
-                //     if(nextSegments?.length) {
-                //         // move to segment (pick randomly)
-                //         // TODO: lookup values from vehicle's choosen path
-                //         var randIndex = Utils.getRandomIntBetween(0, nextSegments.length);
-                //         var nextSeg: RoadSegment = nextSegments[randIndex];
-                //         nextSeg.addVehicle(this, this.segment.end);
-                //     }
-                //     if (this.isChangingLanes) {
-                //         // then we've finished changing lanes
-                //         this._isChangingLanes = false;
-                //         this.simMgr.mapManager.removeSegment(this.segmentId);
-                //     }
-                //     if (!nextSegments.length) {
-                //         // end of Road reached... remove vehicle from Simulation
-                //         this.simMgr.removeVehicle(this);
-                //         return;
-                //     }
-                // }
+            }
+
+            this.turnTowards(this.segment.end, elapsedMs);
+            
+            const pos = this.body.position;
+            const loc = this.location;
+            let force: number = 0;
+            this._state = this.decisionEng.getDesiredState();
+            switch(this.state) {
+                case 'changinglane':
+                    console.info(this.name, 'changing lane');
+                    this.startLaneChange();
+                case 'accelerating':
+                    // set mesh position from physics body
+                    this.obj3D.position.set(pos.x, pos.y, pos.z);
+                    this.accelerate(elapsedMs);
+                    force = 1;
+                    break;
+                case 'decelerating':
+                    // set mesh position from physics body
+                    this.obj3D.position.set(pos.x, pos.y, pos.z);
+                    this.brake(elapsedMs);
+                    force = -0.25;
+                    break;
+                case 'stopped':
+                    // set physics body position from mesh (prevent sliding while stopped)
+                    this.body.position.set(loc.x, loc.y, loc.z);
+                    this._speed = 0;
+                    this.body.velocity.set(0, 0, 0);
+                    break;
+            }
+            if (force !== 0) {
+                const deltaV = Utils.getHeading(this.obj3D).multiply(new Vector3(force, force, force));
+                this.body.applyForce(new Vec3(deltaV.x, deltaV.y, deltaV.z));
             }
         }
-        if (!this.segment) {
-            // end of Road reached... remove vehicle from Simulation
-            this.simMgr.removeVehicle(this);
-            return;
-        }
-        
-        if (this.isCrashed()) {
-            // remove vehicle after appropriate time has passed
-            if (this.crashCleanupTime <= this.simMgr.totalElapsed) {
-                console.info('cleaning up crashed vehicle', this.name);
-                // remove self from the Simulation
-                this.simMgr.removeVehicle(this);
-                return;
-            }
-        }
-        
-        // this.moveForwardBy(distTravelled);
     }
 
     /**
-     * determines if we should decelerate based on road conditions ahead
-     * and then calculates the acceleration to be applied in either the
-     * forward or backwards (negative) direction. Also sets the color
-     * of the vehicle material based on if slowing (yellow), crashed
-     * (red) or other (green)
+     * turns this `Vehicle` to look at the point based on the maximum turn
+     * rate allowed for the speed of this vehicle and the amount of time passed.
+     * @param point the `Vector3` to turn towards
      * @param elapsedMs the amount of time elapsed since last called
-     * @returns the change in acceleration in the forward direction
      */
-    updateSpeed(elapsedMs: number): number {
-        let acceleration: number = 0;
-        // speed up or slow down
-        if (this.shouldDecelerate()) {
-            acceleration = this.brake(elapsedMs);
-        } else {
-            acceleration = this.accelerate(elapsedMs);
+    turnTowards(point: Vector3, elapsedMs: number = 1): void {
+        if (point) {
+            const headingLine = Utils.getHeadingLine(this.obj3D);
+            const desiredHeadingLine = new Line3(this.location, point);
+            const degreesDelta: number = Math.abs(Utils.angleFormedBy(headingLine, desiredHeadingLine));
+            const maxTurnAngle: number = Utils.turnRateCalculator(this.speed) * (elapsedMs / 1000);
+            if (maxTurnAngle > degreesDelta) {
+                this.lookAt(point);
+            } else {
+                const percentTurned = maxTurnAngle / degreesDelta;
+                const look = Utils.getPointInBetweenByPercent(this.location, point, percentTurned);
+                this.lookAt(look);
+            }
         }
-        
-        // prevent going backwards
-        if (this.speed < 0) {
-            acceleration += -this.speed; // remove the amount that caused us to go past zero
-            this._speed = 0; // zero out 
-        }
-        if (this.isCrashed()) {
-            
-        }
-        return acceleration;
     }
 
     isCrashed(): boolean {
@@ -361,11 +325,6 @@ export class Vehicle extends TrafficObject {
             return true;
         }
         return false;
-    }
-
-    setChangingLanes(): void {
-        this._isChangingLanes = true;
-        this._changeLaneTime = this.simMgr.totalElapsed + this.changeLaneDelay;
     }
 
     /**
@@ -405,82 +364,39 @@ export class Vehicle extends TrafficObject {
         return -acceleration;
     }
 
-    shouldDecelerate(skipCollisionCheck: boolean = false): boolean {
-        if (this.isCrashed()) {
-            return true;
-        }
-        
-        if (!skipCollisionCheck) {
-            // perform collision check
-            if (this.isCrashed()) {
-                return true;
-            }
-        }
-        
-        // check for vehicles in range
-        var foundV: Vehicle = this.simMgr.mapManager.shouldStopForVehicles(this);
-        if (foundV) {
-            let lane: RoadSegment = this.shouldChangeLanes(foundV);
-            if (lane) {
-                let changeLaneSegment: RoadSegment = this.simMgr.mapManager.createChangeLaneSegment(this.location, lane);
-                if (changeLaneSegment) {
-                    this.setChangingLanes();
-                    changeLaneSegment.addVehicle(this);
-                    return false; // no deceleration needed because we're changing lanes
-                }
-            }
-            return true;
-        }
-
-        // check for traffic flow controllers in range that say "stop"
-        var foundTfc: TrafficFlowControl = this.simMgr.mapManager.shouldStopForTfcs(this);
-        if (foundTfc) {
-            // console.debug(`vehicle ${this.id} should stop for tfc ${foundTfc.id}`);
-            return true;
-        }
-
-        // check for corners
-        var foundCorner = this.simMgr.mapManager.shouldSlowForCorner(this);
-        if (foundCorner != null) {
-            return true;
-        }
+    canChangeLanes(): boolean {
+        return !this.isChangingLanes
+            && this._changeLaneTime < this.simMgr.totalElapsed
+            && this.simMgr.mapManager.getSimilarSegmentsInRoad(this.segment)?.length > 0;
     }
 
-    shouldChangeLanes(obstructingVehicle: Vehicle): RoadSegment {
+    startLaneChange(): RoadSegment {
         let newLane: RoadSegment;
-        if (! this.isChangingLanes && this._changeLaneTime < this.simMgr.totalElapsed) {
-            let availableLanes: RoadSegment[] = this.simMgr.mapManager.getSimilarSegmentsInRoad(this.segment);
-            for (var i=0; i<availableLanes.length; i++) {
-                let availableLane: RoadSegment = availableLanes[i];
-                // ensure availableLane is clear ahead
-                let vehicles: Vehicle[] = this.simMgr.mapManager
-                    .getVehiclesWithinRadiusAhead(this.location, availableLane, this.getLookAheadDistance()).filter((veh) => {
-                        return this.id != veh.id;
-                    });
-                if (vehicles.length > 0) {
-                    for (var j=0; j<vehicles.length; j++) {
-                        let veh: Vehicle = vehicles[j];
-                        if (veh.speed > obstructingVehicle.speed) {
-                            newLane = availableLane;
-                            break;
-                        }
-                    }
-                } else {
-                    newLane = availableLane;
-                }
-                if (newLane) {
-                    // ensure no vehicles nearby in lane
-                    let nearby: Vehicle[] = this.simMgr.mapManager
-                        .getVehiclesWithinRadius(this, this.getLookAheadDistance() * 2)
-                        .filter((veh) => {
-                            return veh.segmentId != this.segmentId;
-                        });
-                    if (nearby?.length > 0) {
-                        continue;
-                    } else {
+        let availableLanes: RoadSegment[] = this.simMgr.mapManager.getSimilarSegmentsInRoad(this.segment);
+        for (var i=0; i<availableLanes.length; i++) {
+            let availableLane: RoadSegment = availableLanes[i];
+            // ensure availableLane is clear ahead
+            let vehicles: Vehicle[] = this.simMgr.mapManager
+                .getVehiclesWithinRadius(this, this.getLookAheadDistance())
+                .filter(v => v.segmentId === availableLane.id);
+            if (vehicles.length > 0) {
+                for (var j=0; j<vehicles.length; j++) {
+                    let veh: Vehicle = vehicles[j];
+                    if (veh.speed >= this.speed) {
+                        newLane = availableLane;
                         break;
                     }
                 }
+            } else {
+                newLane = availableLane;
+            }
+        }
+        if (newLane) {
+            const changeLaneSegment: RoadSegment = this.simMgr.mapManager.createChangeLaneSegment(this.location, newLane);
+            if (changeLaneSegment) {
+                this._isChangingLanes = true;
+                this._changeLaneTime = this.simMgr.totalElapsed + this.changeLaneDelay;
+                changeLaneSegment.addVehicle(this);
             }
         }
         return newLane;
@@ -556,16 +472,6 @@ export class Vehicle extends TrafficObject {
      * look-ahead distance
      */
     getLookAheadCollisionBox(): Box3 {
-        // const dist: number = this.getLookAheadDistance();
-        // const mesh = new Mesh(new BoxGeometry(this.width, this.height, dist));
-        // const pos = this.location;
-        // const rot = this.rotation;
-        // mesh.position.set(pos.x, pos.y, pos.z);
-        // mesh.rotation.setFromQuaternion(rot);
-        // mesh.translateZ(dist / 2);
-        // const box = new Box3().setFromObject(mesh);
-        // mesh.geometry.dispose();
-        // return box;
         return new Box3().setFromObject(this._driverViewMesh, true);
     }
 
@@ -580,7 +486,7 @@ export class Vehicle extends TrafficObject {
         // create driver view mesh
         const viewGeometry = new CylinderGeometry(this.width / 2, this.width * 2, this.length * 4, 6);
         this._driverViewMesh = new Mesh(viewGeometry, this._viewMaterial);
-        this._driverViewMesh.visible = false;
+        // this._driverViewMesh.visible = false;
         this._driverViewMesh.translateY(this.height / 2);
         this._driverViewMesh.translateY(-(this.length * 2));
         Utils.rotateAround(this._driverViewMesh, new Vector3(0, (this.height / 2), 0), new Vector3(1, 0, 0).normalize(), MathUtils.DEG2RAD * -90);
