@@ -1,9 +1,9 @@
-import { Mesh, BoxGeometry, Vector3, Object3D, Box3, Group, MathUtils, Material, MeshBasicMaterial, CylinderGeometry, Line3 } from "three";
+import { Mesh, BoxGeometry, Vector3, Object3D, Box3, Group, MathUtils, Material, MeshBasicMaterial, CylinderGeometry, Line3, BufferGeometry, Line } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
-import { Body, Box, Vec3, Quaternion as Quat4 } from "cannon-es";
+import { Body, Box, Vec3, Quaternion as Quat4, Sphere } from "cannon-es";
 import { VehicleDecisionEngine } from "./vehicle-decision-engine";
 
 export type VehicleOptions = TrafficObjectOptions & {
@@ -103,6 +103,7 @@ export class Vehicle extends TrafficObject {
     private _viewMaterial: Material;
     private _body: Body;
     private _state: VehicleState;
+    private _heading: Object3D;
 
     constructor(options?: VehicleOptions, simMgr?: SimulationManager) {
         super(options as TrafficObjectOptions, simMgr);
@@ -137,12 +138,10 @@ export class Vehicle extends TrafficObject {
         if (this.hasPhysics) {
             if (!this._body) {
                 const loc = this.location;
-                const quat = this.rotation;
                 this._body = new Body({
                     mass: 100, // kg; TODO: get mass from obj props
-                    shape: new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)),
+                    shape: new Sphere(this.height / 2),
                     position: new Vec3(loc.x, loc.y, loc.z), // m
-                    quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
                 });
                 this.simMgr.physicsManager.addBody(this.body);
             }
@@ -156,7 +155,10 @@ export class Vehicle extends TrafficObject {
      * @returns the speed in Metres per Second
      */
     get speed(): number {
-        return this.body?.velocity?.length() ?? this._speed;
+        if (this.hasPhysics) {
+            return this.body?.velocity?.length();
+        }
+        return this._speed;
     }
 
     /**
@@ -202,13 +204,16 @@ export class Vehicle extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
-        if (this.body?.position?.y > 0) {
-            // debugger;
-            // console.warn(this.name, 'body.position is too high', this.body.position);
-        }
-        if (this.location.y > 0) {
-            // debugger;
-            // console.warn(this.name, 'location is too high', this.location);
+        if (this.speed > 0) {
+            if (this._heading) {
+                this.simMgr.viewManager.scene.remove(this._heading);
+                (this._heading as Mesh)?.geometry?.dispose();
+                this._heading = null;
+            }
+            const line = Utils.getHeadingLine(this);
+            const geom = new BufferGeometry().setFromPoints([line.start, line.end]);
+            this._heading = new Line(geom);
+            this.simMgr.viewManager.scene.add(this._heading);
         }
         if (!this.segment) {
             // end of Road reached... remove vehicle from Simulation
@@ -228,7 +233,7 @@ export class Vehicle extends TrafficObject {
 
         if (this.segment) {
             // if we've reached the end of our current `RoadSegment`
-            if (Utils.containsPoint(this.mesh, this.segment.end)) {
+            if (Utils.isWithinRange(this.location, this.segment.end, this.length / 2)) {
                 // get all segments we could enter (except the one we're already on)
                 const nextSegments = this.simMgr.mapManager.getSegmentsContainingPoint(this.segment.end)
                     .filter(s => s.id != this.segmentId);
@@ -254,7 +259,11 @@ export class Vehicle extends TrafficObject {
 
             this.turnTowards(this.segment.end, elapsedMs);
             
-            const pos = this.body.position;
+            const pos = this.body?.position;
+            if (isNaN(pos?.x)) {
+                // debugger;
+                return;
+            }
             const loc = this.location;
             let force: number = 0;
             this._state = this.decisionEng.getDesiredState();
@@ -266,13 +275,13 @@ export class Vehicle extends TrafficObject {
                     // set mesh position from physics body
                     this.obj3D.position.set(pos.x, pos.y, pos.z);
                     this.accelerate(elapsedMs);
-                    force = 1;
+                    force = 0.01;
                     break;
                 case 'decelerating':
                     // set mesh position from physics body
                     this.obj3D.position.set(pos.x, pos.y, pos.z);
                     this.brake(elapsedMs);
-                    force = -0.25;
+                    force = -0.0025;
                     break;
                 case 'stopped':
                     // set physics body position from mesh (prevent sliding while stopped)
@@ -282,8 +291,9 @@ export class Vehicle extends TrafficObject {
                     break;
             }
             if (force !== 0) {
-                const deltaV = Utils.getHeading(this.obj3D).multiply(new Vector3(force, force, force));
+                const deltaV = Utils.getHeading(this).multiply(new Vector3(force, force, force));
                 this.body.applyForce(new Vec3(deltaV.x, deltaV.y, deltaV.z));
+                const foo = this.body.force;
             }
         }
     }
@@ -296,7 +306,7 @@ export class Vehicle extends TrafficObject {
      */
     turnTowards(point: Vector3, elapsedMs: number = 1): void {
         if (point) {
-            const headingLine = Utils.getHeadingLine(this.obj3D);
+            const headingLine = Utils.getHeadingLine(this);
             const desiredHeadingLine = new Line3(this.location, point);
             const degreesDelta: number = Math.abs(Utils.angleFormedBy(headingLine, desiredHeadingLine));
             const maxTurnAngle: number = Utils.turnRateCalculator(this.speed) * (elapsedMs / 1000);
@@ -409,6 +419,7 @@ export class Vehicle extends TrafficObject {
      * 
      * TODO: include speed-based narrowing of vision
      * TODO: use `hasInViewLeft` and `hasInViewRight` when on inlet instead
+     * TODO: limit view to above road only (no viewing below vehicle hood for ex.)
      * @param obj the `TrafficObject` to check if is in view
      * @returns `true` if the passed in `obj` can be "seen", otherwise `false`
      */
@@ -486,7 +497,7 @@ export class Vehicle extends TrafficObject {
         // create driver view mesh
         const viewGeometry = new CylinderGeometry(this.width / 2, this.width * 2, this.length * 4, 6);
         this._driverViewMesh = new Mesh(viewGeometry, this._viewMaterial);
-        // this._driverViewMesh.visible = false;
+        this._driverViewMesh.visible = false;
         this._driverViewMesh.translateY(this.height / 2);
         this._driverViewMesh.translateY(-(this.length * 2));
         Utils.rotateAround(this._driverViewMesh, new Vector3(0, (this.height / 2), 0), new Vector3(1, 0, 0).normalize(), MathUtils.DEG2RAD * -90);

@@ -160,7 +160,7 @@ export class MapManager {
 	}
 
     getSegmentById(segmentId: number): RoadSegment {
-        return this._roadSegments.get(segmentId);
+        return this._roadSegments?.get(segmentId);
     }
 
 	getSegmentsStartingAt(location: Vector3): RoadSegment[] {

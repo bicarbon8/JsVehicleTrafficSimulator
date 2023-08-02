@@ -1,5 +1,7 @@
 import { Box3, Line3, Mesh, Object3D, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
+import { TrafficObject } from '../objects/traffic-object';
+import { Vehicle } from '../objects/vehicles/vehicle';
 
 export module Utils {
     var _id: number = 0;
@@ -42,6 +44,34 @@ export module Utils {
         var a = line1.end.clone().sub(line1.start.clone()).normalize();
         var b = line2.end.clone().sub(line2.start.clone()).normalize();
         return (Math.acos(a.dot(b))*(180/Math.PI));
+    }
+
+    /**
+     * similar to `Utils.angleFormedBy`, but first zero's out one axis on both lines to make the angle
+     * calculation result be across only 2 dimensions. for example, to get a left / right heading angle
+     * you would specify a `zeroAxis` of `y` (up / down) thereby making the angle calculation account for
+     * differences in only the `x` (left / right) and `z` (forwards / backwards) axis
+     * @param line1 
+     * @param line2 
+     * @param zeroAxis the axis to zero out before computing the angle thereby making the computation 2D
+     * @returns the angle in degrees that each line differs by across two axis
+     */
+    export function angleAxisFormedBy(line1: Line3, line2: Line3, zeroAxis: 'x' | 'y' | 'z'): number {
+        const zAxisVect = new Vector3(1, 1, 1);
+        switch (zeroAxis) {
+            case 'x':
+                zAxisVect.x = 0;
+                break;
+            case 'y': 
+                zAxisVect.y = 0;
+                break;
+            case 'z':
+                zAxisVect.z = 0;
+                break;
+        }
+        const l1 = new Line3(line1.start.clone().multiply(zAxisVect), line1.end.clone().multiply(zAxisVect));
+        const l2 = new Line3(line2.start.clone().multiply(zAxisVect), line2.end.clone().multiply(zAxisVect));
+        return Utils.angleFormedBy(l1, l2);
     }
 
     export function isCollidingWith<T extends Mesh>(obj1: T, obj2: T): boolean {
@@ -205,9 +235,9 @@ export module Utils {
      * @param obj the `Object3D` to get a heading from
      * @returns a `Vector3` representing the heading as a normalised vector
      */
-    export function getHeading(obj: Object3D): Vector3 {
+    export function getHeading(obj: TrafficObject): Vector3 {
         // TODO: WARNING! this doesn't seem to be correct
-        return new Vector3(0, 0, 1).applyQuaternion(obj.quaternion).normalize();
+        return new Vector3(0, 0, 1).applyQuaternion(obj.rotation).normalize();
     }
 
     /**
@@ -217,10 +247,22 @@ export module Utils {
      * @param obj the `Object3D` to get a heading line from
      * @returns a `Line3` representing a ray direction
      */
-    export function getHeadingLine(obj: Object3D): Line3 {
+    export function getHeadingLine(obj: TrafficObject): Line3 {
         const dir = Utils.getHeading(obj);
-        const start = new Vector3(0, 0, 0);
-        const end = start.clone().addScaledVector(dir, 1);
+        const start = obj.location;
+        const scalar = (obj as Vehicle)?.getLookAheadDistance() || 1;
+        const end = start.clone().addScaledVector(dir, scalar);
         return new Line3(start, end);
+    }
+
+    /**
+     * indicates if two points are within a certain range of eachother
+     * @param p1 the first point
+     * @param p2 the second point
+     * @param range the maximum distance allowed
+     * @returns `true` if the first and second points are within the specified distance
+     */
+    export function isWithinRange(p1: Vector3, p2: Vector3, range: number): boolean {
+        return new Line3(p1, p2).distance() <= Math.abs(range);
     }
 }

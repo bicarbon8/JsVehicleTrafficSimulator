@@ -20,6 +20,10 @@ export class ViewManager {
         this.update();
     }
 
+    get scene(): Scene {
+        return this._scene;
+    }
+
     private _initRenderer(canvasId: string): void {
         this._canvas = document.querySelector<HTMLCanvasElement>(canvasId);
         this._renderer = new WebGLRenderer({ canvas: this._canvas });

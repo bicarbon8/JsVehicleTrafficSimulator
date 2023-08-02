@@ -107,7 +107,7 @@ export abstract class TrafficObject implements Renderable {
     set rotation(rotation: Quaternion) {
         if (rotation) {
             this.obj3D?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-            this.body?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+            // this.body?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
         }
     }
 
@@ -128,8 +128,8 @@ export abstract class TrafficObject implements Renderable {
     lookAt(location: Vector3): void {
         if (location) {
             this.obj3D?.lookAt(location);
-            const q = this.rotation;
-            this.body?.quaternion.set(q.x, q.y, q.z, q.w);
+            // const q = this.rotation;
+            // this.body?.quaternion.set(q.x, q.y, q.z, q.w);
 
             this._forceMeshUpdate();
         }

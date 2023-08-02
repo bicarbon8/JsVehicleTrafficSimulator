@@ -33,9 +33,9 @@ export class SimulationManager {
         this._totalElapsedTime = 0;
         this._timeStep = 10;
 
-        this._mapManager = mapMgr || MapManager.inst;
-        this._viewMgr = viewMgr || ViewManager.inst;
-        this._physicsMgr = physicsMgr ?? PhysicsManager.inst;
+        this._mapManager = mapMgr ?? new MapManager();
+        this._viewMgr = viewMgr ?? new ViewManager();
+        this._physicsMgr = physicsMgr ?? new PhysicsManager();
 
         this._lastUpdate = 0;
 

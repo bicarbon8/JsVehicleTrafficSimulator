@@ -39,6 +39,8 @@
     "codelyzer": "6.0.2",
     "jasmine-core": "^5.0.1",
     "jasmine-spec-reporter": "^7.0.0",
+    "jest": "^29.6.2",
+    "jest-environment-jsdom": "^29.6.2",
     "karma": "^6.4.2",
     "karma-chrome-launcher": "^3.2.0",
     "karma-coverage": "^2.2.1",
