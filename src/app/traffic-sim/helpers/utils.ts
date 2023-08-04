@@ -1,4 +1,4 @@
-import { Box3, Line3, Mesh, Object3D, PlaneGeometry, Vector3 } from 'three';
+import { Box3, Line3, MathUtils, Mesh, Object3D, PlaneGeometry, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -42,9 +42,16 @@ export module Utils {
      * @returns the angle in degrees that each line differs by
      */
     export function angleFormedBy(line1: Line3, line2: Line3): number {
-        var a = line1.end.clone().sub(line1.start.clone()).normalize();
-        var b = line2.end.clone().sub(line2.start.clone()).normalize();
-        return (Math.acos(a.dot(b))*(180/Math.PI));
+        const a = line1.end.clone().sub(line1.start.clone()).normalize();
+        const b = line2.end.clone().sub(line2.start.clone()).normalize();
+        // console.warn('vectors', {a}, {b});
+        const dot = a.dot(b);
+        if (dot > 1 || dot < -1) {
+            return 0;
+        }
+        const acos = Math.acos(dot);
+        // console.warn('results', {dot}, {acos});
+        return MathUtils.radToDeg(acos);
     }
 
     /**

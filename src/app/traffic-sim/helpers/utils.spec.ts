@@ -18,6 +18,18 @@ describe('Utils', () => {
             const actual = Utils.angleFormedBy(line1, line2);
             expect(actual).toBe(0);
         })
+
+        /**
+         * forces a value to be returned from the `Vector3.dot` function that is greater than 1
+         * which then causes `Math.acos` to return `NaN`
+         */
+        it('returns a valid number when second line lies directly on first line at angle', () => {
+            const line1 = new Line3(new Vector3(0, 0, 0), new Vector3(-100, -100, 0));
+            const line2 = new Line3(new Vector3(0, 0, 0), new Vector3(-50, -50, 0));
+
+            const actual = Utils.angleFormedBy(line1, line2);
+            expect(actual).toBeCloseTo(0);
+        })
     })
 
     describe('axisAngleFormedBy', () => {

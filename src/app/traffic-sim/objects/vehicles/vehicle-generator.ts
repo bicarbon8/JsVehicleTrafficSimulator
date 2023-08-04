@@ -43,9 +43,9 @@ export class VehicleGenerator extends TrafficObject {
         super(options, simMgr);
         this.delay = options?.delay || 0;
         this.roadName = options?.roadName;
-        this.max = options?.max || Infinity;
-        this.startSpeedMax = options?.startSpeedMax || 0;
-        this.startSpeedMin = options?.startSpeedMin || 0;
+        this.max = options?.max ?? Infinity;
+        this.startSpeedMax = options?.startSpeedMax ?? 0;
+        this.startSpeedMin = options?.startSpeedMin ?? 0;
         this._elapsed = 0;
         this._count = 0;
         this._nextVehicle = null;
@@ -107,9 +107,11 @@ export class VehicleGenerator extends TrafficObject {
     }
 
     private _addToSegment(vehicle: Vehicle): void {
+        vehicle.hasPhysics = true;
+        vehicle.location = this.segment.start;
+        vehicle.lookAt(this.segment.end);
         this.segment.addVehicle(vehicle);
         this.simMgr.viewManager.addRenderable(vehicle);
-        // vehicle.hasPhysics = true;
         // console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.segment.id}'`);
         this._nextVehicle = null; // allow the next vehicle to be generated
     }

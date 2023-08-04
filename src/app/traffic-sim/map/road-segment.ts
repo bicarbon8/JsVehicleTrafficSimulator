@@ -58,7 +58,6 @@ export class RoadSegment extends TrafficObject {
     private _laneChangeLocations: Vector3[];
     private _generator: VehicleGenerator;
     private _body: Body;
-    private _roadSurfaceMesh: Mesh;
 
     constructor(options?: RoadSegmentOptions, simMgr?: SimulationManager) {
         super(options, simMgr);
@@ -69,31 +68,23 @@ export class RoadSegment extends TrafficObject {
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
         this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
         this._width = options?.width || 6; // standard US lane width = 3.7
-        this.isInlet = options?.isInlet || false;
+        this.isInlet = options?.isInlet ?? false;
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
         this.hasPhysics = true;
     }
 
-    override get mesh(): Mesh {
-        if (!this._roadSurfaceMesh) {
-            const obj = this.obj3D; // force creation
-        }
-        return this._roadSurfaceMesh;
-    }
-
     override get body(): Body {
         if (this.hasPhysics) {
             if (!this._body) {
                 const loc = this.location;
-                const quat = this.rotation;
+                const q = this.rotation;
                 this._body = new Body({
                     type: Body.STATIC,
-                    mass: 0,
                     shape: new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)),
                     position: new Vec3(loc.x, loc.y, loc.z), // m
-                    quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
+                    quaternion: new Quat4(q.x, q.y, q.z, q.w)
                 });
                 this.simMgr.physicsManager.addBody(this.body);
             }
@@ -182,21 +173,18 @@ export class RoadSegment extends TrafficObject {
     }
 
     protected generateObj3D(): Object3D {
-        const group = new Group();
         const length = this.line.distance();
         const centre = new Vector3(); 
         this.line.getCenter(centre);
         const depth = 0.5;
         const box = new BoxGeometry(this._width, depth, length);
-        this._roadSurfaceMesh = new Mesh(box, this.material);
-        this._roadSurfaceMesh.position.set(centre.x, centre.y - depth, centre.z);
+        const mesh = new Mesh(box, this.material);
+        mesh.position.set(centre.x, centre.y - depth, centre.z);
         const look = this.line.end.clone();
         look.y -= depth;
-        this._roadSurfaceMesh.lookAt(look);
-        this._forceMeshUpdate();
+        mesh.lookAt(look);
         this._generateLaneChangePoints();
-        group.add(this._roadSurfaceMesh);
-        return group;
+        return mesh;
     }
 
     private _generateLaneChangePoints(): void {

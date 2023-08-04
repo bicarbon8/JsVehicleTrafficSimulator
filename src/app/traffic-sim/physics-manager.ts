@@ -11,13 +11,12 @@ export class PhysicsManager {
     
     constructor(world?: World) {
         this._world = world ?? new World({
-            gravity: new Vec3(0, PhysicsManager.GRAVITY_CONSTANT, 0),
-            frictionGravity: new Vec3(0, PhysicsManager.GRAVITY_CONSTANT, 0)
+            gravity: new Vec3(0, PhysicsManager.GRAVITY_CONSTANT, 0)
         });
         this._ground = new Body({
             type: Body.STATIC,
             shape: new Plane(),
-            position: new Vec3(0, 336.5, 0) // not sure why, but Y = 0 is 337 units below actual 0
+            position: new Vec3(0, 337, 0) // not sure why, but Y = 0 is 337 units below actual 0
         });
         this._ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
         this.addBody(this._ground);
