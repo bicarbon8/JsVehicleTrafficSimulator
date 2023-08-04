@@ -1,7 +1,8 @@
-import { Box3, Line3, Mesh, Object3D, Vector3 } from 'three';
+import { Box3, Line3, Mesh, Object3D, PlaneGeometry, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
+import { V3 } from './customTypes';
 
 export module Utils {
     var _id: number = 0;
@@ -149,6 +150,12 @@ export module Utils {
         }
     }
 
+    /**
+     * calculates the maximum angle that a vehicle can turn given it's speed
+     * to prevent skidding
+     * @param speed in metres per second
+     * @returns the maximum angle that can be turned for the given speed
+     */
     export function turnRateCalculator(speed: number): number {
         if (speed > 150) {
             return 12;
@@ -233,11 +240,12 @@ export module Utils {
      * heading of an `Object3D` based on it's rotation (the location of it's
      * +z face(s))
      * @param obj the `Object3D` to get a heading from
+     * @param forwardAxis a string indicating which vector is forwards: x, y, or z @default z
      * @returns a `Vector3` representing the heading as a normalised vector
      */
-    export function getHeading(obj: TrafficObject): Vector3 {
-        // TODO: WARNING! this doesn't seem to be correct
-        return new Vector3(0, 0, 1).applyQuaternion(obj.rotation).normalize();
+    export function getHeading(obj: TrafficObject, forwards: V3 = {x:0, y:0, z:1}): Vector3 {
+        const forwardVector = new Vector3(forwards.x, forwards.y, forwards.z);
+        return forwardVector.applyQuaternion(obj.rotation).normalize();
     }
 
     /**
@@ -245,10 +253,11 @@ export module Utils {
      * heading of an `Object3D` based on it's rotation (the location of it's
      * +z face(s))
      * @param obj the `Object3D` to get a heading line from
+     * @param forwardAxis a string indicating which vector is forwards: x, y, or z
      * @returns a `Line3` representing a ray direction
      */
-    export function getHeadingLine(obj: TrafficObject): Line3 {
-        const dir = Utils.getHeading(obj);
+    export function getHeadingLine(obj: TrafficObject, forwards?: V3): Line3 {
+        const dir = Utils.getHeading(obj, forwards);
         const start = obj.location;
         const scalar = (obj as Vehicle)?.getLookAheadDistance() || 1;
         const end = start.clone().addScaledVector(dir, scalar);

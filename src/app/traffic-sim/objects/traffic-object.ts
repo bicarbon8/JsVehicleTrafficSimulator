@@ -76,6 +76,7 @@ export abstract class TrafficObject implements Renderable {
     get boundingBox(): Box3 {
         if (this.mesh) {
             var bbox = new Box3().setFromObject(this.mesh);
+            // move to current position
             bbox.min.sub(this.mesh?.position);
             bbox.max.sub(this.mesh?.position);
             return bbox;
@@ -85,6 +86,33 @@ export abstract class TrafficObject implements Renderable {
 
     get material(): MeshStandardMaterial {
         return this._material;
+    }
+
+    /**
+     * length of this object along the up / down vector
+     */
+    get height(): number {
+        const size = new Vector3();
+        this.boundingBox.getSize(size);
+        return size.y;
+    }
+
+    /**
+     * length of this object along the left / right vector
+     */
+    get width(): number {
+        const size = new Vector3();
+        this.boundingBox.getSize(size);
+        return size.x;
+    }
+
+    /**
+     * length of this object along the forward / backward vector
+     */
+    get length(): number {
+        const size = new Vector3();
+        this.boundingBox.getSize(size);
+        return size.z;
     }
 
     get location(): Vector3 {
@@ -107,7 +135,7 @@ export abstract class TrafficObject implements Renderable {
     set rotation(rotation: Quaternion) {
         if (rotation) {
             this.obj3D?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-            // this.body?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+            this.body?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
         }
     }
 
@@ -128,8 +156,8 @@ export abstract class TrafficObject implements Renderable {
     lookAt(location: Vector3): void {
         if (location) {
             this.obj3D?.lookAt(location);
-            // const q = this.rotation;
-            // this.body?.quaternion.set(q.x, q.y, q.z, q.w);
+            const q = this.rotation;
+            this.body?.quaternion.set(q.x, q.y, q.z, q.w);
 
             this._forceMeshUpdate();
         }

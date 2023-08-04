@@ -20,7 +20,7 @@ export type RoadSegmentOptions = TrafficObjectOptions & {
      */
     width?: number;
     /**
-     * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
+     * maximum legal speed allowed on {RoadSegment} in Metres per Second
      */
     speedLimit?: number;
     /**
@@ -39,13 +39,13 @@ export class RoadSegment extends TrafficObject {
      */
     readonly roadName: string;
     /**
-     * maximum legal speed allowed on {RoadSegment} in Kilometres per Hour
+     * maximum legal speed allowed on {RoadSegment} in Metres per Second
      */
     readonly speedLimit: number;
     /**
      * width of {RoadSegment} in Metres
      */
-    readonly width: number;
+    private _width: number;
     /**
      * indicates that this {RoadSegment} merges with other traffic so the
      * collision detection should look across a wider range
@@ -68,7 +68,7 @@ export class RoadSegment extends TrafficObject {
         this.roadName = options?.roadName;
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
         this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
-        this.width = options?.width || 5;
+        this._width = options?.width || 6; // standard US lane width = 3.7
         this.isInlet = options?.isInlet || false;
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
@@ -86,17 +86,12 @@ export class RoadSegment extends TrafficObject {
     override get body(): Body {
         if (this.hasPhysics) {
             if (!this._body) {
-                const size = new Vector3(0, 0, 0);
-                this.boundingBox.getSize(size);
-                const width = size.x;
-                const height = size.y;
-                const depth = size.z;
                 const loc = this.location;
                 const quat = this.rotation;
                 this._body = new Body({
                     type: Body.STATIC,
                     mass: 0,
-                    shape: new Box(new Vec3(width / 2, height / 2, depth / 2)),
+                    shape: new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)),
                     position: new Vec3(loc.x, loc.y, loc.z), // m
                     quaternion: new Quat4(quat.x, quat.y, quat.z, quat.w)
                 });
@@ -191,9 +186,8 @@ export class RoadSegment extends TrafficObject {
         const length = this.line.distance();
         const centre = new Vector3(); 
         this.line.getCenter(centre);
-        const width = 6; // standard US lane width = 3.7
         const depth = 0.5;
-        const box = new BoxGeometry(width, depth, length);
+        const box = new BoxGeometry(this._width, depth, length);
         this._roadSurfaceMesh = new Mesh(box, this.material);
         this._roadSurfaceMesh.position.set(centre.x, centre.y - depth, centre.z);
         const look = this.line.end.clone();

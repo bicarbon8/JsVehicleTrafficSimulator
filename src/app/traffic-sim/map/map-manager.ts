@@ -79,40 +79,13 @@ export class MapManager {
             return false;
         });
         if (distanceToEnd < distance) {
-            let segments: RoadSegment[] = this.getSegmentsStartingAt(segment.end);
+            let segments: RoadSegment[] = this.getSegmentsStartingAt(segment.end, segment.roadName);
             segments.forEach((seg) => {
                 vehicles.splice(0, 0, ...this.getVehiclesWithinRadiusAhead(segment.end, seg, distance - distanceToEnd));
             });
         }
 
         return vehicles;
-    }
-
-    /**
-     * calculates where the passed in `vehicle` will be travelling and 
-     * compares this with the trajectories of other nearby vehicles that
-     * can be seen from the supplied `vehicle`
-     * @param vehicle the `Vehicle` used to compare with other vehicles
-     * @returns an array of vehicles who have intersecting trajectories
-     */
-    getIntersectingVehicles(vehicle: Vehicle): Vehicle[] {
-        const intersects: Vehicle[] = [];
-        const dist: number = vehicle.getLookAheadDistance();
-        const vehicles: Vehicle[] = this.getVehiclesWithinRadius(vehicle, dist)
-            .filter(v => vehicle.hasInViewAhead(v));
-        if (vehicles?.length) {
-            const vehicleBox: Box3 = vehicle.getLookAheadCollisionBox();
-            
-            for (var i=0; i<vehicles.length; i++) {
-                let v: Vehicle = vehicles[i];
-                let vBoxAhead: Box3 = v.getLookAheadCollisionBox();
-                if (vehicleBox.intersectsBox(vBoxAhead)) {
-                    intersects.push(v);
-                }
-            }
-        }
-
-        return intersects;
     }
 
     get trafficFlowControls(): TrafficFlowControl[] {
@@ -136,7 +109,7 @@ export class MapManager {
             return false;
         });
         if (distanceToEnd < distance) {
-            let segments: RoadSegment[] = this.getSegmentsStartingAt(segment.end);
+            let segments: RoadSegment[] = this.getSegmentsStartingAt(segment.end, segment.roadName);
             segments.forEach((seg) => {
                 tfcs.splice(0, 0, ...this.getTfcsWithinRadiusAhead(segment.end, seg, distance - distanceToEnd));
             });
@@ -163,25 +136,59 @@ export class MapManager {
         return this._roadSegments?.get(segmentId);
     }
 
-	getSegmentsStartingAt(location: Vector3): RoadSegment[] {
+    /**
+     * finds all road segments starting at the specified location. if a `roadName` is
+     * specified this function will attempt to first check for segments within the same
+     * road and if none found only then will it look for other segments
+     * @param location a `Vector3` where the `RoadSegment` must start
+     * @param roadName an optional road name used to filter possible segments. 
+     * if no results then all segments are used instead even if specified
+     * @returns an array of segments starting at the specified location or empty array
+     */
+	getSegmentsStartingAt(location: Vector3, roadName?: string): RoadSegment[] {
         if (location) {
-            return this.segments.filter((seg) => {
-                let start: Vector3 = seg.start;
-                return start.x == location.x &&
-                    start.y == location.y &&
-                    start.z == location.z;
-            });
+            let segments: Array<RoadSegment>;
+            if (roadName) {
+                segments = this.getSegmentsInRoad(roadName)
+                    .filter(s => s.start.equals(location));
+            }
+            if (!segments?.length) {
+                segments = this.segments.filter((seg) => {
+                    let start: Vector3 = seg.start;
+                    return start.x == location.x &&
+                        start.y == location.y &&
+                        start.z == location.z;
+                });
+            }
+            return segments;
         }
     }
 
-    getSegmentsEndingAt(location: Vector3): RoadSegment[] {
+    /**
+     * finds all road segments ending at the specified location. if a `roadName` is
+     * specified this function will attempt to first check for segments within the same
+     * road and if none found only then will it look for other segments
+     * @param location a `Vector3` where the `RoadSegment` must end
+     * @param roadName an optional road name used to filter possible segments. 
+     * if no results then all segments are used instead even if specified
+     * @returns an array of segments ending at the specified location or empty array
+     */
+    getSegmentsEndingAt(location: Vector3, roadName?: string): RoadSegment[] {
         if (location) {
-            return this.segments.filter((seg) => {
-                let end: Vector3 = seg.end;
-                return end.x == location.x &&
-                    end.y == location.y &&
-                    end.z == location.z;
-            });
+            let segments: Array<RoadSegment>;
+            if (roadName) {
+                segments = this.getSegmentsInRoad(roadName)
+                    .filter(s => s.end.equals(location));
+            }
+            if (!segments?.length) {
+                segments = this.segments.filter((seg) => {
+                    let end: Vector3 = seg.end;
+                    return end.x == location.x &&
+                        end.y == location.y &&
+                        end.z == location.z;
+                });
+            }
+            return segments;
         }
     }
 
@@ -211,29 +218,16 @@ export class MapManager {
 		return segments;
 	}
 
-	getSimilarSegmentsInRoad(currentSegment: RoadSegment) {
+	getParallelSegmentsInRoad(currentSegment: RoadSegment): Array<RoadSegment> {
 		return this.getSegmentsInRoad(currentSegment.roadName).filter((seg) => {
-            // if less than 5 degrees variance in lines they're similar so return true
-            return currentSegment.id != seg.id && (Math.abs(Utils.angleFormedBy(seg.line, currentSegment.line)) < 5);
+            return currentSegment.id != seg.id
+                && !seg.isInlet // ensure we don't merge into an inlet
+                && (Math.abs(Utils.angleFormedBy(seg.line, currentSegment.line)) < 2) // ensure less than 2 degrees variance
+                && (Math.abs(Utils.angleFormedBy(currentSegment.line, new Line3(currentSegment.center, seg.end))) > 1) // ensure not straight ahead
+                && !currentSegment.end.equals(seg.end) // ensure segments don't merge together
+                && !currentSegment.end.equals(seg.start) // ensure segment isn't connected;
         });
 	}
-
-    shouldStopForVehicles(vehicle: Vehicle): Vehicle {
-        const dist = vehicle.getLookAheadDistance();
-        const vehicles = this.getVehiclesWithinRadius(vehicle, dist)
-            .filter(v => vehicle.hasInViewAhead(v));
-        if (vehicles?.length) {
-            const v1TrajectoryBox = vehicle.getLookAheadCollisionBox();
-            for (let v of vehicles) {
-                let v2TrajectoryBox = v.getLookAheadCollisionBox();
-                if (v1TrajectoryBox.containsBox(v2TrajectoryBox) || v1TrajectoryBox.containsBox(v.boundingBox)) {
-                    return v;
-                }
-            }
-        }
-    
-        return null;
-    }
 
     /**
      * checks the passed in `vehicle` against the current road to determine if any 
@@ -271,7 +265,7 @@ export class MapManager {
             // base the amount on how different the heading is
             var headingDiff = 0;
             var line1: Line3 = vehicle.segment.line;
-            var nextSegments: RoadSegment[] = this.getSegmentsStartingAt(segEnd);
+            var nextSegments: RoadSegment[] = this.getSegmentsStartingAt(segEnd, vehicle.segment.roadName);
             // TODO: only calculate for next segment on choosen path
             for (var i in nextSegments) {
                 var nextSegment: RoadSegment = nextSegments[i];

@@ -4,6 +4,7 @@ import { RoadSegment, RoadSegmentOptions } from "./map/road-segment";
 import { StopLight } from "./objects/traffic-controls/stop-light";
 import { TfcOptions, TrafficFlowControl } from "./objects/traffic-controls/traffic-flow-control";
 import { Vehicle } from "./objects/vehicles/vehicle";
+import { VehicleDecisionEngine } from "./objects/vehicles/vehicle-decision-engine";
 import { VehicleGenerator, VehicleGeneratorOptions } from "./objects/vehicles/vehicle-generator";
 import { PhysicsManager } from "./physics-manager";
 import { ViewManager } from "./view/view-manager";
@@ -26,8 +27,11 @@ export class SimulationManager {
     private _mapManager: MapManager;
     private _viewMgr: ViewManager;
     private _physicsMgr: PhysicsManager;
+    private _decisionEng: VehicleDecisionEngine;
 
-    constructor(mapMgr?: MapManager, viewMgr?: ViewManager, physicsMgr?: PhysicsManager) {
+    public debug: boolean = false;
+
+    constructor(mapMgr?: MapManager, viewMgr?: ViewManager, physicsMgr?: PhysicsManager, decisionEng?: VehicleDecisionEngine) {
         this._realtime = false;
         this._isRunning = false;
         this._totalElapsedTime = 0;
@@ -36,6 +40,7 @@ export class SimulationManager {
         this._mapManager = mapMgr ?? new MapManager();
         this._viewMgr = viewMgr ?? new ViewManager();
         this._physicsMgr = physicsMgr ?? new PhysicsManager();
+        this._decisionEng = decisionEng ?? new VehicleDecisionEngine();
 
         this._lastUpdate = 0;
 
@@ -147,6 +152,10 @@ export class SimulationManager {
 
     get physicsManager(): PhysicsManager {
         return this._physicsMgr;
+    }
+
+    get decisionEng(): VehicleDecisionEngine {
+        return this._decisionEng;
     }
 
     loadMap(map: RoadMap): void {

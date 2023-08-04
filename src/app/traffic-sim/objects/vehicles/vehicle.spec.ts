@@ -13,7 +13,7 @@ describe('Vehicle', () => {
         }, simMgr);
         simMgr.mapManager.addSegment(segment);
         const vehicle: Vehicle = new Vehicle({
-            acceleration: 100, // Metres per Second
+            accelerationRate: 100, // Metres per Second
             maxSpeed: Infinity
         }, simMgr);
         segment.addVehicle(vehicle);
@@ -32,8 +32,8 @@ describe('Vehicle', () => {
         }, simMgr);
         simMgr.mapManager.addSegment(segment);
         const vehicle: Vehicle = new Vehicle({
-            acceleration: 1, // Metres per Second
-            deceleration: 1,
+            accelerationRate: 1, // Metres per Second
+            decelerationRate: 1,
             length: 4
         }, simMgr);
         segment.addVehicle(vehicle);
@@ -45,6 +45,6 @@ describe('Vehicle', () => {
         vehicle.accelerate(1000); // speed should now be 1 Metre per Second
 
         actual = vehicle.getLookAheadDistance();
-        expect(8.5).toEqual(actual);
+        expect(9).toEqual(actual);
     });
 });

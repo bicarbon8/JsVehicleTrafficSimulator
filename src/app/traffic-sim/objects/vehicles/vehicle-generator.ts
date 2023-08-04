@@ -76,12 +76,12 @@ export class VehicleGenerator extends TrafficObject {
             width: Utils.getRandomRealBetween(2, 3),
             height: Utils.getRandomRealBetween(1, 1.5),
             length: Utils.getRandomRealBetween(3, 5),
-            acceleration: Utils.getRandomRealBetween(2.78, 6.95), // 0-100 in 4 to 10 seconds
-            deceleration: Utils.getRandomRealBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
-            reactionTime: Utils.getRandomRealBetween(2500, 3500),
+            accelerationRate: Utils.getRandomRealBetween(2.78, 6.95), // 0-100 in 4 to 10 seconds
+            decelerationRate: Utils.getRandomRealBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
+            reactionTime: Utils.getRandomRealBetween(200, 300), // milliseconds
             changeLaneDelay: Math.floor(Utils.getRandomRealBetween(30000, 60000)),
-            maxSpeed: Math.floor(Utils.getRandomRealBetween(200, 260)),
-            startingVelocity: Utils.getRandomRealBetween(this.startSpeedMin, this.startSpeedMax)
+            maxSpeed: Math.floor(Utils.getRandomRealBetween(41.6, 72.2)), // Metres per Second
+            startingSpeed: Utils.getRandomRealBetween(this.startSpeedMin, this.startSpeedMax)
         });
         v.location = this.segment.start;
         v.lookAt(this.segment.end);
@@ -109,7 +109,7 @@ export class VehicleGenerator extends TrafficObject {
     private _addToSegment(vehicle: Vehicle): void {
         this.segment.addVehicle(vehicle);
         this.simMgr.viewManager.addRenderable(vehicle);
-        vehicle.hasPhysics = true;
+        // vehicle.hasPhysics = true;
         // console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.segment.id}'`);
         this._nextVehicle = null; // allow the next vehicle to be generated
     }
