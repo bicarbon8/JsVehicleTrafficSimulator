@@ -77,7 +77,7 @@ export class VehicleGenerator extends TrafficObject {
             height: Utils.getRandomRealBetween(1, 1.5),
             length: Utils.getRandomRealBetween(3, 5),
             accelerationRate: Utils.getRandomRealBetween(2.78, 6.95), // 0-100 in 4 to 10 seconds
-            decelerationRate: Utils.getRandomRealBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
+            maxDecelerationRate: Utils.getRandomRealBetween(6.94, 10.15), // 100-0 in 2.7 to 4 seconds
             reactionTime: Utils.getRandomRealBetween(200, 300), // milliseconds
             changeLaneDelay: Math.floor(Utils.getRandomRealBetween(30000, 60000)),
             maxSpeed: Math.floor(Utils.getRandomRealBetween(41.6, 72.2)), // Metres per Second
@@ -101,8 +101,8 @@ export class VehicleGenerator extends TrafficObject {
 
     private _canAddToSegment(vehicle: Vehicle): boolean {
         const vehicles = this.simMgr.mapManager
-            .getVehiclesWithinRadiusAhead(vehicle.location, this.segment, vehicle.length * 3)
-            .filter(v => v.id !== vehicle.id);
+            .getVehiclesWithinRadius(vehicle, vehicle.length + vehicle.getLookAheadDistance())
+            .filter(v => !(vehicle.hasInViewLeft(v) && vehicle.hasInViewRight(v)));
         return vehicles?.length == 0;
     }
 

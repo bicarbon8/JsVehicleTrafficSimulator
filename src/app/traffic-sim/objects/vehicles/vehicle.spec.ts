@@ -33,7 +33,7 @@ describe('Vehicle', () => {
         simMgr.mapManager.addSegment(segment);
         const vehicle: Vehicle = new Vehicle({
             accelerationRate: 1, // Metres per Second
-            decelerationRate: 1,
+            maxDecelerationRate: 1,
             length: 4
         }, simMgr);
         segment.addVehicle(vehicle);

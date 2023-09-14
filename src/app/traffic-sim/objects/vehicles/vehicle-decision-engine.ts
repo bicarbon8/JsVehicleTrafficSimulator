@@ -158,9 +158,10 @@ export class VehicleDecisionEngine {
 
     private _vehiclesAhead(vehicle: Vehicle): Array<Vehicle> {
         const ahead = vehicle.simMgr.mapManager.getVehiclesWithinRadius(vehicle, vehicle.getLookAheadDistance())
+            .filter(v => vehicle.hasInViewAhead(v))
             .filter(v => {
-                return vehicle.hasInViewAhead(v)
-                    && Math.abs(Utils.angleFormedBy(Utils.getHeadingLine(vehicle), Utils.getHeadingLine(v))) < 50
+                const headingDiff = Math.abs(Utils.angleFormedBy(Utils.getHeadingLine(vehicle), Utils.getHeadingLine(v)));
+                return headingDiff < 50;
             });
 
         return ahead;

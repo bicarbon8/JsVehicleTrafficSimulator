@@ -82,11 +82,12 @@ export class RoadSegment extends TrafficObject {
                 const q = this.rotation;
                 this._body = new Body({
                     type: Body.STATIC,
-                    shape: new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)),
-                    position: new Vec3(loc.x, loc.y, loc.z), // m
-                    quaternion: new Quat4(q.x, q.y, q.z, q.w)
+                    mass: 0
                 });
-                this.simMgr.physicsManager.addBody(this.body);
+                this._body.addShape(new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)));
+                this._body.position.set(loc.x, loc.y, loc.z);
+                this._body.quaternion.set(q.x, q.y, q.z, q.w);
+                this.simMgr.physicsManager.addBody(this._body);
             }
             return this._body;
         }

@@ -1,10 +1,9 @@
-import { Mesh, BoxGeometry, Vector3, Object3D, Group, Line3, BufferGeometry, Line } from "three";
+import { Mesh, BoxGeometry, Vector3, Object3D, Line3, BufferGeometry, Line } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
-import { Body, Box, Vec3, Quaternion as Quat4, Sphere } from "cannon-es";
-import { VehicleDecisionEngine } from "./vehicle-decision-engine";
+import { Body, Box, Vec3, Quaternion as Quat4, Material } from "cannon-es";
 
 export type VehicleOptions = TrafficObjectOptions & {
     /**
@@ -30,7 +29,7 @@ export type VehicleOptions = TrafficObjectOptions & {
     /**
      * deceleration in Metres per Second
      */
-    decelerationRate?: number;
+    maxDecelerationRate?: number;
     /**
      * minimum time in milliseconds to wait after changing lanes before changing again
      */
@@ -64,7 +63,7 @@ export class Vehicle extends TrafficObject {
     /**
      * deceleration in Metres per Second (defaults to 6.94 mps)
      */
-    readonly decelerationRate: number;
+    readonly maxDecelerationRate: number;
     /**
      * amount of time after changing lanes before considering changing again in milliseconds (defaults to 5000 ms)
      */
@@ -101,7 +100,7 @@ export class Vehicle extends TrafficObject {
         this._height = options?.height ?? 1.5; // metres
         this.reactionTime = options?.reactionTime || 250; // milliseconds
         this.accelerationRate = options?.accelerationRate ?? 2.78; // Metres per Second
-        this.decelerationRate = options?.decelerationRate ?? 6.94; // Metres per Second
+        this.maxDecelerationRate = options?.maxDecelerationRate ?? 6.94; // Metres per Second
         this.changeLaneDelay = options?.changeLaneDelay || 30000; // milliseconds
         this.maxSpeed = options?.maxSpeed ?? 72.2; // Metres per Second
         
@@ -136,11 +135,11 @@ export class Vehicle extends TrafficObject {
                 const q = this.rotation;
                 this._body = new Body({
                     mass: 100, // kg; TODO: get mass from obj props
-                    shape: new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)),
-                    position: new Vec3(loc.x, loc.y, loc.z), // m
-                    quaternion: new Quat4(q.x, q.y, q.z, q.w)
                 });
-                this.simMgr.physicsManager.addBody(this.body);
+                this._body.addShape(new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)));
+                this._body.position.set(loc.x, loc.y, loc.z);
+                this._body.quaternion.set(q.x, q.y, q.z, q.w);
+                this.simMgr.physicsManager.addBody(this._body);
             }
             return this._body;
         }
@@ -152,6 +151,13 @@ export class Vehicle extends TrafficObject {
      * @returns the speed in Metres per Second
      */
     get speed(): number {
+        if (this.hasPhysics) {
+            const relativeVelocity = this.body.velocity
+                .vsub(this.body.velocity
+                .vsub(this.body.quaternion.vmult(new Vec3(0, 0, 1))))
+                .z;
+            return relativeVelocity * 100;
+        }
         return this._speed;
     }
 
@@ -186,7 +192,7 @@ export class Vehicle extends TrafficObject {
             height: this.height,
             reactionTime: this.reactionTime,
             accelerationRate: this.accelerationRate,
-            decelerationRate: this.decelerationRate,
+            maxDecelerationRate: this.maxDecelerationRate,
             changeLaneDelay: this.changeLaneDelay,
             maxSpeed: this.maxSpeed,
             startingSpeed: this.speed
@@ -260,16 +266,16 @@ export class Vehicle extends TrafficObject {
             }
             const loc = this.location;
             const speed = this.speed;
-            if (this.nextReactionTime <= this.simMgr.totalElapsed) {
-                this._lastReaction = this.simMgr.totalElapsed;
+            let acceleration: number;
+            // if (this.nextReactionTime <= this.simMgr.totalElapsed) {
+            //     this._lastReaction = this.simMgr.totalElapsed;
                 this._state = this.simMgr.decisionEng.getDesiredState(this);
-            }
+            // }
             switch(this.state) {
                 case 'changinglane':
                     const lane = this.startLaneChange();
                     if (!lane) {
                         this._state = 'decelerating';
-                        this.obj3D.position.set(pos.x, pos.y, pos.z);
                         this.brake(elapsedMs);
                         break;
                     } else {
@@ -277,27 +283,51 @@ export class Vehicle extends TrafficObject {
                     }
                 case 'accelerating':
                     // set mesh position from physics body
-                    this.obj3D.position.set(pos.x, pos.y, pos.z);
-                    this.accelerate(elapsedMs);
+                    acceleration = this.accelerate(elapsedMs);
+                    acceleration *= 10;
                     break;
                 case 'decelerating':
                     // set mesh position from physics body
-                    this.obj3D.position.set(pos.x, pos.y, pos.z);
-                    this.brake(elapsedMs);
+                    acceleration = this.brake(elapsedMs);
+                    acceleration *= 0.0001;
                     break;
                 case 'stopped':
                     // set physics body position from mesh (prevent sliding while stopped)
-                    this.body?.position?.set(loc.x, loc.y, loc.z);
                     this._speed = 0;
                     this.body?.velocity?.set(0, 0, 0);
+                    acceleration = 0;
                     break;
             }
             if (this.hasPhysics) {
-                const deltaV = Utils.getHeading(this).multiply(new Vector3(speed / 60, speed / 60, speed / 60));
-                this.body.velocity.set(deltaV.x, deltaV.y, deltaV.z);
+                if (acceleration !== 0) {
+                    const relativeVelocity = this.body.velocity
+                        .vsub(this.body.velocity
+                        .vsub(this.body.quaternion.vmult(new Vec3(0, 0, 1))));
+                    const frictionForce = relativeVelocity.scale(-1);
+                    const localForce = new Vec3(0, 0, acceleration);
+                    const accelerationForce = this.body.quaternion.vmult(localForce);
+                    this.body.applyForce(
+                        new Vec3(
+                            accelerationForce.x - frictionForce.x, 
+                            accelerationForce.y - frictionForce.y, 
+                            accelerationForce.z - frictionForce.z
+                        )
+                    );
+                }
             } else {
                 const dist = speed * Utils.convertMillisecondsToSeconds(elapsedMs); // Metres
                 this.moveForwardBy(dist);
+            }
+
+            switch(this.state) {
+                case 'stopped':
+                    // set physics body position from mesh (prevent sliding while stopped)
+                    this.body?.position?.set(loc.x, loc.y, loc.z);
+                    break;
+                default:
+                    // set mesh position from physics body
+                    this.obj3D.position.set(pos.x, pos.y, pos.z);
+                    break;
             }
         }
     }
@@ -382,16 +412,17 @@ export class Vehicle extends TrafficObject {
      * @returns the deceleration applied (negative value)
      */
     brake(elapsedMs: number): number {
+        // TODO: determine amount of deceleration required up to max allowed
         let acceleration: number = 0;
         if (this.speed > 0) {
             const elapsedSeconds = Utils.convertMillisecondsToSeconds(elapsedMs);
-            acceleration = this.decelerationRate * elapsedSeconds;
+            acceleration = 1 * elapsedSeconds; // this.maxDecelerationRate * elapsedSeconds;
             if (!this.isCrashed()) {
                 this.material?.color.setHex(0xffff00); // yellow
             }
         }
         this._speed -= acceleration;
-        return -acceleration;
+        return 0; //-acceleration;
     }
 
     canChangeLanes(): boolean {
@@ -454,16 +485,45 @@ export class Vehicle extends TrafficObject {
     hasInViewAhead(obj: TrafficObject): boolean {
         // const view = this.getLookAheadCollisionBox();
         // return view.containsBox(obj.boundingBox);
-        if (this.segment) {
-            const maxAngleDelta = (this.segment.isInlet) ? 45 : 30; // degrees
-            const otherLoc: Vector3 = obj.location;
-            const headingLine = Utils.getHeadingLine(this);
-            const headingToLocation = new Line3(this.location, otherLoc);
+        const headingLine = Utils.getHeadingLine(this);
+        const headingToLocation = new Line3(this.location, obj.location);
+        const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
+        if (angle >= -45 && angle <= 45) {
+            // TODO: limit view to above road only (no viewing below vehicle hood for ex.)
+            return true;
+        }
+        return false;
+    }
 
-            if (Math.abs(Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y')) <= maxAngleDelta) {
-                // TODO: limit view to above road only (no viewing below vehicle hood for ex.)
-                return true;
-            }
+    hasInViewLeft(obj: TrafficObject): boolean {
+        const headingLine = Utils.getHeadingLine(this);
+        const headingToLocation = new Line3(this.location, obj.location);
+        const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
+        if (angle <= -45 && angle >= -135) {
+            return true;
+        }
+        return false;
+    }
+
+    hasInViewRight(obj: TrafficObject): boolean {
+        const headingLine = Utils.getHeadingLine(this);
+        const headingToLocation = new Line3(this.location, obj.location);
+        const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
+        if (angle >= 45 && angle <= 135) {
+            return true;
+        }
+        return false;
+    }
+
+    hasInViewBehind(obj: TrafficObject): boolean {
+        // const view = this.getLookAheadCollisionBox();
+        // return view.containsBox(obj.boundingBox);
+        const headingLine = Utils.getHeadingLine(this);
+        const headingToLocation = new Line3(this.location, obj.location);
+        const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
+        if ((angle <= -135 && angle >= -225) || (angle >= 135 && angle <= 225)) {
+            // TODO: limit view to above road only (no viewing below vehicle hood for ex.)
+            return true;
         }
         return false;
     }
@@ -481,10 +541,11 @@ export class Vehicle extends TrafficObject {
      * `t` = time (Seconds)
      * @returns the distance required to safely stop in metres
      */
-    getLookAheadDistance(): number { 
-        const time: number = this.speed / this.decelerationRate; // Seconds
-        const distanceToStop: number = this.speed * time; // metres
-        const total: number = distanceToStop + (this._length * 2);
+    getLookAheadDistance(): number {
+        const safeDecelerationRate = 1; // m/s^2
+        const time: number = this.speed / safeDecelerationRate; // Seconds
+        const distanceToStop: number = this.speed * (time * Utils.convertMillisecondsToSeconds(this.reactionTime)); // metres
+        const total: number = distanceToStop + (this.length * 3);
         return total;
     }
 

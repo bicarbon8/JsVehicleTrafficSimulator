@@ -69,6 +69,27 @@ export class MapManager {
         return withinRadius;
     }
 
+    getVehiclesInViewAhead(vehicle: Vehicle, options?: {includeLeft?: boolean, includeRight?: boolean}): Array<Vehicle> {
+        options ??= {includeLeft: false, includeRight: false};
+        const viewDist = vehicle.getLookAheadDistance();
+        const vehicles = this.getVehiclesWithinRadius(vehicle, viewDist)
+            .filter(v => vehicle.hasInViewAhead(v));
+        return vehicles;
+    }
+
+    getVehiclesOnConnectedSegments(vehicle: Vehicle, inViewAhead: boolean = false): Array<Vehicle> {
+        const vehicles = new Array<Vehicle>();
+        const vSeg = vehicle.segment;
+        if (vSeg) {
+            const segments = this.getSegmentsConnectedTo(vSeg);
+            segments.forEach(s => vehicles.push(...s.vehicles));
+            if (inViewAhead) {
+                return vehicles.filter(v => vehicle.hasInViewAhead(v));
+            }
+        }
+        return vehicles;
+    }
+
     getVehiclesWithinRadiusAhead(location: Vector3, segment: RoadSegment, distance: number): Vehicle[] {
         let distanceToEnd: number = Utils.getLength(location, segment.end);
         let vehicles: Vehicle[] = segment.vehicles.filter((v) => {
@@ -134,6 +155,15 @@ export class MapManager {
 
     getSegmentById(segmentId: number): RoadSegment {
         return this._roadSegments?.get(segmentId);
+    }
+
+    getSegmentsConnectedTo(segment: RoadSegment): Array<RoadSegment> {
+        const segments = [
+            ...this.getSegmentsStartingAt(segment.end),
+            ...this.getSegmentsEndingAt(segment.start),
+            ...segment.laneChangePoints.map(p => this.getSegmentsEndingAt(p)).flat(2)
+        ];
+        return segments;
     }
 
     /**
