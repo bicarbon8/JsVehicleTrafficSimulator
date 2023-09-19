@@ -192,11 +192,11 @@ export module Utils {
      * `d` = distance in metres
      * `v` = {velocity} in Metres per Second
      * `t` = time in Seconds
-     * @param velocity the speed in Metres per Second
+     * @param speed the speed in Metres per Second
      * @param elapsedMs the time in milliseconds
      */
-    export function getDistanceTravelled(velocity: number, elapsedMs: number): number {
-        return velocity * convertMillisecondsToSeconds(elapsedMs);
+    export function getDistanceTravelled(speed: number, elapsedMs: number): number {
+        return speed * convertMillisecondsToSeconds(elapsedMs);
     }
 
     /**
@@ -280,5 +280,41 @@ export module Utils {
      */
     export function isWithinRange(p1: Vector3, p2: Vector3, range: number): boolean {
         return new Line3(p1, p2).distance() <= Math.abs(range);
+    }
+
+    /**
+     * fuzzy equality comparison between two numbers where each must be within the 
+     * specified `offset` from eachother to be considered equal
+     * @param a the first number
+     * @param b the second number
+     * @param offset the maximum difference allowed to be considered equal
+     * @returns `true` if the first and second number are within the specified `offset`
+     * from eachother (inclusive), otherwise `false`
+     */
+    export function fuzzyEquals(a: number, b: number, offset: number = 0.1): boolean {
+        if (a > b) {
+            return a - b <= offset;
+        } else if (b > a) {
+            return b - a <= offset;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * predicts a vehicle's location in the future based on current speed and heading
+     * @param vehicle the `Vehicle` to predict a location of
+     * @param deltaTimeMs the amount of milliseconds in the future to predict
+     * @returns a `Vector3` indicating the new location of the passed in vehicle
+     * at the specified time in the future if no other changes occur
+     */
+    export function predictLocationAtTime(vehicle: Vehicle, deltaTimeMs: number): Vector3 {
+        if (Utils.fuzzyEquals(vehicle.speed, 0, 0.01)) {
+            return vehicle.location;
+        }
+        const dist = Utils.getDistanceTravelled(vehicle.speed, deltaTimeMs);
+        const heading = Utils.getHeading(vehicle);
+        const loc = vehicle.location;
+        return loc.add(heading.multiplyScalar(dist));
     }
 }

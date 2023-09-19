@@ -153,6 +153,7 @@ export class Vehicle extends TrafficObject {
     get speed(): number {
         if (this.hasPhysics) {
             const relativeVelocity = this.body.velocity
+                .clone()
                 .vsub(this.body.velocity
                 .vsub(this.body.quaternion.vmult(new Vec3(0, 0, 1))))
                 .z;
