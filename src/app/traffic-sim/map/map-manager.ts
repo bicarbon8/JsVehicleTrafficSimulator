@@ -226,6 +226,12 @@ export class MapManager {
         return this.segments.filter((seg) => seg.roadName == roadName);
     }
 
+    /**
+     * checks all known `RoadSegment` objects for those containing the passed in `point`
+     * at either the start, end or as a change lane point
+     * @param point the `Vector3` to look for within any segments
+     * @returns an array of `RoadSegement` objects where each contains the passed in `point`
+     */
     getSegmentsContainingPoint(point: Vector3): RoadSegment[] {
         var segments = [];
         var allSegments: RoadSegment[] = this.segments;

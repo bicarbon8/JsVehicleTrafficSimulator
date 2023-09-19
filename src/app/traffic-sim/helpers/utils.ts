@@ -317,4 +317,33 @@ export module Utils {
         const loc = vehicle.location;
         return loc.add(heading.multiplyScalar(dist));
     }
+
+    /**
+     * calculates, based on a vehicle's current lane, where it will be in the future
+     * given its speed and assuming no changes applied during the time
+     * @param vehicle the `Vehicle` to calculate a location of
+     * @param deltaTimeMs the amount of time in milliseconds in the future to calculate
+     * @returns a `Vector3` indicating the new location of the passed in vehicle at
+     * the specified time in the future if no other changes occur
+     */
+    export function calculateLocationAtTime(vehicle: Vehicle, deltaTimeMs: number): Vector3 {
+        if (Utils.fuzzyEquals(vehicle.speed, 0, 0.01)) {
+            return vehicle.location;
+        }
+        const dist = Utils.getDistanceTravelled(vehicle.speed, deltaTimeMs);
+        let start = vehicle.location;
+        let segment = vehicle.segment;
+        let remaining = dist;
+        while (remaining > Utils.getLength(start, segment.end)) {
+            const nextSegments = vehicle.simMgr.mapManager.getSegmentsContainingPoint(segment.end);
+            if (nextSegments?.length > 0) {
+                remaining -= Utils.getLength(start, segment.end);
+                start = segment.end;
+                segment = nextSegments[Utils.getRandomIntBetween(0, nextSegments.length)];
+            } else {
+                return null; // vehicle won't exist
+            }
+        }
+        return Utils.getPointInBetweenByDistance(start, segment.end, remaining);
+    }
 }
