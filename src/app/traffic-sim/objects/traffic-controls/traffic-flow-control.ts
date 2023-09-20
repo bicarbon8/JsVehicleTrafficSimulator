@@ -31,6 +31,7 @@ export abstract class TrafficFlowControl extends TrafficObject {
     }
 
     update(elapsedMs: number): void {
+        super.update(elapsedMs);
         this._elapsed += elapsedMs;
     }
 

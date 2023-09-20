@@ -1,4 +1,4 @@
-import { Body, Vec3, World, Plane, ContactMaterial, Material } from "cannon-es";
+import { Body, Vec3, World, Plane, Material } from "cannon-es";
 import { SimulationManager } from "./simulation-manager";
 
 export class PhysicsManager {

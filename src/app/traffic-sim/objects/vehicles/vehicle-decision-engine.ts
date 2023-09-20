@@ -44,7 +44,8 @@ export class VehicleDecisionEngine {
     private _getAcceleratingDesiredState(vehicle: Vehicle): VehicleState {
         const vehicles = this._vehiclesAhead(vehicle);
         if (vehicles.length > 0) {
-            if (vehicles.some(v => v.state === 'stopped' || this._isVehicle2Slower(vehicle, v))) {
+            // if (vehicles.some(v => v.state === 'stopped' || this._isVehicle2Slower(vehicle, v))) {
+            if (this._willCollideWithAnotherVehicle(vehicle)) {
                 if (vehicle.canChangeLanes()) {
                     if (this._shouldChangeLanes(vehicle)) {
                         return 'changinglane';
@@ -78,7 +79,8 @@ export class VehicleDecisionEngine {
     private _getDeceleratingDesiredState(vehicle: Vehicle): VehicleState {
         const vehicles = this._vehiclesAhead(vehicle);
         if (vehicles.length > 0) {
-            if (vehicles.some(v => v.state === 'stopped' || this._isVehicle2Slower(vehicle, v))) {
+            if (this._willCollideWithAnotherVehicle(vehicle)) {
+            // if (vehicles.some(v => v.state === 'stopped' || this._isVehicle2Slower(vehicle, v))) {
                 if (vehicle.canChangeLanes()) {
                     if (this._shouldChangeLanes(vehicle)) {
                         return 'changinglane';
@@ -156,13 +158,20 @@ export class VehicleDecisionEngine {
         return 'decelerating';
     }
 
+    /**
+     * finds all vehicles that can be seen within a 90 degree FoV ahead and
+     * that are within the look ahead distance
+     * @param vehicle the simulated vehicle
+     * @returns an array of vehicles that are within the look ahead distance
+     * and can be seen ahead of the passed in vehicle (within a 90 degree FoV)
+     */
     private _vehiclesAhead(vehicle: Vehicle): Array<Vehicle> {
         const ahead = vehicle.simMgr.mapManager.getVehiclesWithinRadius(vehicle, vehicle.getLookAheadDistance())
-            .filter(v => vehicle.hasInViewAhead(v))
-            .filter(v => {
-                const headingDiff = Math.abs(Utils.angleFormedBy(Utils.getHeadingLine(vehicle), Utils.getHeadingLine(v)));
-                return headingDiff < 50;
-            });
+            .filter(v => vehicle.hasInViewAhead(v));
+            // .filter(v => {
+            //     const headingDiff = Math.abs(Utils.angleFormedBy(Utils.getHeadingLine(vehicle), Utils.getHeadingLine(v)));
+            //     return headingDiff < 50;
+            // });
 
         return ahead;
     }
@@ -222,5 +231,21 @@ export class VehicleDecisionEngine {
 
     private _isAboveMaxSpeed(vehicle: Vehicle): boolean {
         return vehicle.speed > vehicle.maxSpeed;
+    }
+
+    private _willCollideWithAnotherVehicle(vehicle: Vehicle): boolean {
+        let collide = false;
+        const pos1 = Utils.calculateLocationAtTime(vehicle, vehicle.safeStopTime());
+        const rad1 = vehicle.length;
+        const vehicles = this._vehiclesAhead(vehicle);
+        for (let v2 of vehicles) {
+            const pos2 = Utils.calculateLocationAtTime(v2, v2.safeStopTime());
+            const rad2 = v2.length;
+            collide = Utils.isCollidingWith(pos1, rad1, pos2, rad2);
+            if (collide) {
+                break;
+            }
+        }
+        return collide;
     }
 }

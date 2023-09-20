@@ -4,6 +4,7 @@ import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
 import { Body } from 'cannon-es';
+import { V3 } from '../helpers/customTypes';
 
 export type TrafficObjectOptions = {
     id?: number;
@@ -20,6 +21,8 @@ export abstract class TrafficObject implements Renderable {
 
     private _obj3D: Object3D;
     private _material: MeshStandardMaterial;
+    private _previousLoc: Vector3;
+    private _velocity: Vector3;
 
     /**
      * the `id` of the `RoadSegment` on which this `TrafficObject` is placed
@@ -39,6 +42,7 @@ export abstract class TrafficObject implements Renderable {
             color: 0xffffff, // white,
             flatShading: true
         });
+        this._velocity = new Vector3();
     }
 
     /**
@@ -139,6 +143,10 @@ export abstract class TrafficObject implements Renderable {
         }
     }
 
+    get velocity(): Vector3 {
+        return this._velocity.clone();
+    }
+
     /**
      * moves this object group along it's z-axis by the specified {distance}
      * @param distance distance to move forward by
@@ -185,5 +193,9 @@ export abstract class TrafficObject implements Renderable {
 
     protected abstract generateObj3D(): Object3D;
 
-    abstract update(elapsedMs: number): void;
+    update(elapsedMs: number): void {
+        const loc = this.location;
+        this._previousLoc ??= loc.clone();
+        this._velocity = loc.sub(this._previousLoc).divideScalar(elapsedMs / 1000); // m/s
+    }
 }

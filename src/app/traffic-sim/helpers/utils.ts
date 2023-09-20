@@ -1,4 +1,4 @@
-import { Box3, Line3, MathUtils, Mesh, Object3D, PlaneGeometry, Vector3 } from 'three';
+import { Box3, Line3, MathUtils, Mesh, Object3D, PlaneGeometry, Sphere, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -82,11 +82,21 @@ export module Utils {
         return Utils.angleFormedBy(l1, l2);
     }
 
-    export function isCollidingWith<T extends Mesh>(obj1: T, obj2: T): boolean {
-        if (obj1 && obj2) {
-            const b1: Box3 = new Box3().setFromObject(obj1);
-            const b2: Box3 = new Box3().setFromObject(obj2);
-            return b1.intersectsBox(b2);
+    /**
+     * creates two spheres of the specified radii and determines if they intersect
+     * @param p1 the centre of object1
+     * @param r1 the radius of object1
+     * @param p2 the centre of object2
+     * @param r2 the radius of object2 @default r1
+     * @returns `true` if a sphere at `p1` with radius `r1` intersects with a sphere at `p2`
+     * with a radius of `r2`
+     */
+    export function isCollidingWith(p1: Vector3, r1: number, p2: Vector3, r2: number): boolean {
+        if (p1 && p2) {
+            r2 ??= r1;
+            const s1: Sphere = new Sphere(p1, r1);
+            const s2: Sphere = new Sphere(p2, r2);
+            return s1.intersectsSphere(s2);
         }
         return false;
     }

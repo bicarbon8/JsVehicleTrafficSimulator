@@ -1,9 +1,9 @@
-import { Mesh, BoxGeometry, Vector3, Object3D, Line3, BufferGeometry, Line } from "three";
+import { Mesh, BoxGeometry, Vector3, Object3D, Line3, BufferGeometry, Line, Quaternion } from "three";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
-import { Body, Box, Vec3, Quaternion as Quat4, Material } from "cannon-es";
+import { Body, Box, Vec3, Quaternion as Quat4 } from "cannon-es";
 
 export type VehicleOptions = TrafficObjectOptions & {
     /**
@@ -81,7 +81,6 @@ export class Vehicle extends TrafficObject {
      * time when we should consider changing lanes again if blocked
      */
     private _changeLaneTime: number;
-    private _speed: number; // see: {get speed()}
     private _crashedAt: number; // see: {get crashedAt()}
     private _crashCleanupTime: number; // see: {get crashCleanupTime()}
     private _body: Body; // cannon-es physics body (only if `hasPhysics` is true)
@@ -104,7 +103,6 @@ export class Vehicle extends TrafficObject {
         this.changeLaneDelay = options?.changeLaneDelay || 30000; // milliseconds
         this.maxSpeed = options?.maxSpeed ?? 72.2; // Metres per Second
         
-        this._speed = options?.startingSpeed || 0; // Metres per Second
         this._changeLaneTime = this.changeLaneDelay;
         this._state = options?.startingState ?? 'stopped';
         this._lastReaction = 0;
@@ -151,15 +149,10 @@ export class Vehicle extends TrafficObject {
      * @returns the speed in Metres per Second
      */
     get speed(): number {
-        if (this.hasPhysics) {
-            const relativeVelocity = this.body.velocity
-                .clone()
-                .vsub(this.body.velocity
-                .vsub(this.body.quaternion.vmult(new Vec3(0, 0, 1))))
-                .z;
-            return relativeVelocity * 100;
-        }
-        return this._speed;
+        const q = this.rotation;
+        q.conjugate();
+        const localVelocity = this.velocity.applyQuaternion(q);
+        return localVelocity.z;
     }
 
     /**
@@ -204,11 +197,9 @@ export class Vehicle extends TrafficObject {
         return v;
     }
 
-    update(elapsedMs: number): void {
-        if (isNaN(this.speed)) {
-            debugger;
-        }
-        
+    override update(elapsedMs: number): void {
+        super.update(elapsedMs);
+
         if (this.simMgr.debug) {
             this.viewHeadingLine();
         }
@@ -268,10 +259,10 @@ export class Vehicle extends TrafficObject {
             const loc = this.location;
             const speed = this.speed;
             let acceleration: number;
-            // if (this.nextReactionTime <= this.simMgr.totalElapsed) {
-            //     this._lastReaction = this.simMgr.totalElapsed;
+            if (this.nextReactionTime <= this.simMgr.totalElapsed) {
+                this._lastReaction = this.simMgr.totalElapsed;
                 this._state = this.simMgr.decisionEng.getDesiredState(this);
-            // }
+            }
             switch(this.state) {
                 case 'changinglane':
                     const lane = this.startLaneChange();
@@ -285,16 +276,15 @@ export class Vehicle extends TrafficObject {
                 case 'accelerating':
                     // set mesh position from physics body
                     acceleration = this.accelerate(elapsedMs);
-                    acceleration *= 10;
+                    // acceleration *= 10;
                     break;
                 case 'decelerating':
                     // set mesh position from physics body
                     acceleration = this.brake(elapsedMs);
-                    acceleration *= 0.0001;
+                    // acceleration *= 0.0001;
                     break;
                 case 'stopped':
                     // set physics body position from mesh (prevent sliding while stopped)
-                    this._speed = 0;
                     this.body?.velocity?.set(0, 0, 0);
                     acceleration = 0;
                     break;
@@ -302,11 +292,12 @@ export class Vehicle extends TrafficObject {
             if (this.hasPhysics) {
                 if (acceleration !== 0) {
                     const relativeVelocity = this.body.velocity
+                        .clone()
                         .vsub(this.body.velocity
-                        .vsub(this.body.quaternion.vmult(new Vec3(0, 0, 1))));
+                        .vsub(this.body.quaternion.clone().vmult(new Vec3(0, 0, 1))));
                     const frictionForce = relativeVelocity.scale(-1);
                     const localForce = new Vec3(0, 0, acceleration);
-                    const accelerationForce = this.body.quaternion.vmult(localForce);
+                    const accelerationForce = this.body.quaternion.clone().vmult(localForce);
                     this.body.applyForce(
                         new Vec3(
                             accelerationForce.x - frictionForce.x, 
@@ -359,8 +350,10 @@ export class Vehicle extends TrafficObject {
         if (this._crashedAt != null) {
             return true;
         }
+        const p1 = this.obj3D.position;
+        const r1 = this.length;
         const nearbyVehicles = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
-        if (nearbyVehicles.some(v => Utils.isCollidingWith(this.mesh, v.mesh))) {
+        if (nearbyVehicles.some(v => Utils.isCollidingWith(p1, r1, v.obj3D.position, v.length))) {
             this._crashedAt = this.simMgr.totalElapsed;
             this.material.color.setHex(0xff0000); // red
             this._crashCleanupTime = this._crashedAt
@@ -395,7 +388,6 @@ export class Vehicle extends TrafficObject {
                 this.material?.color.setHex(0x66ff66); // green
             }
         }
-        this._speed += acceleration;
         return acceleration;
     }
 
@@ -417,13 +409,12 @@ export class Vehicle extends TrafficObject {
         let acceleration: number = 0;
         if (this.speed > 0) {
             const elapsedSeconds = Utils.convertMillisecondsToSeconds(elapsedMs);
-            acceleration = 1 * elapsedSeconds; // this.maxDecelerationRate * elapsedSeconds;
+            acceleration = this.maxDecelerationRate * elapsedSeconds;
             if (!this.isCrashed()) {
                 this.material?.color.setHex(0xffff00); // yellow
             }
         }
-        this._speed -= acceleration;
-        return 0; //-acceleration;
+        return -acceleration;
     }
 
     canChangeLanes(): boolean {
@@ -543,11 +534,24 @@ export class Vehicle extends TrafficObject {
      * @returns the distance required to safely stop in metres
      */
     getLookAheadDistance(): number {
-        const safeDecelerationRate = 1; // m/s^2
-        const time: number = this.speed / safeDecelerationRate; // Seconds
-        const distanceToStop: number = this.speed * (time * Utils.convertMillisecondsToSeconds(this.reactionTime)); // metres
-        const total: number = distanceToStop + (this.length * 3);
+        const distanceToStop: number = this.speed * this.safeStopTime(); // metres
+        const total: number = distanceToStop + this.length;
         return total;
+    }
+
+    /**
+     * calculates the amount of time required to stop this vehicle safely
+     * @returns the amount of time, in seconds, required to stop safely
+     */
+    safeStopTime(): number {
+        const speed = this.speed;
+        const reactionSeconds = Utils.convertMillisecondsToSeconds(this.reactionTime);
+        if (Utils.fuzzyEquals(speed, 0.01)) {
+            return reactionSeconds;
+        }
+        const safeDecelerationRate = 1; // m/s^2
+        const time: number = (speed / safeDecelerationRate) + reactionSeconds;
+        return time; // seconds
     }
 
     /**
