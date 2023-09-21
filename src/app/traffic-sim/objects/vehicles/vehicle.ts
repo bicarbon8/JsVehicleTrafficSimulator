@@ -110,6 +110,27 @@ export class Vehicle extends TrafficObject {
     }
 
     /**
+     * length of this object along the up / down vector
+     */
+    get height(): number {
+        return this._height;
+    }
+
+    /**
+     * length of this object along the left / right vector
+     */
+    get width(): number {
+        return this._width;
+    }
+
+    /**
+     * length of this object along the forward / backward vector
+     */
+    get length(): number {
+        return this._length;
+    }
+
+    /**
      * the last time the driver reacted to some event in milliseconds of simulation time
      */
     get lastReactionTime(): number {
@@ -263,18 +284,18 @@ export class Vehicle extends TrafficObject {
 
             switch(this.state) {
                 case 'stopped':
-                    const loc = this.location;
                     // set physics body position from mesh (prevent sliding while stopped)
+                    const loc = this.location;
                     this.body?.velocity?.set(0, 0, 0);
                     this.body?.position?.set(loc.x, loc.y, loc.z);
                     break;
                 default:
+                    // set mesh position from physics body
                     const pos = this.body?.position ?? this.location;
                     if (isNaN(pos?.x)) {
                         // debugger;
                         return;
                     }
-                    // set mesh position from physics body
                     this.obj3D.position.set(pos.x, pos.y, pos.z);
                     break;
             }
@@ -353,7 +374,7 @@ export class Vehicle extends TrafficObject {
             const deltaV = Utils.getHeading(this, {x:0, y:0, z:1})
                 .multiplyScalar(force);
             console.info({accelerationForce: deltaV});
-            this.body.applyForce(
+            this.body.applyImpulse(
                 new Vec3(
                     deltaV.x, 
                     deltaV.y, 
@@ -522,24 +543,24 @@ export class Vehicle extends TrafficObject {
     getLookAheadDistance(): number {
         const distanceToStop: number = this.speed * this.safeStopTime(); // metres
         const total: number = distanceToStop + (this.length * 2);
-        console.info({distanceToStop}, `${this.length}`, {total});
+        console.debug({distanceToStop}, {total});
         return total;
     }
 
     /**
-     * calculates the amount of time required to stop this vehicle safely
+     * calculates the amount of time required, in seconds, to stop this vehicle safely
      * @returns the amount of time, in seconds, required to stop safely
      */
     safeStopTime(): number {
         const speed = this.speed;
         const reactionSeconds = Utils.convertMillisecondsToSeconds(this.reactionTime);
         if (Utils.fuzzyEquals(speed, 0.01)) {
-            console.info({speed}, {reactionSeconds});
+            console.debug({speed}, {reactionSeconds});
             return reactionSeconds;
         }
         const safeDecelerationRate = 1; // m/s^2
         const time: number = (speed / safeDecelerationRate) + reactionSeconds;
-        console.info({speed}, {reactionSeconds}, {safeDecelerationRate}, {time});
+        console.debug({speed}, {reactionSeconds}, {safeDecelerationRate}, {time});
         return time; // seconds
     }
 

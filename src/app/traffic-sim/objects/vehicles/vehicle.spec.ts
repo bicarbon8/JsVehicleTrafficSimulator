@@ -4,6 +4,31 @@ import { Vehicle } from "./vehicle";
 import { SimulationManager } from "../../simulation-manager";
 
 describe('Vehicle', () => {
+    const datas = [
+        {direction: new Vector3(0,0,1),length:4,width:2,height:1},
+        {direction: new Vector3(0,0,-1),length:4,width:2,height:1},
+        {direction: new Vector3(1,0,0),length:4,width:2,height:1},
+        {direction: new Vector3(-1,0,0),length:4,width:2,height:1},
+        {direction: new Vector3(0,1,0),length:4,width:2,height:1},
+        {direction: new Vector3(0,-1,0),length:4,width:2,height:1},
+        {direction: new Vector3(1,1,1),length:4,width:2,height:1},
+        {direction: new Vector3(-1,-1,-1),length:4,width:2,height:1}
+    ];
+    datas.forEach(data => {
+        it(`returns the correct dimensions when facing: ${JSON.stringify(data.direction)}`, () => {
+            const v = new Vehicle({
+                length: data.length,
+                width: data.width,
+                height: data.height
+            });
+            v.lookAt(data.direction);
+
+            expect(v.length).withContext('length').toBeCloseTo(data.length, 0.1);
+            expect(v.width).withContext('width').toBeCloseTo(data.width, 0.1);
+            expect(v.height).withContext('height').toBeCloseTo(data.height, 0.1);
+        })
+    });
+
     it('can accelerate based on acceleration in Metres per Second', () => {
         const simMgr = new SimulationManager();
         const segment: RoadSegment = new RoadSegment({
@@ -20,9 +45,14 @@ describe('Vehicle', () => {
             height: 1
         }, simMgr);
         vehicle.hasPhysics = true;
+        const body = vehicle.body;
         segment.addVehicle(vehicle, segment.start);
         vehicle.lookAt(segment.end);
-        simMgr.update(1000); // 1 second elapsed
+        simMgr.update(250); // 1/4 second elapsed
+        simMgr.update(250); // 1/4 second elapsed
+        simMgr.update(250); // 1/4 second elapsed
+        simMgr.update(250); // 1/4 second elapsed
+        console.debug('body velocity', body.velocity);
 
         const actual = vehicle.speed; // should be 1 m/s
 

@@ -5,6 +5,7 @@ import { Vehicle } from '../objects/vehicles/vehicle';
 import { VehicleGenerator } from '../objects/vehicles/vehicle-generator';
 import { SimulationManager } from '../simulation-manager';
 import { Body, Box, Vec3, Quaternion as Quat4 } from 'cannon-es';
+import { Utils } from '../helpers/utils';
 
 export type RoadSegmentOptions = TrafficObjectOptions & {
     start: Vector3;
@@ -19,6 +20,10 @@ export type RoadSegmentOptions = TrafficObjectOptions & {
      * width of {RoadSegment} in Metres
      */
     width?: number;
+    /**
+     * height of {RoadSegment} in Metres
+     */
+    height?: number;
     /**
      * maximum legal speed allowed on {RoadSegment} in Metres per Second
      */
@@ -47,6 +52,10 @@ export class RoadSegment extends TrafficObject {
      */
     private _width: number;
     /**
+     * height of {RoadSegment} in Metres
+     */
+    private _height: number;
+    /**
      * indicates that this {RoadSegment} merges with other traffic so the
      * collision detection should look across a wider range
      */
@@ -67,12 +76,27 @@ export class RoadSegment extends TrafficObject {
         this.roadName = options?.roadName;
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
         this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
-        this._width = options?.width || 6; // standard US lane width = 3.7
+        this._width = options?.width ?? 6; // standard US lane width = 3.7
+        this._height = options?.height ?? 0.5;
         this.isInlet = options?.isInlet ?? false;
         this._vehicles = new Map<number, Vehicle>();
         this._tfcs = new Map<number, TrafficFlowControl>();
         this._laneChangeLocations = [];
         this.hasPhysics = true;
+    }
+
+    /**
+     * length of this object along the up / down vector
+     */
+    get height(): number {
+        return this._height;
+    }
+
+    /**
+     * length of this object along the left / right vector
+     */
+    get width(): number {
+        return this._width;
     }
 
     override get body(): Body {
@@ -177,12 +201,12 @@ export class RoadSegment extends TrafficObject {
         const length = this.line.distance();
         const centre = new Vector3(); 
         this.line.getCenter(centre);
-        const depth = 0.5;
-        const box = new BoxGeometry(this._width, depth, length);
+        
+        const box = new BoxGeometry(this._width, this._height, length);
         const mesh = new Mesh(box, this.material);
-        mesh.position.set(centre.x, centre.y - depth, centre.z);
+        mesh.position.set(centre.x, centre.y - this._height, centre.z);
         const look = this.line.end.clone();
-        look.y -= depth;
+        look.y -= this._height;
         mesh.lookAt(look);
         this._generateLaneChangePoints();
         return mesh;

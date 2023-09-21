@@ -92,39 +92,6 @@ export abstract class TrafficObject implements Renderable {
         return this._material;
     }
 
-    /**
-     * length of this object along the up / down vector
-     */
-    get height(): number {
-        const size = new Vector3();
-        this.boundingBox.getSize(size);
-        const inverseRotation = this.mesh?.quaternion.clone().invert() ?? new Quaternion();
-        size.applyQuaternion(inverseRotation);
-        return Math.abs(size.y);
-    }
-
-    /**
-     * length of this object along the left / right vector
-     */
-    get width(): number {
-        const size = new Vector3();
-        this.boundingBox.getSize(size);
-        const inverseRotation = this.mesh?.quaternion.clone().invert() ?? new Quaternion();
-        size.applyQuaternion(inverseRotation);
-        return Math.abs(size.x);
-    }
-
-    /**
-     * length of this object along the forward / backward vector
-     */
-    get length(): number {
-        const size = new Vector3();
-        this.boundingBox.getSize(size);
-        const inverseRotation = this.mesh?.quaternion.clone().invert() ?? new Quaternion();
-        size.applyQuaternion(inverseRotation);
-        return Math.abs(size.z);
-    }
-
     get location(): Vector3 {
         return this.obj3D?.position.clone();
     }
