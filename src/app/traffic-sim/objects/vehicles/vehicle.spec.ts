@@ -13,14 +13,20 @@ describe('Vehicle', () => {
         }, simMgr);
         simMgr.mapManager.addSegment(segment);
         const vehicle: Vehicle = new Vehicle({
-            accelerationRate: 100, // Metres per Second
-            maxSpeed: Infinity
+            accelerationRate: 1, // Metres per Second
+            maxSpeed: Infinity,
+            length: 4,
+            width: 2,
+            height: 1
         }, simMgr);
-        segment.addVehicle(vehicle);
-        vehicle.accelerate(1000); // 1 second
+        vehicle.hasPhysics = true;
+        segment.addVehicle(vehicle, segment.start);
+        vehicle.lookAt(segment.end);
+        simMgr.update(1000); // 1 second elapsed
 
-        let actual: number = vehicle.speed;
-        expect(100).toEqual(actual);
+        const actual = vehicle.speed; // should be 1 m/s
+
+        expect(1).withContext('speed').toEqual(actual);
     });
 
     it('can generate appropriate lookahead distance', () => {
@@ -34,17 +40,22 @@ describe('Vehicle', () => {
         const vehicle: Vehicle = new Vehicle({
             accelerationRate: 1, // Metres per Second
             maxDecelerationRate: 1,
-            length: 4
+            length: 4,
+            width: 2,
+            height: 1
         }, simMgr);
+        vehicle.hasPhysics = true;
         segment.addVehicle(vehicle);
 
         let actual: number = vehicle.getLookAheadDistance();
-        expect(vehicle.speed).toEqual(0);
-        expect(8).toEqual(actual);
+        expect(vehicle.speed).withContext('before update speed').toEqual(0);
+        expect(8).withContext('look ahead distance at rest').toEqual(actual);
 
-        vehicle.accelerate(1000); // speed should now be 1 Metre per Second
+        simMgr.update(1000); // speed should now be 1 m/s
+        
+        expect(vehicle.speed).withContext('after update speed').toEqual(1);
 
         actual = vehicle.getLookAheadDistance();
-        expect(9).toEqual(actual);
+        expect(9).withContext('look ahead distance at speed').toBeCloseTo(actual, 0.1);
     });
 });

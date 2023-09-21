@@ -52,6 +52,7 @@ export type VehicleOptions = TrafficObjectOptions & {
 export type VehicleState = 'decelerating' | 'accelerating' | 'stopped' | 'changinglane';
 
 export class Vehicle extends TrafficObject {
+    static mass: number = 100;
     /**
      * milliseconds taken to react to events (defaults to 2500 ms)
      */
@@ -132,9 +133,11 @@ export class Vehicle extends TrafficObject {
                 const loc = this.mesh.position;
                 const q = this.rotation;
                 this._body = new Body({
-                    mass: 100, // kg; TODO: get mass from obj props
+                    mass: Vehicle.mass, // kg; TODO: get mass from obj props
                 });
-                this._body.addShape(new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)));
+                const dimensions = new Vec3(this.width / 2, this.height / 2, this.length / 2);
+                // console.info({dimensions});
+                this._body.addShape(new Box(dimensions));
                 this._body.position.set(loc.x, loc.y, loc.z);
                 this._body.quaternion.set(q.x, q.y, q.z, q.w);
                 this.simMgr.physicsManager.addBody(this._body);
@@ -146,11 +149,10 @@ export class Vehicle extends TrafficObject {
 
     /**
      * the speed along the Z axis, fowards or backwards (negative for backwards)
-     * @returns the speed in Metres per Second
+     * @returns the speed in Metres per Second along the vehicle's Z axis
      */
     get speed(): number {
-        const q = this.rotation;
-        q.conjugate();
+        const q = this.rotation.invert();
         const localVelocity = this.velocity.applyQuaternion(q);
         return localVelocity.z;
     }
@@ -158,8 +160,15 @@ export class Vehicle extends TrafficObject {
     /**
      * `true` if vehicle is changing lanes
      */
-    get isChangingLanes(): boolean {
+    get changingLanes(): boolean {
         return this._isChangingLanes ?? false;
+    }
+
+    /**
+     * sets the current state of lane changing
+     */
+    set changingLanes(changing: boolean) {
+        this._isChangingLanes = changing ?? false;
     }
 
     /**
@@ -207,6 +216,7 @@ export class Vehicle extends TrafficObject {
         if (!this.segment) {
             // end of Road reached... remove vehicle from Simulation
             this.simMgr.removeVehicle(this);
+            console.warn('vehicle', this.name, 'has no segment so was removed from the map');
             return;
         }
 
@@ -223,104 +233,133 @@ export class Vehicle extends TrafficObject {
         if (this.segment) {
             // if we've reached the end of our current `RoadSegment`
             if (Utils.isWithinRange(this.location, this.segment.end, this.length / 2)) {
-                let nextSegments: Array<RoadSegment>;
-                if (this.isChangingLanes) {
-                    // get all segments we could enter (except the one we're already on)
-                    nextSegments = this.simMgr.mapManager.getSegmentsContainingPoint(this.segment.end)
-                        .filter(s => s.id != this.segmentId);
-                    // then we've finished changing lanes
-                    this._isChangingLanes = false;
-                    this.simMgr.mapManager.removeSegment(this.segmentId);
-                    console.info(this.name, 'finished lane change with', nextSegments, 'available');
+                const nextSegment = this.simMgr.mapManager.getNextSegment(this);
+                if (nextSegment) {
+                    nextSegment.addVehicle(this);
+                    console.info('vehicle', this.name, 'moved to new segment', nextSegment.name, 'in road', nextSegment.roadName);
                 } else {
-                    nextSegments = this.simMgr.mapManager.getSegmentsStartingAt(this.segment.end, this.segment.roadName);
-                }
-                // if there is a next Segment
-                if(nextSegments?.length) {
-                    // move to segment (pick randomly)
-                    // TODO: lookup values from vehicle's choosen path
-                    var randIndex = Utils.getRandomIntBetween(0, nextSegments.length);
-                    var nextSeg: RoadSegment = nextSegments[randIndex];
-                    nextSeg.addVehicle(this);
-                } else {
-                    // end of Road reached... remove vehicle from Simulation
                     this.simMgr.removeVehicle(this);
+                    console.warn('vehicle', this.name, 'has no segment so was removed from the map');
                     return;
                 }
             }
 
             this.turnTowards(this.segment?.end, elapsedMs);
-            
-            const pos = this.body?.position ?? this.location;
-            if (isNaN(pos?.x)) {
-                // debugger;
-                return;
-            }
-            const loc = this.location;
-            const speed = this.speed;
-            let acceleration: number;
-            if (this.nextReactionTime <= this.simMgr.totalElapsed) {
+            let state = this.state;
+            if (this.nextReactionTime >= this.simMgr.totalElapsed) {
                 this._lastReaction = this.simMgr.totalElapsed;
-                this._state = this.simMgr.decisionEng.getDesiredState(this);
+                state = this.simMgr.decisionEng.getDesiredState(this);
             }
-            switch(this.state) {
-                case 'changinglane':
-                    const lane = this.startLaneChange();
-                    if (!lane) {
-                        this._state = 'decelerating';
-                        this.brake(elapsedMs);
-                        break;
-                    } else {
-                        this._state = 'accelerating';
-                    }
-                case 'accelerating':
-                    // set mesh position from physics body
-                    acceleration = this.accelerate(elapsedMs);
-                    // acceleration *= 10;
-                    break;
-                case 'decelerating':
-                    // set mesh position from physics body
-                    acceleration = this.brake(elapsedMs);
-                    // acceleration *= 0.0001;
-                    break;
-                case 'stopped':
-                    // set physics body position from mesh (prevent sliding while stopped)
-                    this.body?.velocity?.set(0, 0, 0);
-                    acceleration = 0;
-                    break;
-            }
+            const acceleration = this.getDesiredAccelerationForDesiredState(state);
+            this.setVehicleColourForState(this.state);
             if (this.hasPhysics) {
-                if (acceleration !== 0) {
-                    const relativeVelocity = this.body.velocity
-                        .clone()
-                        .vsub(this.body.velocity
-                        .vsub(this.body.quaternion.clone().vmult(new Vec3(0, 0, 1))));
-                    const frictionForce = relativeVelocity.scale(-1);
-                    const localForce = new Vec3(0, 0, acceleration);
-                    const accelerationForce = this.body.quaternion.clone().vmult(localForce);
-                    this.body.applyForce(
-                        new Vec3(
-                            accelerationForce.x - frictionForce.x, 
-                            accelerationForce.y - frictionForce.y, 
-                            accelerationForce.z - frictionForce.z
-                        )
-                    );
-                }
+                const force = Vehicle.mass * acceleration;
+                const percent = elapsedMs / 1000;
+                this.applyForce(force * percent);
             } else {
-                const dist = speed * Utils.convertMillisecondsToSeconds(elapsedMs); // Metres
+                const dist = this.speed * Utils.convertMillisecondsToSeconds(elapsedMs); // Metres
                 this.moveForwardBy(dist);
             }
 
             switch(this.state) {
                 case 'stopped':
+                    const loc = this.location;
                     // set physics body position from mesh (prevent sliding while stopped)
+                    this.body?.velocity?.set(0, 0, 0);
                     this.body?.position?.set(loc.x, loc.y, loc.z);
                     break;
                 default:
+                    const pos = this.body?.position ?? this.location;
+                    if (isNaN(pos?.x)) {
+                        // debugger;
+                        return;
+                    }
                     // set mesh position from physics body
                     this.obj3D.position.set(pos.x, pos.y, pos.z);
                     break;
             }
+        }
+    }
+
+    /**
+     * sets the vehicle's colour based on it's crashed or acceleration
+     * states
+     * @param state the `VehicleState` to base the colour on
+     */
+    setVehicleColourForState(state: VehicleState): void {
+        if (this.isCrashed()) {
+            this.material.color.setHex(0xff0000); // red
+            return;
+        }
+        switch(state) {
+            case 'accelerating':
+                this.material?.color.setHex(0x66ff66); // green
+                break;
+            case 'decelerating':
+                this.material?.color.setHex(0xffff00); // yellow
+                break;
+            case 'stopped':
+                this.material?.color.setHex(0xc0c0c0);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * calculates the acceleration to be applied based on the passed in
+     * `VehicleState`
+     * @param state the `VehicleState` used to determine acceleration
+     * @returns the acceleration to apply
+     */
+    getDesiredAccelerationForDesiredState(state: VehicleState): number {
+        let acceleration: number = 0;
+        switch(state) {
+            case 'changinglane':
+                console.debug('vehicle', this.name, 'wants to change lanes')
+                const lane = this.startLaneChange();
+                if (!lane) {
+                    this._state = 'decelerating';
+                    acceleration = -1; // m/s
+                } else {
+                    this._state = 'accelerating';
+                    acceleration = this.accelerationRate;
+                }
+                break;
+            case 'accelerating':
+                console.debug('vehicle', this.name, 'wants to accelerate');
+                acceleration = this.accelerationRate; // m/s
+                break;
+            case 'decelerating':
+                console.debug('vehicle', this.name, 'wants to decelerate');
+                acceleration = -1; // m/s
+                break;
+            case 'stopped':
+                console.debug('vehicle', this.name, 'wants to stop');
+                break;
+            default:
+                break;
+        }
+        return acceleration;
+    }
+
+    /**
+     * applies the passed in force to the `body` object along
+     * the z axis subtracting any friction forces along other axis
+     * @param force the force to apply along the z axis
+     */
+    applyForce(force: number): void {
+        if (force !== 0) {
+            const deltaV = Utils.getHeading(this, {x:0, y:0, z:1})
+                .multiplyScalar(force);
+            console.info({accelerationForce: deltaV});
+            this.body.applyForce(
+                new Vec3(
+                    deltaV.x, 
+                    deltaV.y, 
+                    deltaV.z
+                )
+            );
         }
     }
 
@@ -355,7 +394,6 @@ export class Vehicle extends TrafficObject {
         const nearbyVehicles = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
         if (nearbyVehicles.some(v => Utils.isCollidingWith(p1, r1, v.obj3D.position, v.length))) {
             this._crashedAt = this.simMgr.totalElapsed;
-            this.material.color.setHex(0xff0000); // red
             this._crashCleanupTime = this._crashedAt
                 + Utils.getRandomRealBetween(
                     SimulationManager.Constants.CRASH_CLEANUP_MIN_DELAY, 
@@ -365,60 +403,8 @@ export class Vehicle extends TrafficObject {
         return false;
     }
 
-    /**
-     * if this vehicle is not exceeding its `maxSpeed` and the
-     * `RoadSegment.speedLimit` the current speed will be increased
-     * using the following formula:
-     * `Vf = Vi + A * t`
-     * 
-     * where:
-     * `Vf` is the final velocity in Metres per Second
-     * `Vi` is the current velocity in Metres per Second
-     * `A` is the `acceleration` in Metres per Second
-     * `t` is the elapsed time in Seconds
-     * @param elapsedMs amount of time, in milliseconds, elapsed since last update
-     * @returns the acceleration applied
-     */
-    accelerate(elapsedMs: number): number {
-        let acceleration: number = 0;
-        if (this.speed < this.maxSpeed && this.speed < this.segment?.speedLimit) {
-            const elapsedSeconds: number = Utils.convertMillisecondsToSeconds(elapsedMs);
-            acceleration = this.accelerationRate * elapsedSeconds;
-            if (!this.isCrashed()) {
-                this.material?.color.setHex(0x66ff66); // green
-            }
-        }
-        return acceleration;
-    }
-
-    /**
-     * if this vehicle is not already stopped the current speed
-     * will be decreased using the following formula:
-     * `Vf = Vi + A * t`
-     * 
-     * where:
-     * `Vf` is the final velocity in Metres per Second
-     * `Vi` is the current velocity in Metres per Second
-     * `A` is the `acceleration` in Metres per Second
-     * `t` is the elapsed time in Seconds
-     * @param elapsedMs amount of time, in milliseconds, elapsed since last update
-     * @returns the deceleration applied (negative value)
-     */
-    brake(elapsedMs: number): number {
-        // TODO: determine amount of deceleration required up to max allowed
-        let acceleration: number = 0;
-        if (this.speed > 0) {
-            const elapsedSeconds = Utils.convertMillisecondsToSeconds(elapsedMs);
-            acceleration = this.maxDecelerationRate * elapsedSeconds;
-            if (!this.isCrashed()) {
-                this.material?.color.setHex(0xffff00); // yellow
-            }
-        }
-        return -acceleration;
-    }
-
     canChangeLanes(): boolean {
-        return !this.isChangingLanes
+        return !this.changingLanes
             && this._changeLaneTime <= this.simMgr.totalElapsed;
     }
 
@@ -535,7 +521,8 @@ export class Vehicle extends TrafficObject {
      */
     getLookAheadDistance(): number {
         const distanceToStop: number = this.speed * this.safeStopTime(); // metres
-        const total: number = distanceToStop + this.length;
+        const total: number = distanceToStop + (this.length * 2);
+        console.info({distanceToStop}, `${this.length}`, {total});
         return total;
     }
 
@@ -547,10 +534,12 @@ export class Vehicle extends TrafficObject {
         const speed = this.speed;
         const reactionSeconds = Utils.convertMillisecondsToSeconds(this.reactionTime);
         if (Utils.fuzzyEquals(speed, 0.01)) {
+            console.info({speed}, {reactionSeconds});
             return reactionSeconds;
         }
         const safeDecelerationRate = 1; // m/s^2
         const time: number = (speed / safeDecelerationRate) + reactionSeconds;
+        console.info({speed}, {reactionSeconds}, {safeDecelerationRate}, {time});
         return time; // seconds
     }
 

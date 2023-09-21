@@ -4,7 +4,6 @@ import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
 import { Body } from 'cannon-es';
-import { V3 } from '../helpers/customTypes';
 
 export type TrafficObjectOptions = {
     id?: number;
@@ -81,8 +80,9 @@ export abstract class TrafficObject implements Renderable {
         if (this.mesh) {
             var bbox = new Box3().setFromObject(this.mesh);
             // move to current position
-            bbox.min.sub(this.mesh?.position);
-            bbox.max.sub(this.mesh?.position);
+            const position = this.mesh.position;
+            bbox.min.sub(position);
+            bbox.max.sub(position);
             return bbox;
         }
         return null;
@@ -98,7 +98,9 @@ export abstract class TrafficObject implements Renderable {
     get height(): number {
         const size = new Vector3();
         this.boundingBox.getSize(size);
-        return size.y;
+        const inverseRotation = this.mesh?.quaternion.clone().invert() ?? new Quaternion();
+        size.applyQuaternion(inverseRotation);
+        return Math.abs(size.y);
     }
 
     /**
@@ -107,7 +109,9 @@ export abstract class TrafficObject implements Renderable {
     get width(): number {
         const size = new Vector3();
         this.boundingBox.getSize(size);
-        return size.x;
+        const inverseRotation = this.mesh?.quaternion.clone().invert() ?? new Quaternion();
+        size.applyQuaternion(inverseRotation);
+        return Math.abs(size.x);
     }
 
     /**
@@ -116,7 +120,9 @@ export abstract class TrafficObject implements Renderable {
     get length(): number {
         const size = new Vector3();
         this.boundingBox.getSize(size);
-        return size.z;
+        const inverseRotation = this.mesh?.quaternion.clone().invert() ?? new Quaternion();
+        size.applyQuaternion(inverseRotation);
+        return Math.abs(size.z);
     }
 
     get location(): Vector3 {

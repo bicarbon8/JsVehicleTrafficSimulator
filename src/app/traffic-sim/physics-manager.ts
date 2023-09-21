@@ -27,7 +27,12 @@ export class PhysicsManager {
     }
 
     update(elapsedMs: number): void {
-        this._world.step(elapsedMs);
+        const elapsedSeconds = elapsedMs / 1000;
+        let subSteps: number = 1;
+        if (elapsedSeconds > (1/60)) {
+            subSteps = Math.ceil(elapsedSeconds / (1/60));
+        }
+        this._world.step(elapsedSeconds, null, subSteps);
     }
 
     public addBody(body: Body): void {

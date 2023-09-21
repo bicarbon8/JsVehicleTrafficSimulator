@@ -89,29 +89,38 @@ export class SimulationManager {
 
     start(): void {
         this._startTime = (this._realtime) ? new Date().getTime() : 0;
+        this._lastUpdate = this._startTime;
         this._isRunning = true;
-        this.update();
+        this.animationLoop();
     }
 
     stop(): void {
         this._isRunning = false;
-        this._lastUpdate = null;
     }
 
-    update(): void {
+    animationLoop(): void {
         if (this._isRunning) {
             let elapsed: number = this.getElapsed();
             this._totalElapsedTime += elapsed;
-            this._physicsMgr.update(elapsed);
-            this._mapManager.update(elapsed);
-
+            this.update(elapsed);
             this._lastUpdate = (this._realtime) ? new Date().getTime() : this.getElapsed();
-
-            this._frameId = requestAnimationFrame(() => this.update());
+            this._frameId = requestAnimationFrame(() => this.animationLoop());
         }
         
         // console.debug(`updating view...`);
         this._viewMgr.update();
+    }
+
+    /**
+     * progresses the simulation forward by the specified amount of `elapsed` time
+     * in milliseconds.
+     * 
+     * > NOTE: this should be called by the `animationLoop`
+     * @param elapsed the amount of time in milliseconds that has elapsed
+     */
+    update(elapsed: number): void {
+        this._mapManager.update(elapsed);
+        this._physicsMgr.update(elapsed);
     }
 
     /**

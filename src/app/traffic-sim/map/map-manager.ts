@@ -1,4 +1,4 @@
-import { Box3, Line3, Vector3 } from 'three';
+import { Line3, Vector3 } from 'three';
 import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -355,6 +355,39 @@ export class MapManager {
         }
 
         return changeLaneSegment;
+    }
+
+    /**
+     * attempts to locate a `RoadSegment` starting from the end point of the 
+     * passed in vehicle's current segment
+     * @param vehicle a `Vehicle` nearing the end of it's existing `RoadSegment`
+     * @returns a randomly choosen `RoadSegment` that starts from the end of the 
+     * vehicle's current segment or `undefined` if none available
+     */
+    getNextSegment(vehicle: Vehicle): RoadSegment {
+        let nextSegment: RoadSegment;
+        if (vehicle) {
+            let nextSegments: Array<RoadSegment>;
+            if (vehicle.changingLanes) {
+                // get all segments we could enter (except the one we're already on)
+                nextSegments = this.getSegmentsContainingPoint(vehicle.segment.end)
+                    .filter(s => s.id != vehicle.segmentId);
+                // then we've finished changing lanes
+                vehicle.changingLanes = false;
+                this.removeSegment(vehicle.segmentId);
+                console.info(vehicle.name, 'finished lane change with', nextSegments, 'available');
+            } else {
+                nextSegments = this.getSegmentsStartingAt(vehicle.segment.end, vehicle.segment.roadName);
+            }
+            // if there is a next Segment
+            if(nextSegments?.length) {
+                // move to segment (pick randomly)
+                // TODO: lookup values from vehicle's choosen path
+                const randIndex = Utils.getRandomIntBetween(0, nextSegments.length);
+                nextSegment = nextSegments[randIndex];
+            }
+        }
+        return nextSegment;
     }
 }
 
