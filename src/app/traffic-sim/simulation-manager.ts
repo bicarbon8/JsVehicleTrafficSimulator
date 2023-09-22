@@ -1,3 +1,4 @@
+import { V3 } from "./helpers/customTypes";
 import { MapManager } from "./map/map-manager";
 import { RoadMap } from "./map/road-map";
 import { RoadSegment, RoadSegmentOptions } from "./map/road-segment";
@@ -26,7 +27,7 @@ export class SimulationManager {
 
     private _mapManager: MapManager;
     private _viewMgr: ViewManager;
-    private _physicsMgr: PhysicsManager;
+    // private _physicsMgr: PhysicsManager;
     private _decisionEng: VehicleDecisionEngine;
 
     public debug: boolean = false;
@@ -39,7 +40,7 @@ export class SimulationManager {
 
         this._mapManager = mapMgr ?? new MapManager();
         this._viewMgr = viewMgr ?? new ViewManager();
-        this._physicsMgr = physicsMgr ?? new PhysicsManager();
+        // this._physicsMgr = physicsMgr ?? new PhysicsManager(this);
         this._decisionEng = decisionEng ?? new VehicleDecisionEngine();
 
         this._lastUpdate = 0;
@@ -119,7 +120,6 @@ export class SimulationManager {
      */
     update(elapsed: number): void {
         this._mapManager.update(elapsed);
-        this._physicsMgr.update(elapsed);
     }
 
     updateView(): void {
@@ -163,9 +163,9 @@ export class SimulationManager {
         return this._viewMgr;
     }
 
-    get physicsManager(): PhysicsManager {
-        return this._physicsMgr;
-    }
+    // get physicsManager(): PhysicsManager {
+    //     return this._physicsMgr;
+    // }
 
     get decisionEng(): VehicleDecisionEngine {
         return this._decisionEng;
@@ -192,7 +192,7 @@ export class SimulationManager {
                         break;
                 }
                 if (tfc) {
-                    let segment: RoadSegment = this.mapManager.getSegmentsEndingAt(opts.location).find((seg) => {
+                    let segment: RoadSegment = this.mapManager.getSegmentsEndingAt(V3.toVector3(opts.location)).find((seg) => {
                         return seg.roadName.toLowerCase() == tfc.roadName.toLowerCase();
                     });
                     if (segment) {

@@ -1,9 +1,9 @@
 import { Utils } from "../../helpers/utils";
 import { Vehicle } from "./vehicle";
-import { Line3, Mesh, Vector3 } from 'three';
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
 import { RoadSegment } from "../../map/road-segment";
+import { Mesh, Vector3 }from "@babylonjs/core";
 
 export type VehicleGeneratorOptions = TrafficObjectOptions & {
     location: Vector3;
@@ -111,7 +111,6 @@ export class VehicleGenerator extends TrafficObject {
         vehicle.location = this.segment.start;
         vehicle.lookAt(this.segment.end);
         this.segment.addVehicle(vehicle);
-        this.simMgr.viewManager.addRenderable(vehicle);
         // console.info(`new vehicle: '${this._nextVehicle.id}' added to segment: '${this.segment.id}'`);
         this._nextVehicle = null; // allow the next vehicle to be generated
     }

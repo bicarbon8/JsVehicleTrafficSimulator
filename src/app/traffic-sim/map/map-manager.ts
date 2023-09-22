@@ -1,4 +1,4 @@
-import { Line3, Vector3 } from 'three';
+import { Path3D, Vector3 } from "@babylonjs/core";
 import { Utils } from '../helpers/utils';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { Vehicle } from '../objects/vehicles/vehicle';
@@ -259,7 +259,7 @@ export class MapManager {
             return currentSegment.id != seg.id
                 && !seg.isInlet // ensure we don't merge into an inlet
                 && (Math.abs(Utils.angleFormedBy(seg.line, currentSegment.line)) < 2) // ensure less than 2 degrees variance
-                && (Math.abs(Utils.angleFormedBy(currentSegment.line, new Line3(currentSegment.center, seg.end))) > 1) // ensure not straight ahead
+                && (Math.abs(Utils.angleFormedBy(currentSegment.line, new Path3D([currentSegment.center, seg.end]))) > 1) // ensure not straight ahead
                 && !currentSegment.end.equals(seg.end) // ensure segments don't merge together
                 && !currentSegment.end.equals(seg.start) // ensure segment isn't connected;
         });
@@ -300,12 +300,12 @@ export class MapManager {
         if (distanceToSegEnd < distance) {
             // base the amount on how different the heading is
             var headingDiff = 0;
-            var line1: Line3 = vehicle.segment.line;
+            var line1 = vehicle.segment.line;
             var nextSegments: RoadSegment[] = this.getSegmentsStartingAt(segEnd, vehicle.segment.roadName);
             // TODO: only calculate for next segment on choosen path
             for (var i in nextSegments) {
                 var nextSegment: RoadSegment = nextSegments[i];
-                var line2: Line3 = nextSegment.line;
+                var line2 = nextSegment.line;
                 var angle: number = Math.abs(Utils.angleFormedBy(line1, line2));
                 if (angle > headingDiff) {
                     headingDiff = angle;
@@ -328,15 +328,15 @@ export class MapManager {
         let points: Vector3[] = newSegment.laneChangePoints;
         for (var j=0; j<points.length; j++) {
             var point: Vector3 = points[j];
-            var line1: Line3 = new Line3(location, point);
-            var line2: Line3 = newSegment.line;
+            var line1 = new Path3D([location, point]);
+            var line2 = newSegment.line;
             var angle: number = Math.abs(Utils.angleFormedBy(line1, line2));
             // TODO: base angle on speed where greater angles allowed at lower speeds
             if (angle <= 25 && angle > 5) {
                 if (!closestPoint) {
                     closestPoint = point;
                 } else {
-                    if (line1.distance() < Utils.getLength(closestPoint, location)) {
+                    if (line1.getDistanceAt(0) < Utils.getLength(closestPoint, location)) {
                         closestPoint = point;
                     }
                 }

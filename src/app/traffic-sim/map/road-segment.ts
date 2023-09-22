@@ -1,15 +1,15 @@
-import { Line3, Vector3, LineBasicMaterial, BufferGeometry, Line, LineCurve3, SphereGeometry, MeshBasicMaterial, Object3D, Mesh, Group, BoxGeometry } from 'three';
 import { TrafficFlowControl } from '../objects/traffic-controls/traffic-flow-control';
 import { TrafficObject, TrafficObjectOptions } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { VehicleGenerator } from '../objects/vehicles/vehicle-generator';
 import { SimulationManager } from '../simulation-manager';
-import { Body, Box, Vec3, Quaternion as Quat4 } from 'cannon-es';
 import { Utils } from '../helpers/utils';
+import { Axis, Mesh, MeshBuilder, Path3D, Space, Vector3 } from "@babylonjs/core";
+import { V3 } from '../helpers/customTypes';
 
 export type RoadSegmentOptions = TrafficObjectOptions & {
-    start: Vector3;
-    end: Vector3;
+    start: V3;
+    end: V3;
     /**
      * name of the road to which this {RoadSegment} belongs. 
      * segments on the same {roadName} are lanes that vehicles
@@ -61,12 +61,11 @@ export class RoadSegment extends TrafficObject {
      */
     readonly isInlet: boolean;
 
-    private _line: Line3;
+    private _line: Path3D;
     private _vehicles: Map<number, Vehicle>;
     private _tfcs: Map<number, TrafficFlowControl>;
     private _laneChangeLocations: Vector3[];
     private _generator: VehicleGenerator;
-    private _body: Body;
 
     constructor(options?: RoadSegmentOptions, simMgr?: SimulationManager) {
         super(options, simMgr);
@@ -75,7 +74,7 @@ export class RoadSegment extends TrafficObject {
         }
         this.roadName = options?.roadName;
         this.speedLimit = (options?.speedLimit === undefined) ? Infinity : options?.speedLimit;
-        this._line = new Line3(options?.start || new Vector3(), options?.end || new Vector3());
+        this._line = new Path3D([V3.toVector3(options.start), V3.toVector3(options.end)]);
         this._width = options?.width ?? 6; // standard US lane width = 3.7
         this._height = options?.height ?? 0.5;
         this.isInlet = options?.isInlet ?? false;
@@ -97,25 +96,6 @@ export class RoadSegment extends TrafficObject {
      */
     get width(): number {
         return this._width;
-    }
-
-    override get body(): Body {
-        if (this.hasPhysics) {
-            if (!this._body) {
-                const loc = this.location;
-                const q = this.rotation;
-                this._body = new Body({
-                    type: Body.STATIC,
-                    mass: 0
-                });
-                this._body.addShape(new Box(new Vec3(this.width / 2, this.height / 2, this.length / 2)));
-                this._body.position.set(loc.x, loc.y, loc.z);
-                this._body.quaternion.set(q.x, q.y, q.z, q.w);
-                this.simMgr.physicsManager.addBody(this._body);
-            }
-            return this._body;
-        }
-        return super.body;
     }
 
     update(elapsedMs: number): void {
@@ -197,15 +177,13 @@ export class RoadSegment extends TrafficObject {
         this._generator.segmentId = this.id;
     }
 
-    protected generateObj3D(): Object3D {
-        const length = this.line.distance();
-        const centre = new Vector3(); 
-        this.line.getCenter(centre);
+    protected generateObj3D(): Mesh {
+        const length = this.length;
+        const centre = this.center
         
-        const box = new BoxGeometry(this._width, this._height, length);
-        const mesh = new Mesh(box, this.material);
+        const mesh = MeshBuilder.CreateBox(this.name, {width: this._width, height: this._height, depth: length}, this.simMgr.viewManager.scene);
         mesh.position.set(centre.x, centre.y - this._height, centre.z);
-        const look = this.line.end.clone();
+        const look = this.end;
         look.y -= this._height;
         mesh.lookAt(look);
         this._generateLaneChangePoints();
@@ -213,45 +191,42 @@ export class RoadSegment extends TrafficObject {
     }
 
     private _generateLaneChangePoints(): void {
-        const point = new SphereGeometry(1);
-        const sphere = new Mesh(point);
+        const sphere = MeshBuilder.CreateSphere(`tmp`, {}, this.simMgr.viewManager.scene);
         const spacing = 1;
         const length = this.length;
         sphere.position.set(this.start.x, this.start.y, this.start.z);
         sphere.lookAt(this.end);
         // place point every [spacing] units (metres)
         for (var i=spacing; i<length; i+=spacing) {
-            sphere.translateZ(spacing);
+            sphere.translate(Axis.Z, spacing, Space.LOCAL);
             this._laneChangeLocations.push(sphere.position.clone());
         }
-        sphere.geometry.dispose();
+        sphere.dispose();
     }
 
     get start(): Vector3 {
-        return this.line.start;
+        return this._line.getPointAt(0).clone();
     }
 
     get end(): Vector3 {
-        return this.line.end;
+        return this._line.getPointAt(1).clone();
     }
 
-    get line(): Line3 {
-        return this._line.clone();
+    get line(): Path3D {
+        return new Path3D([...this._line.getPoints().map(p => p.clone())]);
     }
 
     get length(): number {
-        return this.line.distance() || 0;
+        return this._line?.getDistanceAt(0) ?? 0;
     }
 
     get center(): Vector3 {
-        const v: Vector3 = new Vector3();
-        this.line.getCenter(v) ?? new Vector3();
+        const v: Vector3 = Utils.getPointInBetweenByPercent(this.start, this.end, 0.5);
         return v;
     }
 
     get tangent(): Vector3 {
-        const s: LineCurve3 = new LineCurve3(this.line.start, this.line.end);
-        return s.getTangent(0);
+        return this._line.getTangentAt(0);
     }
 
     clone(): RoadSegment {
@@ -259,8 +234,8 @@ export class RoadSegment extends TrafficObject {
             id: this.id,
             name: this.name,
             width: this.width,
-            start: this.line.start,
-            end: this.line.end,
+            start: this.start,
+            end: this.end,
             speedLimit: this.speedLimit
         });
         r.location = this.location;

@@ -1,4 +1,4 @@
-import { Mesh, SphereGeometry, Object3D, Group } from "three";
+import { Axis, Color3, Mesh, MeshBuilder, Space }from "@babylonjs/core";
 import { SimulationManager } from "../../simulation-manager";
 import { Vehicle } from "../vehicles/vehicle";
 import { TfcOptions, TrafficFlowControl } from "./traffic-flow-control";
@@ -46,13 +46,10 @@ export class StopLight extends TrafficFlowControl {
         return false;
     }
     
-    protected generateObj3D(): Object3D {
-        const group = new Group();
-        var geometry = new SphereGeometry(1);
-        const mesh = new Mesh(geometry, this.material);
-        mesh.translateY(4);
-        group.add(mesh);
-        return group;
+    protected generateObj3D(): Mesh {
+        const mesh = MeshBuilder.CreateSphere(this.name);
+        mesh.translate(Axis.Y, 4, Space.LOCAL);
+        return mesh;
     }
 
     override update(elapsedMs?: number): void {
@@ -85,22 +82,24 @@ export class StopLight extends TrafficFlowControl {
     }
 
     private _setColour(): void {
-        switch (this.state) {
-            case 'proceed':
-                this.material?.color.setHex(0x00ff00); // green
-                this.material?.emissive.setHex(0x00ff00);
-                break;
-            case 'caution':
-                this.material?.color.setHex(0xffff00); // yellow
-                this.material?.emissive.setHex(0xffff00);
-                break;
-            case 'stop':
-                this.material?.color.setHex(0xff0000); // red
-                this.material?.emissive.setHex(0xff0000);
-                break;
-            default:
-                console.error('invalid TfcState of', this.state, 'for id', this.id);
-                break;
+        if (this.material) {
+            switch (this.state) {
+                case 'proceed':
+                    this.material.diffuseColor = Color3.FromHexString('#00ff00'); // green
+                    this.material.emissiveColor = Color3.FromHexString('#00ff00');
+                    break;
+                case 'caution':
+                    this.material.diffuseColor = Color3.FromHexString('#ffff00'); // yellow
+                    this.material.emissiveColor = Color3.FromHexString('#ffff00');
+                    break;
+                case 'stop':
+                    this.material.diffuseColor = Color3.FromHexString('#ff0000'); // red
+                    this.material.emissiveColor = Color3.FromHexString('#ff0000');
+                    break;
+                default:
+                    console.error('invalid TfcState of', this.state, 'for id', this.id);
+                    break;
+            }
         }
     }
 }

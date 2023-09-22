@@ -2,7 +2,7 @@ import { Renderable } from '../view/renderable';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { V3 } from './customTypes';
-import { Axis, Mesh, MeshBuilder, Path3D, Ray, Vector3 } from 'babylonjs';
+import { Axis, Mesh, MeshBuilder, Path3D, Ray, Vector3 } from "@babylonjs/core";
 
 export module Utils {
     var _id: number = 0;
@@ -32,7 +32,7 @@ export module Utils {
     }
 
 	export function getLength(p1: Vector3, p2: Vector3): number {
-        return new Path3D([p1, p2]).length();
+        return new Path3D([p1, p2]).getDistanceAt(0);
     }
 
     /**
@@ -327,7 +327,7 @@ export module Utils {
      * @returns `true` if the first and second points are within the specified distance
      */
     export function isWithinRange(p1: Vector3, p2: Vector3, range: number): boolean {
-        return new Path3D([p1, p2]).length() <= Math.abs(range);
+        return new Path3D([p1, p2]).getDistanceAt(0) <= Math.abs(range);
     }
 
     /**

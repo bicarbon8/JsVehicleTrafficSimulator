@@ -1,7 +1,7 @@
-import { Vector3 } from "three";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
 import { Vehicle } from "../vehicles/vehicle";
+import { V3 } from "../../helpers/customTypes";
 
 export type TfcState = 'proceed' | 'caution' | 'stop';
 
@@ -10,7 +10,7 @@ export type TfcOptions = TrafficObjectOptions & {
     changeDelay?: number;
     roadName?: string;
     type?: string;
-    location?: Vector3;
+    location?: V3;
 }
 
 export abstract class TrafficFlowControl extends TrafficObject {

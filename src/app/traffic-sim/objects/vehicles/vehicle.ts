@@ -1,4 +1,4 @@
-import { LinesMesh, Mesh, MeshBuilder, Path3D, Space, Vector3 } from "babylonjs";
+import { Color3, LinesMesh, Mesh, MeshBuilder, Path3D, PhysicsAggregate, PhysicsBody, PhysicsImpostor, PhysicsShapeType, Space, StandardMaterial, Vector3 }from "@babylonjs/core";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
@@ -86,6 +86,7 @@ export class Vehicle extends TrafficObject {
     private _state: VehicleState;
     private _lastReaction: number; // see {get lastReactionTime()}
     private _headingLine: LinesMesh;
+    private _body: PhysicsBody;
 
     private readonly _width: number;
     private readonly _length: number;
@@ -287,13 +288,13 @@ export class Vehicle extends TrafficObject {
         }
         switch(state) {
             case 'accelerating':
-                // this.material?.color.setHex(0x66ff66); // green
+                this.material.diffuseColor = Color3.FromHexString('#66ff66'); // green
                 break;
             case 'decelerating':
-                // this.material?.color.setHex(0xffff00); // yellow
+                this.material.diffuseColor = Color3.FromHexString('#ffff00'); // yellow
                 break;
             case 'stopped':
-                // this.material?.color.setHex(0xc0c0c0);
+                this.material.diffuseColor = Color3.FromHexString('#c0c0c0'); // gray
                 break;
             default:
                 break;
@@ -347,13 +348,13 @@ export class Vehicle extends TrafficObject {
             const deltaV = Utils.getHeading(this, {x:0, y:0, z:1})
                 .multiply(new Vector3(force, force, force));
             console.info({accelerationForce: deltaV});
-            this.body.applyImpulse(
+            this.mesh.physicsImpostor.applyImpulse(
                 new Vector3(
                     deltaV.x, 
                     deltaV.y, 
                     deltaV.z
                 ),
-                this.location
+                this.mesh.getAbsolutePosition()
             );
         }
     }
@@ -405,15 +406,15 @@ export class Vehicle extends TrafficObject {
 
     startLaneChange(): RoadSegment {
         let newLane: RoadSegment;
-        const aPoint = new Vector3();
-        const bPoint = new Vector3();
+        let aPoint: Vector3;
+        let bPoint: Vector3;
         const loc = this.location;
         const availableLanes: RoadSegment[] = this.simMgr.mapManager.getParallelSegmentsInRoad(this.segment)
             .sort((a, b) => {
-                a.line.closestPointToPoint(loc, true, aPoint);
-                b.line.closestPointToPoint(loc, true, bPoint);
-                const aDist = new Path3D([loc, aPoint]).length();
-                const bDist = new Path3D([loc, bPoint]).length();
+                aPoint = Utils.getPointInBetweenByPercent(a.start, a.end, a.line.getClosestPositionTo(loc));
+                bPoint = Utils.getPointInBetweenByPercent(b.start, b.end, b.line.getClosestPositionTo(loc));
+                const aDist = new Path3D([loc, aPoint]).getDistanceAt(0);
+                const bDist = new Path3D([loc, bPoint]).getDistanceAt(0);
                 if (aDist < bDist) {
                     return -1;
                 } else if (aDist > bDist) {
@@ -555,13 +556,15 @@ export class Vehicle extends TrafficObject {
     }
 
     private _destroyHeadingLine(): void {
-        this._headingLine.dispose();
+        this._headingLine?.dispose();
         this._headingLine = null;
     }
 
     protected generateObj3D(): Mesh {
         const mesh = MeshBuilder.CreateBox(this.name, {width: this._width, height: this._height, depth: this._length}, this.simMgr.viewManager.scene);
         mesh.translate(new Vector3(0, 1, 0), this._height / 2, Space.LOCAL);
+        mesh.material = new StandardMaterial(`${this.name}_material`, this.simMgr.viewManager.scene);
+        mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsShapeType.BOX, { mass: 100, restitution: 0.75}, this.simMgr.viewManager.scene);
         
         return mesh;
     }
@@ -569,8 +572,5 @@ export class Vehicle extends TrafficObject {
     override disposeGeometry(): void {
         super.disposeGeometry();
         this._destroyHeadingLine();
-        if (this.body) {
-            this.simMgr.physicsManager.removeBody(this.body);
-        }
     }
 }

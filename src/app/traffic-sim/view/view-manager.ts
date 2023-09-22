@@ -1,4 +1,6 @@
-import { AxesViewer, Engine, FreeCamera, HemisphericLight, Scene, Vector3 } from 'babylonjs';
+import { AxesViewer, CannonJSPlugin, Engine, FreeCamera, HemisphericLight, Scene, Vector3 } from "@babylonjs/core";
+import * as cannon from "cannon";
+import "@babylonjs/core/Physics/physicsEngineComponent";
 import { Renderable } from './renderable';
 
 export class ViewManager {
@@ -54,6 +56,8 @@ export class ViewManager {
     private _initScene() {
         this._scene = new Scene(this._renderer);
         const axes = new AxesViewer(this._scene, 100);
+        window.CANNON = cannon;
+        this._scene.enablePhysics(new Vector3(0, -9.81, 0), new CannonJSPlugin());
     }
 
     update(): void {

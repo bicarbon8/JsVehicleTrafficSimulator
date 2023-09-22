@@ -1,7 +1,7 @@
 import { RoadSegment } from "../../map/road-segment";
 import { Vehicle } from "./vehicle";
 import { SimulationManager } from "../../simulation-manager";
-import { Vector3 } from "babylonjs";
+import { Vector3 }from "@babylonjs/core";
 
 describe('Vehicle', () => {
     const datas = [

@@ -1,4 +1,4 @@
-import { Line3, Vector3 } from "three";
+import { Path3D, Vector3 }from "@babylonjs/core";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { TrafficFlowControl } from "../traffic-controls/traffic-flow-control";
@@ -119,15 +119,14 @@ export class VehicleDecisionEngine {
 
     private _shouldChangeLanes(vehicle: Vehicle): boolean {
         const loc = vehicle.location;
-        const aPoint = new Vector3();
-        const bPoint = new Vector3();
-        const line = new Line3();
+        let aPoint: Vector3;
+        let bPoint: Vector3;
         const similar = vehicle.simMgr.mapManager.getParallelSegmentsInRoad(vehicle.segment)
             .sort((a, b) => {
-                a.line.closestPointToPoint(loc, true, aPoint);
-                b.line.closestPointToPoint(loc, true, bPoint);
-                const aDist = line.set(loc, aPoint).distance();
-                const bDist = line.set(loc, bPoint).distance();
+                aPoint = Utils.getPointInBetweenByPercent(a.start, a.end, a.line.getClosestPositionTo(loc));
+                bPoint = Utils.getPointInBetweenByPercent(b.start, b.end, b.line.getClosestPositionTo(loc));
+                const aDist = new Path3D([loc, aPoint]).getDistanceAt(0);
+                const bDist = new Path3D([loc, bPoint]).getDistanceAt(0);
                 if (aDist < bDist) {
                     return -1;
                 } else if (aDist > bDist) {

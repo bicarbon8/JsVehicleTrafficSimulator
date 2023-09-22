@@ -2,14 +2,12 @@ import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
-import { BoundingBlock, BoundingInfo, Material, Mesh, PhysicsBody, Quaternion, Space, Vector3 } from "babylonjs";
+import { BoundingInfo, Mesh, PhysicsBody, Quaternion, Space, StandardMaterial, Vector3 }from "@babylonjs/core";
 
 export type TrafficObjectOptions = {
     id?: number;
     name?: string;
     mesh?: Mesh;
-    material?: Material;
-    // texture?: Texture;
 };
 
 export abstract class TrafficObject implements Renderable {
@@ -18,7 +16,6 @@ export abstract class TrafficObject implements Renderable {
     readonly simMgr: SimulationManager;
 
     private _mesh: Mesh;
-    private _material: Material;
     private _previousLoc: Vector3;
     private _velocity: Vector3;
 
@@ -36,11 +33,6 @@ export abstract class TrafficObject implements Renderable {
         this.simMgr = simMgr ?? SimulationManager.inst;
         this.id = options?.id ?? Utils.getNewId();
         this.name = options?.name ?? `${this.constructor.name}-${this.id}`;
-        this._material = options?.material ?? new Material('material1', this.simMgr.viewManager.scene);
-        // {
-        //     color: 0xffffff, // white,
-        //     flatShading: true
-        // });
         this._velocity = new Vector3();
     }
 
@@ -73,8 +65,8 @@ export abstract class TrafficObject implements Renderable {
         return null;
     }
 
-    get material(): Material {
-        return this.mesh.material;
+    get material(): StandardMaterial {
+        return this.mesh?.material as StandardMaterial;
     }
 
     get location(): Vector3 {
@@ -90,7 +82,7 @@ export abstract class TrafficObject implements Renderable {
     }
 
     get rotation(): Quaternion {
-        return this.mesh?.rotationQuaternion.clone();
+        return this.mesh?.rotationQuaternion?.clone() ?? new Quaternion();
     }
 
     set rotation(rotation: Quaternion) {
