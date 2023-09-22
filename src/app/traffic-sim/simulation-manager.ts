@@ -107,8 +107,7 @@ export class SimulationManager {
             this._frameId = requestAnimationFrame(() => this.animationLoop());
         }
         
-        // console.debug(`updating view...`);
-        this._viewMgr.update();
+        this.updateView();
     }
 
     /**
@@ -121,6 +120,11 @@ export class SimulationManager {
     update(elapsed: number): void {
         this._mapManager.update(elapsed);
         this._physicsMgr.update(elapsed);
+    }
+
+    updateView(): void {
+        // console.debug(`updating view...`);
+        this._viewMgr.update();
     }
 
     /**

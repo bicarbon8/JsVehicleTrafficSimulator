@@ -48,10 +48,7 @@ describe('Vehicle', () => {
         const body = vehicle.body;
         segment.addVehicle(vehicle, segment.start);
         vehicle.lookAt(segment.end);
-        simMgr.update(250); // 1/4 second elapsed
-        simMgr.update(250); // 1/4 second elapsed
-        simMgr.update(250); // 1/4 second elapsed
-        simMgr.update(250); // 1/4 second elapsed
+        simMgr.update(1000); // 1 second elapsed
         console.debug('body velocity', body.velocity);
 
         const actual = vehicle.speed; // should be 1 m/s
@@ -75,7 +72,8 @@ describe('Vehicle', () => {
             height: 1
         }, simMgr);
         vehicle.hasPhysics = true;
-        segment.addVehicle(vehicle);
+        segment.addVehicle(vehicle, segment.start);
+        vehicle.lookAt(segment.end);
 
         let actual: number = vehicle.getLookAheadDistance();
         expect(vehicle.speed).withContext('before update speed').toEqual(0);
