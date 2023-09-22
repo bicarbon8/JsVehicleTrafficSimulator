@@ -179,7 +179,7 @@ export class SimulationManager {
                 let opts: RoadSegmentOptions = map.segments[i];
                 let s: RoadSegment = new RoadSegment(opts)
                 this.mapManager.addSegment(s);
-                this.viewManager.addRenderable(s);
+                // this.viewManager.addRenderable(s);
             }
             // add TFCs
             for (var i=0; i<map.tfcs?.length; i++) {
@@ -197,7 +197,7 @@ export class SimulationManager {
                     });
                     if (segment) {
                         segment.addTrafficFlowControl(tfc);
-                        this.viewManager.addRenderable(tfc);
+                        // this.viewManager.addRenderable(tfc);
                     }
                 }
             }
@@ -216,7 +216,7 @@ export class SimulationManager {
     }
 
     removeVehicle(vehicle: Vehicle) {
-        this._viewMgr.removeRenderable(vehicle);
+        // this._viewMgr.removeRenderable(vehicle);
         vehicle.segment?.removeVehicle(vehicle.id);
         vehicle.disposeGeometry();
     }

@@ -1,16 +1,15 @@
-import { Box3, Mesh, MeshStandardMaterial, Object3D, Quaternion, Texture, Vector3 } from 'three';
 import { Utils } from "../helpers/utils";
 import { RoadSegment } from "../map/road-segment";
 import { Renderable } from "../view/renderable";
 import { SimulationManager } from "../simulation-manager";
-import { Body } from 'cannon-es';
+import { BoundingBlock, BoundingInfo, Material, Mesh, PhysicsBody, Quaternion, Space, Vector3 } from "babylonjs";
 
 export type TrafficObjectOptions = {
     id?: number;
     name?: string;
     mesh?: Mesh;
-    material?: MeshStandardMaterial;
-    texture?: Texture;
+    material?: Material;
+    // texture?: Texture;
 };
 
 export abstract class TrafficObject implements Renderable {
@@ -18,8 +17,8 @@ export abstract class TrafficObject implements Renderable {
     readonly name: string;
     readonly simMgr: SimulationManager;
 
-    private _obj3D: Object3D;
-    private _material: MeshStandardMaterial;
+    private _mesh: Mesh;
+    private _material: Material;
     private _previousLoc: Vector3;
     private _velocity: Vector3;
 
@@ -37,10 +36,11 @@ export abstract class TrafficObject implements Renderable {
         this.simMgr = simMgr ?? SimulationManager.inst;
         this.id = options?.id ?? Utils.getNewId();
         this.name = options?.name ?? `${this.constructor.name}-${this.id}`;
-        this._material = options?.material ?? new MeshStandardMaterial({
-            color: 0xffffff, // white,
-            flatShading: true
-        });
+        this._material = options?.material ?? new Material('material1', this.simMgr.viewManager.scene);
+        // {
+        //     color: 0xffffff, // white,
+        //     flatShading: true
+        // });
         this._velocity = new Vector3();
     }
 
@@ -54,65 +54,48 @@ export abstract class TrafficObject implements Renderable {
         return this.simMgr.mapManager.getSegmentById(this.segmentId);
     }
     
-    get obj3D(): Object3D {
-        if (!this._obj3D) {
-            this._obj3D = this.generateObj3D();
-        }
-        return this._obj3D;
-    }
-
-    /**
-     * @returns `this.obj3D as Mesh` if it is an instance of `Mesh`,
-     * otherwise `null`
-     */
     get mesh(): Mesh {
-        if (this.obj3D instanceof Mesh) {
-            return this.obj3D as Mesh;
+        if (!this._mesh) {
+            this._mesh = this.generateObj3D();
         }
-        return null;
+        return this._mesh;
     }
 
-    get body(): Body {
-        return null;
+    get body(): PhysicsBody {
+        return this.mesh?.physicsBody;
     }
 
-    get boundingBox(): Box3 {
+    get boundingBox(): BoundingInfo {
         if (this.mesh) {
-            var bbox = new Box3().setFromObject(this.mesh);
-            // move to current position
-            const position = this.mesh.position;
-            bbox.min.sub(position);
-            bbox.max.sub(position);
+            var bbox = this.mesh.getBoundingInfo();
             return bbox;
         }
         return null;
     }
 
-    get material(): MeshStandardMaterial {
-        return this._material;
+    get material(): Material {
+        return this.mesh.material;
     }
 
     get location(): Vector3 {
-        return this.obj3D?.position.clone();
+        return this.mesh?.position.clone();
     }
 
     set location(location: Vector3) {
         if (location) {
-            this.obj3D?.position.set(location.x, location.y, location.z);
-            this.body?.position.set(location.x, location.y, location.z);
+            this.mesh?.position.set(location.x, location.y, location.z);
         }
         
         this._forceMeshUpdate();
     }
 
     get rotation(): Quaternion {
-        return this.obj3D?.quaternion.clone();
+        return this.mesh?.rotationQuaternion.clone();
     }
 
     set rotation(rotation: Quaternion) {
         if (rotation) {
-            this.obj3D?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-            this.body?.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+            this.mesh?.rotationQuaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
         }
     }
 
@@ -126,9 +109,8 @@ export abstract class TrafficObject implements Renderable {
      */
     moveForwardBy(distance: number): void {
         if (distance > 0) {
-            this.obj3D?.translateZ(distance);
+            this.mesh?.translate(new Vector3(0, 0, 1), distance, Space.LOCAL);
             const loc = this.location;
-            this.body?.position.set(loc.x, loc.y, loc.z);
 
             this._forceMeshUpdate();
         }
@@ -136,21 +118,20 @@ export abstract class TrafficObject implements Renderable {
 
     lookAt(location: Vector3): void {
         if (location) {
-            this.obj3D?.lookAt(location);
+            this.mesh?.lookAt(location);
             const q = this.rotation;
-            this.body?.quaternion.set(q.x, q.y, q.z, q.w);
 
             this._forceMeshUpdate();
         }
     }
 
     disposeGeometry(): void {
-        for (let m of this.obj3D?.children) {
+        for (let m of this.mesh?.getChildMeshes()) {
             if (m instanceof Mesh) {
                 m.geometry?.dispose();
             }
         }
-        this._obj3D = null;
+        this._mesh = null;
     }
 
     /**
@@ -160,15 +141,16 @@ export abstract class TrafficObject implements Renderable {
      * this.mesh.geometry.normalsNeedUpdate = true;
      */
     protected _forceMeshUpdate(): void {
-        this.mesh?.updateMatrix();
-        this.mesh?.updateMatrixWorld();
+        // this.mesh?.updateMatrix();
+        // this.mesh?.updateMatrixWorld();
     }
 
-    protected abstract generateObj3D(): Object3D;
+    protected abstract generateObj3D(): Mesh;
 
     update(elapsedMs: number): void {
         const loc = this.location;
         this._previousLoc ??= loc.clone();
-        this._velocity = loc.sub(this._previousLoc).divideScalar(elapsedMs / 1000); // m/s
+        const seconds = elapsedMs / 1000;
+        this._velocity = loc.subtract(this._previousLoc).divide(new Vector3(seconds, seconds, seconds)); // m/s
     }
 }

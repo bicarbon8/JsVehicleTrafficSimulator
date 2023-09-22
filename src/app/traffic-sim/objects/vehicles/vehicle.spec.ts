@@ -1,7 +1,7 @@
-import { Vector3 } from "three";
 import { RoadSegment } from "../../map/road-segment";
 import { Vehicle } from "./vehicle";
 import { SimulationManager } from "../../simulation-manager";
+import { Vector3 } from "babylonjs";
 
 describe('Vehicle', () => {
     const datas = [
@@ -49,7 +49,7 @@ describe('Vehicle', () => {
         segment.addVehicle(vehicle, segment.start);
         vehicle.lookAt(segment.end);
         simMgr.update(1000); // 1 second elapsed
-        console.debug('body velocity', body.velocity);
+        console.debug('body velocity', body.getLinearVelocity());
 
         const actual = vehicle.speed; // should be 1 m/s
 

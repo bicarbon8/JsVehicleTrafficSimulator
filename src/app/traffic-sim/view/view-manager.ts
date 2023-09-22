@@ -1,22 +1,20 @@
-import { AxesHelper, PerspectiveCamera, PointLight, Scene, Vector3, WebGLRenderer } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { AxesViewer, Engine, FreeCamera, HemisphericLight, Scene, Vector3 } from 'babylonjs';
 import { Renderable } from './renderable';
 
 export class ViewManager {
-    private _renderer: WebGLRenderer;
+    private _renderer: Engine;
     private _scene: Scene;
-    private _camera: PerspectiveCamera;
-    private _controls: OrbitControls;
-    private _light: PointLight;
+    private _camera: FreeCamera;
+    private _light: HemisphericLight;
     private _canvas: HTMLCanvasElement;
 
     init(canvasId: string) {
         this._initRenderer(canvasId);
+        this._initScene();
         this._initCamera();
         this._initControls();
         this._initLight();
-        this._initScene();
-
+        
         this.update();
     }
 
@@ -26,7 +24,7 @@ export class ViewManager {
 
     private _initRenderer(canvasId: string): void {
         this._canvas = document.querySelector<HTMLCanvasElement>(canvasId);
-        this._renderer = new WebGLRenderer({ canvas: this._canvas });
+        this._renderer = new Engine(this._canvas, false, {preserveDrawingBuffer: true, stencil: true});
         this._renderer.setSize(this.getWidth(), this.getHeight());
         window.addEventListener('resize', () => {
             this.resize();
@@ -35,11 +33,8 @@ export class ViewManager {
     }
 
     private _initLight(): void {
-        let pointLight = new PointLight(0xFFFFFF); // white
-        pointLight.position.x = 10;
-        pointLight.position.y = 50;
-        pointLight.position.z = 130;
-        this._light = pointLight;
+        const light = new HemisphericLight('light1', new Vector3(0, 1, 0), this.scene);
+        this._light = light;
     }
 
     private _initCamera(): void {
@@ -47,40 +42,35 @@ export class ViewManager {
         let aspectRatio = this.getWidth() / this.getHeight();
         let nearClip = 0.1;
         let farClip = 10000;
-        this._camera = new PerspectiveCamera(viewAngle, aspectRatio, nearClip, farClip);
-        this._camera.position.set(200, 200, 200);
-        this._camera.lookAt(new Vector3(0, 0, 0));
+        this._camera = new FreeCamera('camera1', new Vector3(200, 200, 200), this.scene, );
+        this._camera.setTarget(new Vector3(0, 0, 0));
+        this._camera.attachControl(this._canvas, false);
     }
 
     private _initControls(): void {
-        this._controls = new OrbitControls(this._camera, this._renderer.domElement);
-        this._controls.dampingFactor = 0.2;
+        
     }
 
     private _initScene() {
-        this._scene = new Scene();
-        let axesHelper = new AxesHelper(100);
-        this._scene.add(axesHelper, this._light);
+        this._scene = new Scene(this._renderer);
+        const axes = new AxesViewer(this._scene, 100);
     }
 
     update(): void {
-        this._renderer?.render(this._scene, this._camera);
+        this.scene.render();
     }
 
     reset(): void {
         this._renderer = null;
         this._scene = null;
         this._camera = null;
-        this._controls = null;
     }
 
     destroy(): void {
         this._renderer.dispose();
-        this._controls.dispose();
         this._scene = null;
         this._camera = null;
         this._renderer = null;
-        this._controls = null;
     }
 
     resize(): void {
@@ -88,18 +78,18 @@ export class ViewManager {
         let height: number = this.getHeight();
         this._renderer.setSize(width, height);
         if (this._camera) {
-            this._camera.aspect = width / height;
-            this._camera.updateProjectionMatrix();
+            // this._camera.aspect = width / height;
+            // this._camera.updateProjectionMatrix();
         }
     }
 
-    addRenderable<T extends Renderable>(renderable: T): void {
-        this._scene.add(renderable.obj3D);
-    }
+    // addRenderable<T extends Renderable>(renderable: T): void {
+    //     this._scene.add(renderable.obj3D);
+    // }
 
-    removeRenderable<T extends Renderable>(renderable: T): void {
-        this._scene.remove(renderable.obj3D);
-    }
+    // removeRenderable<T extends Renderable>(renderable: T): void {
+    //     this._scene.remove(renderable.obj3D);
+    // }
 
     getWidth(): number {
         return window.innerWidth;

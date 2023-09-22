@@ -1,8 +1,8 @@
-import { Box3, Line3, MathUtils, Mesh, Object3D, PlaneGeometry, Sphere, Vector3 } from 'three';
 import { Renderable } from '../view/renderable';
 import { TrafficObject } from '../objects/traffic-object';
 import { Vehicle } from '../objects/vehicles/vehicle';
 import { V3 } from './customTypes';
+import { Axis, Mesh, MeshBuilder, Path3D, Ray, Vector3 } from 'babylonjs';
 
 export module Utils {
     var _id: number = 0;
@@ -32,7 +32,7 @@ export module Utils {
     }
 
 	export function getLength(p1: Vector3, p2: Vector3): number {
-        return new Line3(p1, p2).distance();
+        return new Path3D([p1, p2]).length();
     }
 
     /**
@@ -41,17 +41,21 @@ export module Utils {
      * @param line2 
      * @returns the angle in degrees that each line differs by
      */
-    export function angleFormedBy(line1: Line3, line2: Line3): number {
-        const a = line1.end.clone().sub(line1.start.clone()).normalize();
-        const b = line2.end.clone().sub(line2.start.clone()).normalize();
+    export function angleFormedBy(line1: Path3D, line2: Path3D): number {
+        const a = line1.getPointAt(1).clone().subtract(line1.getPointAt(0).clone()).normalize();
+        const b = line2.getPointAt(1).clone().subtract(line2.getPointAt(0).clone()).normalize();
         // console.warn('vectors', {a}, {b});
-        const dot = a.dot(b);
+        const dot = Vector3.Dot(a, b);
         if (dot > 1 || dot < -1) {
             return 0;
         }
         const acos = Math.acos(dot);
         // console.warn('results', {dot}, {acos});
-        return MathUtils.radToDeg(acos);
+        return Utils.radToDeg(acos);
+    }
+
+    export function radToDeg(radians: number): number {
+        return radians * (180 / Math.PI);
     }
 
     /**
@@ -64,7 +68,7 @@ export module Utils {
      * @param zeroAxis the axis to zero out before computing the angle thereby making the computation 2D
      * @returns the angle in degrees that each line differs by across two axis
      */
-    export function angleAxisFormedBy(line1: Line3, line2: Line3, zeroAxis: 'x' | 'y' | 'z'): number {
+    export function angleAxisFormedBy(line1: Path3D, line2: Path3D, zeroAxis: 'x' | 'y' | 'z'): number {
         const zAxisVect = new Vector3(1, 1, 1);
         switch (zeroAxis) {
             case 'x':
@@ -77,8 +81,8 @@ export module Utils {
                 zAxisVect.z = 0;
                 break;
         }
-        const l1 = new Line3(line1.start.clone().multiply(zAxisVect), line1.end.clone().multiply(zAxisVect));
-        const l2 = new Line3(line2.start.clone().multiply(zAxisVect), line2.end.clone().multiply(zAxisVect));
+        const l1 = new Path3D([line1.getPointAt(0).clone().multiply(zAxisVect), line1.getPointAt(1).clone().multiply(zAxisVect)]);
+        const l2 = new Path3D([line2.getPointAt(0).clone().multiply(zAxisVect), line2.getPointAt(1).clone().multiply(zAxisVect)]);
         return Utils.angleFormedBy(l1, l2);
     }
 
@@ -92,21 +96,57 @@ export module Utils {
      * with a radius of `r2`
      */
     export function isCollidingWith(p1: Vector3, r1: number, p2: Vector3, r2: number): boolean {
-        if (p1 && p2) {
-            r2 ??= r1;
-            const s1: Sphere = new Sphere(p1, r1);
-            const s2: Sphere = new Sphere(p2, r2);
-            return s1.intersectsSphere(s2);
-        }
+        // if (p1 && p2) {
+        //     r2 ??= r1;
+        //     const s1: Sphere = MeshBuilder.CreateSphere('sphere1', {p1, r1);
+        //     const s2: Sphere = MeshBuilder.CreateSphere('sphere1', {p2, r2);
+        //     return s1.intersectsSphere(s2);
+        // }
         return false;
     }
 
     export function containsPoint<T extends Mesh>(obj: T, point: Vector3): boolean {
-        if (obj && point) {
-            const box = new Box3().setFromObject(obj);
-            return box.containsPoint(point);
+        var boundInfo = obj.getBoundingInfo();
+        var max = boundInfo.maximum;
+        var min = boundInfo.minimum;
+        var diameter = 2 * boundInfo.boundingSphere.radius;
+        if(point.x < min.x || point.x > max.x) {
+            return false;
         }
-        return false;
+        if(point.y < min.y || point.y > max.y) {
+            return false;
+        }
+        if(point.z < min.z || point.z > max.z) {
+            return false;
+        }
+
+        var pointFound = false;
+        var d = 0;
+        var hitCount = 0;
+        var gap = 0;
+        var distance = 0;
+        var ray = new Ray(Vector3.Zero(), Axis.X, diameter);;
+        var pickInfo;
+        var direction = point.clone();
+        var refPoint = point.clone();
+
+        
+        hitCount = 0;
+        ray.origin = refPoint;
+        ray.direction = direction;
+        ray.length = diameter;		
+        pickInfo = ray.intersectsMesh(obj);
+        while (pickInfo.hit) {	
+            hitCount++;
+            pickInfo.pickedPoint.addToRef(direction.scale(0.00000001), refPoint);
+            ray.origin  = refPoint;
+            pickInfo = ray.intersectsMesh(obj);
+        }	
+        if((hitCount % 2) === 1) {
+            pointFound = true;
+        }
+        
+        return pointFound;
     }
 
     export function convertKmphToMetresPerSec(kilometersPerHour: number): number {
@@ -218,7 +258,7 @@ export module Utils {
      * @returns a `Vector3` that lies some `distance` in between `pointA` and `pointB`
      */
     export function getPointInBetweenByDistance(pointA: Vector3, pointB: Vector3, distance: number): Vector3 {
-        const dir = pointB.clone().sub(pointA).normalize().multiplyScalar(distance);
+        const dir = pointB.clone().subtract(pointA).normalize().multiply(new Vector3(distance, distance, distance));
         return pointA.clone().add(dir);
     }
 
@@ -231,25 +271,23 @@ export module Utils {
      * @returns a `Vector3` that lies some `percentage` distance in between `pointA` and `pointB`
      */
     export function getPointInBetweenByPercent(pointA: Vector3, pointB: Vector3, percentage: number): Vector3 {
-        const delta = pointB.clone().sub(pointA);
+        const delta = pointB.clone().subtract(pointA);
         const len = delta.length();
-        const dir = delta.normalize().multiplyScalar(len * percentage);
+        const mult = len * percentage;
+        const dir = delta.normalize().multiply(new Vector3(mult, mult, mult));
         return pointA.clone().add(dir);
     }
 
     /**
      * rotates the supplied `obj` around the `centre` point by the supplied `radians` using
      * the supplied `axis`
-     * @param obj the `Object3D` to rotate
+     * @param obj the `Mesh` to rotate
      * @param centre the point around which to rotate
      * @param axis a normalised `Vector3` indicating the axis of rotation
      * @param radians the radians to rotate
      */
-    export function rotateAround(obj: Object3D, centre: Vector3, axis: Vector3, radians: number): void {
-        obj.position.sub(centre);
-        obj.position.applyAxisAngle(axis, radians);
-        obj.position.add(centre);
-        obj.rotateOnAxis(axis, radians);
+    export function rotateAround(obj: Mesh, centre: Vector3, axis: Vector3, radians: number): void {
+        obj.rotateAround(centre, axis, radians);
     }
 
     /**
@@ -262,7 +300,7 @@ export module Utils {
      */
     export function getHeading(obj: TrafficObject, forwards: V3 = {x:0, y:0, z:1}): Vector3 {
         const forwardVector = new Vector3(forwards.x, forwards.y, forwards.z);
-        return forwardVector.applyQuaternion(obj.rotation).normalize();
+        return forwardVector.applyRotationQuaternion(obj.rotation).normalize();
     }
 
     /**
@@ -271,14 +309,14 @@ export module Utils {
      * +z face(s))
      * @param obj the `Object3D` to get a heading line from
      * @param forwardAxis a string indicating which vector is forwards: x, y, or z
-     * @returns a `Line3` representing a ray direction
+     * @returns a `Path3D` representing a ray direction
      */
-    export function getHeadingLine(obj: TrafficObject, forwards?: V3): Line3 {
+    export function getHeadingLine(obj: TrafficObject, forwards?: V3): Path3D {
         const dir = Utils.getHeading(obj, forwards);
         const start = obj.location;
         const scalar = (obj as Vehicle)?.getLookAheadDistance() || 1;
-        const end = start.clone().addScaledVector(dir, scalar);
-        return new Line3(start, end);
+        const end = start.clone().add(dir.multiply(new Vector3(scalar, scalar, scalar)));
+        return new Path3D([start, end]);
     }
 
     /**
@@ -289,7 +327,7 @@ export module Utils {
      * @returns `true` if the first and second points are within the specified distance
      */
     export function isWithinRange(p1: Vector3, p2: Vector3, range: number): boolean {
-        return new Line3(p1, p2).distance() <= Math.abs(range);
+        return new Path3D([p1, p2]).length() <= Math.abs(range);
     }
 
     /**
@@ -325,7 +363,7 @@ export module Utils {
         const dist = Utils.getDistanceTravelled(vehicle.speed, deltaTimeMs);
         const heading = Utils.getHeading(vehicle);
         const loc = vehicle.location;
-        return loc.add(heading.multiplyScalar(dist));
+        return loc.add(heading.multiply(new Vector3(dist, dist, dist)));
     }
 
     /**

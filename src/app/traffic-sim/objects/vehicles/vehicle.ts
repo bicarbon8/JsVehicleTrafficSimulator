@@ -1,9 +1,8 @@
-import { Mesh, BoxGeometry, Vector3, Object3D, Line3, BufferGeometry, Line, Quaternion } from "three";
+import { LinesMesh, Mesh, MeshBuilder, Path3D, Space, Vector3 } from "babylonjs";
 import { Utils } from "../../helpers/utils";
 import { RoadSegment } from "../../map/road-segment";
 import { SimulationManager } from "../../simulation-manager";
 import { TrafficObject, TrafficObjectOptions } from "../traffic-object";
-import { Body, Box, Vec3, Quaternion as Quat4 } from "cannon-es";
 
 export type VehicleOptions = TrafficObjectOptions & {
     /**
@@ -84,10 +83,9 @@ export class Vehicle extends TrafficObject {
     private _changeLaneTime: number;
     private _crashedAt: number; // see: {get crashedAt()}
     private _crashCleanupTime: number; // see: {get crashCleanupTime()}
-    private _body: Body; // cannon-es physics body (only if `hasPhysics` is true)
     private _state: VehicleState;
-    private _heading: Object3D;
     private _lastReaction: number; // see {get lastReactionTime()}
+    private _headingLine: LinesMesh;
 
     private readonly _width: number;
     private readonly _length: number;
@@ -148,33 +146,13 @@ export class Vehicle extends TrafficObject {
         return this._state;
     }
 
-    override get body(): Body {
-        if (this.hasPhysics) {
-            if (!this._body) {
-                const loc = this.mesh.position;
-                const q = this.rotation;
-                this._body = new Body({
-                    mass: Vehicle.mass, // kg; TODO: get mass from obj props
-                });
-                const dimensions = new Vec3(this.width / 2, this.height / 2, this.length / 2);
-                // console.info({dimensions});
-                this._body.addShape(new Box(dimensions));
-                this._body.position.set(loc.x, loc.y, loc.z);
-                this._body.quaternion.set(q.x, q.y, q.z, q.w);
-                this.simMgr.physicsManager.addBody(this._body);
-            }
-            return this._body;
-        }
-        return super.body;
-    }
-
     /**
      * the speed along the Z axis, fowards or backwards (negative for backwards)
      * @returns the speed in Metres per Second along the vehicle's Z axis
      */
     get speed(): number {
         const q = this.rotation.invert();
-        const localVelocity = this.velocity.applyQuaternion(q);
+        const localVelocity = this.velocity.applyRotationQuaternion(q);
         return localVelocity.z;
     }
 
@@ -286,17 +264,12 @@ export class Vehicle extends TrafficObject {
                 case 'stopped':
                     // set physics body position from mesh (prevent sliding while stopped)
                     const loc = this.location;
-                    this.body?.velocity?.set(0, 0, 0);
-                    this.body?.position?.set(loc.x, loc.y, loc.z);
+                    const zeroV = new Vector3(0, 0, 0);
+                    this.body?.setLinearVelocity(zeroV);
+                    this.body?.setAngularVelocity(zeroV)
                     break;
                 default:
                     // set mesh position from physics body
-                    const pos = this.body?.position ?? this.location;
-                    if (isNaN(pos?.x)) {
-                        // debugger;
-                        return;
-                    }
-                    this.obj3D.position.set(pos.x, pos.y, pos.z);
                     break;
             }
         }
@@ -309,18 +282,18 @@ export class Vehicle extends TrafficObject {
      */
     setVehicleColourForState(state: VehicleState): void {
         if (this.isCrashed()) {
-            this.material.color.setHex(0xff0000); // red
+            // this.material.color.setHex(0xff0000); // red
             return;
         }
         switch(state) {
             case 'accelerating':
-                this.material?.color.setHex(0x66ff66); // green
+                // this.material?.color.setHex(0x66ff66); // green
                 break;
             case 'decelerating':
-                this.material?.color.setHex(0xffff00); // yellow
+                // this.material?.color.setHex(0xffff00); // yellow
                 break;
             case 'stopped':
-                this.material?.color.setHex(0xc0c0c0);
+                // this.material?.color.setHex(0xc0c0c0);
                 break;
             default:
                 break;
@@ -372,14 +345,15 @@ export class Vehicle extends TrafficObject {
     applyForce(force: number): void {
         if (force !== 0) {
             const deltaV = Utils.getHeading(this, {x:0, y:0, z:1})
-                .multiplyScalar(force);
+                .multiply(new Vector3(force, force, force));
             console.info({accelerationForce: deltaV});
             this.body.applyImpulse(
-                new Vec3(
+                new Vector3(
                     deltaV.x, 
                     deltaV.y, 
                     deltaV.z
-                )
+                ),
+                this.location
             );
         }
     }
@@ -393,7 +367,7 @@ export class Vehicle extends TrafficObject {
     turnTowards(point: Vector3, elapsedMs: number = 1): void {
         if (point) {
             const headingLine = Utils.getHeadingLine(this);
-            const desiredHeadingLine = new Line3(this.location, point);
+            const desiredHeadingLine = new Path3D([this.location, point]);
             const degreesDelta: number = Math.abs(Utils.angleFormedBy(headingLine, desiredHeadingLine));
             const maxTurnAngle: number = Utils.turnRateCalculator(this.speed) * (elapsedMs / 1000);
             if (maxTurnAngle > degreesDelta) {
@@ -410,10 +384,10 @@ export class Vehicle extends TrafficObject {
         if (this._crashedAt != null) {
             return true;
         }
-        const p1 = this.obj3D.position;
+        const p1 = this.mesh.position;
         const r1 = this.length;
         const nearbyVehicles = this.simMgr.mapManager.getVehiclesWithinRadius(this, this.length * 2);
-        if (nearbyVehicles.some(v => Utils.isCollidingWith(p1, r1, v.obj3D.position, v.length))) {
+        if (nearbyVehicles.some(v => Utils.isCollidingWith(p1, r1, v.mesh.position, v.length))) {
             this._crashedAt = this.simMgr.totalElapsed;
             this._crashCleanupTime = this._crashedAt
                 + Utils.getRandomRealBetween(
@@ -433,14 +407,13 @@ export class Vehicle extends TrafficObject {
         let newLane: RoadSegment;
         const aPoint = new Vector3();
         const bPoint = new Vector3();
-        const line = new Line3();
         const loc = this.location;
         const availableLanes: RoadSegment[] = this.simMgr.mapManager.getParallelSegmentsInRoad(this.segment)
             .sort((a, b) => {
                 a.line.closestPointToPoint(loc, true, aPoint);
                 b.line.closestPointToPoint(loc, true, bPoint);
-                const aDist = line.set(loc, aPoint).distance();
-                const bDist = line.set(loc, bPoint).distance();
+                const aDist = new Path3D([loc, aPoint]).length();
+                const bDist = new Path3D([loc, bPoint]).length();
                 if (aDist < bDist) {
                     return -1;
                 } else if (aDist > bDist) {
@@ -485,7 +458,7 @@ export class Vehicle extends TrafficObject {
         // const view = this.getLookAheadCollisionBox();
         // return view.containsBox(obj.boundingBox);
         const headingLine = Utils.getHeadingLine(this);
-        const headingToLocation = new Line3(this.location, obj.location);
+        const headingToLocation = new Path3D([this.location, obj.location]);
         const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
         if (angle >= -45 && angle <= 45) {
             // TODO: limit view to above road only (no viewing below vehicle hood for ex.)
@@ -496,7 +469,7 @@ export class Vehicle extends TrafficObject {
 
     hasInViewLeft(obj: TrafficObject): boolean {
         const headingLine = Utils.getHeadingLine(this);
-        const headingToLocation = new Line3(this.location, obj.location);
+        const headingToLocation = new Path3D([this.location, obj.location]);
         const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
         if (angle <= -45 && angle >= -135) {
             return true;
@@ -506,7 +479,7 @@ export class Vehicle extends TrafficObject {
 
     hasInViewRight(obj: TrafficObject): boolean {
         const headingLine = Utils.getHeadingLine(this);
-        const headingToLocation = new Line3(this.location, obj.location);
+        const headingToLocation = new Path3D([this.location, obj.location]);
         const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
         if (angle >= 45 && angle <= 135) {
             return true;
@@ -518,7 +491,7 @@ export class Vehicle extends TrafficObject {
         // const view = this.getLookAheadCollisionBox();
         // return view.containsBox(obj.boundingBox);
         const headingLine = Utils.getHeadingLine(this);
-        const headingToLocation = new Line3(this.location, obj.location);
+        const headingToLocation = new Path3D([this.location, obj.location]);
         const angle = Utils.angleAxisFormedBy(headingLine, headingToLocation, 'y');
         if ((angle <= -135 && angle >= -225) || (angle >= 135 && angle <= 225)) {
             // TODO: limit view to above road only (no viewing below vehicle hood for ex.)
@@ -573,26 +546,22 @@ export class Vehicle extends TrafficObject {
      */
     viewHeadingLine(): void {
         if (this.speed > 0) {
-            if (this._heading) {
+            if (this._headingLine) {
                 this._destroyHeadingLine();
             }
             const line = Utils.getHeadingLine(this);
-            const geom = new BufferGeometry().setFromPoints([line.start, line.end]);
-            this._heading = new Line(geom);
-            this.simMgr.viewManager.scene.add(this._heading);
+            this._headingLine = MeshBuilder.CreateLines('heading', {points: [line.getPointAt(0), line.getPointAt(1)]}, this.simMgr.viewManager.scene);
         }
     }
 
     private _destroyHeadingLine(): void {
-        this.simMgr.viewManager.scene.remove(this._heading);
-        (this._heading as Mesh)?.geometry?.dispose();
-        this._heading = null;
+        this._headingLine.dispose();
+        this._headingLine = null;
     }
 
-    protected generateObj3D(): Object3D {
-        const vehicleGeometry = new BoxGeometry(this._width, this._height, this._length);
-        const mesh = new Mesh(vehicleGeometry, this.material);
-        mesh.translateY(this._height / 2);
+    protected generateObj3D(): Mesh {
+        const mesh = MeshBuilder.CreateBox(this.name, {width: this._width, height: this._height, depth: this._length}, this.simMgr.viewManager.scene);
+        mesh.translate(new Vector3(0, 1, 0), this._height / 2, Space.LOCAL);
         
         return mesh;
     }

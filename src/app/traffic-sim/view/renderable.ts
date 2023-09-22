@@ -1,10 +1,9 @@
-import { Box3, Mesh, MeshStandardMaterial, Object3D } from "three";
+import { BoundingInfo, Material, Mesh } from "babylonjs";
 
 export interface Renderable {
-    readonly obj3D: Object3D;
     readonly mesh: Mesh;
-    readonly boundingBox: Box3;
-    readonly material: MeshStandardMaterial;
+    readonly boundingBox: BoundingInfo;
+    readonly material: Material;
     hasPhysics: boolean;
     update(elapsedMs: number): void;
     disposeGeometry(): void;
